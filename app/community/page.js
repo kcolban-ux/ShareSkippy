@@ -125,7 +125,7 @@ export default function CommunityPage() {
         throw dogError;
       }
       setDogAvailabilityPosts(dogPosts || []);
-      console.log('Dog posts fetched:', dogPosts?.length || 0);
+      
 
       // Fetch petpal availability posts
       const { data: petpalPosts, error: petpalError } = await supabase
@@ -150,11 +150,11 @@ export default function CommunityPage() {
         throw petpalError;
       }
       setPetpalAvailabilityPosts(petpalPosts || []);
-      console.log('Petpal posts fetched:', petpalPosts?.length || 0);
+      
 
               // Fetch user's own availability posts
         if (user) {
-          console.log('Fetching posts for user:', user.id);
+  
           const { data: myPosts, error: myError } = await supabase
             .from('availability')
             .select(`
@@ -193,8 +193,7 @@ export default function CommunityPage() {
           throw myError;
         }
         setMyAvailabilityPosts(myPosts || []);
-        console.log('User posts fetched:', myPosts?.length || 0);
-        console.log('User posts data:', myPosts);
+
       }
 
     } catch (error) {
@@ -463,14 +462,11 @@ export default function CommunityPage() {
                       >
                         View Details
                       </Link>
-                      {/* Debug info - remove this later */}
-                      <div className="text-xs text-gray-500">
-                        User: {user?.id?.substring(0, 8)} | Owner: {post.owner_id?.substring(0, 8)}
-                      </div>
+
                       {user && user.id !== post.owner_id ? (
                         <button
                           onClick={() => openMessageModal(post.owner, post)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           Send Message
                         </button>

@@ -7,7 +7,7 @@ const config = {
   appDescription:
     "ShareSkippy - Connecting dog lovers with dog owners for free, community-based dog sharing experiences.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "localhost:300",
+  domainName: "shareskippy.com",
   crisp: {
     // Crisp website ID. IF YOU DON'T USE CRISP: just remove this => Then add a support email in this config file (resend.supportEmail) otherwise customer support won't work.
     id: "",

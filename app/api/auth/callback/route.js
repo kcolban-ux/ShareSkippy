@@ -15,5 +15,10 @@ export async function GET(req) {
   }
 
   // URL to redirect to after sign in process completes
-  return NextResponse.redirect(requestUrl.origin + config.auth.callbackUrl);
+  // Use the host header to determine the correct origin
+  const host = req.headers.get('host');
+  const protocol = req.headers.get('x-forwarded-proto') || 'https';
+  const origin = `${protocol}://${host}`;
+  
+  return NextResponse.redirect(origin + config.auth.callbackUrl);
 }
