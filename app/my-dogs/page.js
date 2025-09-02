@@ -196,7 +196,7 @@ export default function MyDogsPage() {
                     </p>
                     
                     <p className="capitalize">
-                      {dog.size?.replace('_', ' ')} • {dog.gender}
+                      {dog.size?.includes('-') ? `${dog.size} lbs` : dog.size?.replace('_', ' ')} • {dog.gender}
                       {dog.neutered && ' (Neutered)'}
                     </p>
                     

@@ -39,7 +39,7 @@ const faqData = [
   },
   {
     question: "What should I do for my first meeting?",
-    answer: "Always meet in a public place first, such as a local park or coffee shop. Bring your dog along if you're a pet owner, and take time to get to know each other. Trust your instincts and don't hesitate to reschedule if you're uncomfortable.",
+    answer: "Always meet in a public place first, such as a local park or coffee shop. Bring your dog along if you&apos;re a pet owner, and take time to get to know each other. Trust your instincts and don&apos;t hesitate to reschedule if you&apos;re uncomfortable.",
     category: "safety"
   },
   {
@@ -73,12 +73,12 @@ const faqData = [
   // For Pet Lovers
   {
     question: "How do I offer to help with pet care?",
-    answer: "Create a profile, share your availability, and browse requests from pet owners. You can also post your own availability for specific activities or times. Be clear about your experience level and what you're comfortable with.",
+    answer: "Create a profile, share your availability, and browse requests from pet owners. You can also post your own availability for specific activities or times. Be clear about your experience level and what you&apos;re comfortable with.",
     category: "lovers"
   },
   {
     question: "What if I don't have experience with dogs?",
-    answer: "That's okay! Many pet owners are happy to work with beginners. Be honest about your experience level, and many owners will provide guidance. Start with well-behaved, older dogs if you're new to pet care.",
+    answer: "That&apos;s okay! Many pet owners are happy to work with beginners. Be honest about your experience level, and many owners will provide guidance. Start with well-behaved, older dogs if you&apos;re new to pet care.",
     category: "lovers"
   },
   {
@@ -88,7 +88,7 @@ const faqData = [
   },
   {
     question: "What if I'm allergic to certain animals?",
-    answer: "Be upfront about any allergies in your profile. Many pet owners have hypoallergenic breeds or can accommodate allergy concerns. You can also specify which types of pets you're comfortable with.",
+    answer: "Be upfront about any allergies in your profile. Many pet owners have hypoallergenic breeds or can accommodate allergy concerns. You can also specify which types of pets you&apos;re comfortable with.",
     category: "lovers"
   },
 

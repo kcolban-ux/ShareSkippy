@@ -10,7 +10,7 @@ import config from "@/config";
 
 const navigationItems = [
   {
-    href: "/dashboard",
+    href: "/community",
     label: "Community",
   },
   {
@@ -69,8 +69,8 @@ const LoggedInNav = () => {
         <div className="flex lg:flex-1">
           <Link
             className="flex items-center gap-2 shrink-0"
-            href="/dashboard"
-            title={`${config.appName} dashboard`}
+            href="/"
+            title={`${config.appName} home`}
           >
             <Image
               src={logo}
@@ -146,8 +146,8 @@ const LoggedInNav = () => {
           <div className="flex items-center justify-between">
             <Link
               className="flex items-center gap-2 shrink-0"
-              title={`${config.appName} dashboard`}
-              href="/dashboard"
+              title={`${config.appName} home`}
+              href="/"
             >
               <Image
                 src={logo}

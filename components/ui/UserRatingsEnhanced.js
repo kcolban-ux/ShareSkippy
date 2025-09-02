@@ -155,7 +155,7 @@ export default function UserRatingsEnhanced({ userId, userRole }) {
             
             {review.comment && (
               <p className="text-gray-700 text-sm leading-relaxed">
-                "{review.comment}"
+                &ldquo;{review.comment}&rdquo;
               </p>
             )}
             

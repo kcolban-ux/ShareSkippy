@@ -5,30 +5,30 @@ import { useState, useEffect } from 'react';
 
 // Carousel messages for the hero section
 const carouselMessages = [
-  "Going on a date? Grab a pup first — it's the perfect wingman. If it flops, at least someone's happy to see you. 🐾",
+  "Going on a date? Grab a pup first — it&apos;s the perfect wingman. If it flops, at least someone&apos;s happy to see you. 🐾",
   "Need an instant mood booster? A wagging tail beats meditation apps, trust us. 🐶",
   "Owners get reliable walkers. Dog-lovers get their canine fix. Everyone swipes right on more belly rubs.",
-  "Love dogs but don't love vet bills, pet insurance, and 5AM potty breaks? Borrow one instead. 100% joy, 0% pee stains.",
+  "Love dogs but don&apos;t love vet bills, pet insurance, and 5AM potty breaks? Borrow one instead. 100% joy, 0% pee stains.",
   "Think of us as Tinder for dogs… but without the awkward small talk.",
   "Have a dog desperate for a friend? Set up a puppy playdate. Warning: your dog might end up with a better social life than you.",
-  "Some owners can't give their dogs enough walks — maybe they're elderly, disabled, or working 80-hour tech weeks. Meanwhile, plenty of dog lovers are dying to hike, run, or cuddle. We make the match.",
+  "Some owners can&apos;t give their dogs enough walks — maybe they&apos;re elderly, disabled, or working 80-hour tech weeks. Meanwhile, plenty of dog lovers are dying to hike, run, or cuddle. We make the match.",
   "Some pups need more play, some humans need more pup. Put them together and boom — happy dogs, happy people, fewer chewed remotes.",
   "Your dog wants a marathon. You want a burrito. No shame — this is where WalkSkippy saves the day.",
-  "When dogs get more love, humans get more joy. It's science. (Okay, maybe not peer-reviewed, but just look at their faces.)"
+  "When dogs get more love, humans get more joy. It&apos;s science. (Okay, maybe not peer-reviewed, but just look at their faces.)"
 ];
 
 // Community stories
 const communityStories = [
   {
-    quote: "I can't have a dog in my apartment, but now I hike with Max every week.",
+    quote: "I can&apos;t have a dog in my apartment, but now I hike with Max every week.",
     author: "Sarah, Dog Lover"
   },
   {
-    quote: "I work from home and needed a break from Zoom meetings. Walking neighbors' dogs gives me fresh air, exercise, and some seriously good puppy therapy.",
+    quote: "I work from home and needed a break from Zoom meetings. Walking neighbors&apos; dogs gives me fresh air, exercise, and some seriously good puppy therapy.",
     author: "Mike, Remote Worker"
   },
   {
-    quote: "My dog has boundless energy, and I couldn't keep up. Now he gets playdates with other pups, and I get peace of mind knowing he's happy and socialized.",
+    quote: "My dog has boundless energy, and I couldn&apos;t keep up. Now he gets playdates with other pups, and I get peace of mind knowing he&apos;s happy and socialized.",
     author: "Lisa, Dog Owner"
   },
   {
@@ -44,15 +44,15 @@ const communityStories = [
     author: "Maria, Single Parent"
   },
   {
-    quote: "I've always wanted a dog but live in an apartment that doesn't allow pets. Now I get weekend puppy cuddles, and it's the highlight of my week.",
+    quote: "I&apos;ve always wanted a dog but live in an apartment that doesn&apos;t allow pets. Now I get weekend puppy cuddles, and it&apos;s the highlight of my week.",
     author: "Alex, Apartment Dweller"
   },
   {
-    quote: "After moving to a new neighborhood, I didn't know anyone. Walking dogs with neighbors helped me make friends and get my daily steps in.",
+    quote: "After moving to a new neighborhood, I didn&apos;t know anyone. Walking dogs with neighbors helped me make friends and get my daily steps in.",
     author: "Tom, New Neighbor"
   },
   {
-    quote: "I work long hours and couldn't give Luna the walks she needed. Now neighbors help take her on hikes, and she's happier than ever.",
+    quote: "I work long hours and couldn&apos;t give Luna the walks she needed. Now neighbors help take her on hikes, and she&apos;s happier than ever.",
     author: "Rachel, Busy Professional"
   },
   {
@@ -277,7 +277,7 @@ export default function Home() {
 
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-xl text-gray-700 leading-relaxed mb-8">
-              Vets estimate that over <strong>70% of city dogs don't get enough exercise</strong>. Life happens — some owners are elderly, recovering from illness, juggling long work hours, caring for kids on their own, or managing tight budgets. Pups still need to run, play, and explore. That's where you come in: <strong>volunteer, make a dog's AND a human's day, and get the best reward ever: puppy love</strong>.
+              Vets estimate that over <strong>70% of city dogs don&apos;t get enough exercise</strong>. Life happens — some owners are elderly, recovering from illness, juggling long work hours, caring for kids on their own, or managing tight budgets. Pups still need to run, play, and explore. That&apos;s where you come in: <strong>volunteer, make a dog&apos;s AND a human&apos;s day, and get the best reward ever: puppy love</strong>.
             </p>
             
             <div className="text-center">
@@ -348,7 +348,7 @@ export default function Home() {
             {communityStories.slice(0, 6).map((story, index) => (
               <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
                 <p className="text-lg text-gray-800 mb-4 italic">
-                  "{story.quote}"
+                  &ldquo;{story.quote}&rdquo;
                 </p>
                 <p className="text-sm text-gray-600 font-semibold">
                   — {story.author}

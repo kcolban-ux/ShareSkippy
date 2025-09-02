@@ -20,3 +20,20 @@ progress::-webkit-progress-value {
     @apply !capitalize;
   }
 }
+
+@layer components {
+  .clickable-card {
+    @apply cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+  
+  .clickable-card:hover {
+    @apply ring-2 ring-blue-200;
+  }
+  
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

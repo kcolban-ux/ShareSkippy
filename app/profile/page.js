@@ -1,11 +1,11 @@
 "use client";
 import { useUser } from '@/libs/supabase/hooks';
-import Map from '../../components/map/Map';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
 import UserRatingsEnhanced from '../../components/ui/UserRatingsEnhanced';
 import { createClient } from '@/libs/supabase/client';
+import { formatLocation } from '@/libs/utils';
 
 export default function ProfilePage() {
   const { user, loading: userLoading } = useUser();
@@ -74,7 +74,7 @@ export default function ProfilePage() {
     return (
       <div className="max-w-md mx-auto p-6 text-center space-y-4">
         <h2 className="text-xl font-semibold">Welcome!</h2>
-        <p className="text-gray-600">You haven't set up your profile yet.</p>
+        <p className="text-gray-600">You haven&apos;t set up your profile yet.</p>
         <Link href="/profile/edit" className="inline-block bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
           Create Your Profile
         </Link>
@@ -196,16 +196,23 @@ export default function ProfilePage() {
         <div className="space-y-2">
           <h3 className="font-medium text-gray-700">Location</h3>
           <div className="bg-gray-50 p-3 rounded">
-            <span className="font-medium text-gray-700">📍 {profile.neighborhood}, {profile.city}</span>
-          </div>
-          {profile.display_lat && profile.display_lng && (
-            <div className="mt-2">
-              <Map lat={profile.display_lat} lng={profile.display_lng} />
-              <div className="text-xs text-gray-500 mt-1">
-                Approximate location for community matching. Your exact address remains private.
-              </div>
+            {(() => {
+              const formattedLocation = formatLocation({
+                neighborhood: profile.neighborhood,
+                city: profile.city,
+                state: profile.state
+              });
+              return (
+                <span className="font-medium text-gray-700">
+                  📍 {formattedLocation.neighborhood}, {formattedLocation.city}
+                  {formattedLocation.state && `, ${formattedLocation.state}`}
+                </span>
+              );
+            })()}
+            <div className="text-xs text-gray-500 mt-1">
+              Approximate location for community matching. Your exact address remains private.
             </div>
-          )}
+          </div>
         </div>
       )}
 

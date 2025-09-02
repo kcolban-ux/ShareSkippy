@@ -9,7 +9,7 @@ export default function MeetingsPage() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4">Coming Soon</h2>
         <p className="text-gray-600">
-          The meetings feature is currently under development. You'll be able to schedule 
+          The meetings feature is currently under development. You&apos;ll be able to schedule 
           dog walking meetups and join community events with other dog lovers.
         </p>
       </div>

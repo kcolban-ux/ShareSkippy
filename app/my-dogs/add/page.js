@@ -17,7 +17,7 @@ export default function AddDogPage() {
     name: '',
     breed: '',
     birthday: '',
-    size: 'medium',
+    size: '26-40',
     gender: 'male',
     neutered: false,
     temperament: [],
@@ -210,7 +210,7 @@ export default function AddDogPage() {
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your dog's name"
+                placeholder="Enter your dog&apos;s name"
               />
             </div>
 
@@ -262,10 +262,12 @@ export default function AddDogPage() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="small">Small (1-20 lbs)</option>
-                  <option value="medium">Medium (21-50 lbs)</option>
-                  <option value="large">Large (51-100 lbs)</option>
-                  <option value="extra_large">Extra Large (100+ lbs)</option>
+                  <option value="0-10">0-10 lbs</option>
+                  <option value="11-25">11-25 lbs</option>
+                  <option value="26-40">26-40 lbs</option>
+                  <option value="41-70">41-70 lbs</option>
+                  <option value="71-90">71-90 lbs</option>
+                  <option value="91-110">91-110 lbs</option>
                 </select>
               </div>
               <div>

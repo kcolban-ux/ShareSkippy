@@ -36,6 +36,7 @@ const AppLayout = ({ children }) => {
   
   // Don't show footer on dashboard/profile pages (logged-in pages)
   const isLoggedInPage = pathname.startsWith("/dashboard") || 
+                        pathname.startsWith("/community") ||
                         pathname.startsWith("/profile") || 
                         pathname.startsWith("/share-availability") ||
                         pathname.startsWith("/messages") ||

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/libs/supabase/client';
 import toast from 'react-hot-toast';
 import PhotoUpload from '../../../components/ui/PhotoUpload';
+import { formatLocation } from '@/libs/utils';
 
 export default function ProfileEditPage() {
   const { user, loading: userLoading } = useUser();
@@ -159,13 +160,22 @@ export default function ProfileEditPage() {
         updated_at: new Date().toISOString()
       };
 
-      // Conditionally add location columns if they exist
-      // These will be added after running the migration
-      if (profile.neighborhood?.trim()) {
-        profileData.neighborhood = profile.neighborhood.trim();
+      // Format location data with proper capitalization
+      const formattedLocation = formatLocation({
+        neighborhood: profile.neighborhood?.trim() || '',
+        city: profile.city?.trim() || '',
+        state: profile.state?.trim() || ''
+      });
+
+      // Add location data with proper capitalization
+      if (formattedLocation.neighborhood) {
+        profileData.neighborhood = formattedLocation.neighborhood;
       }
-      if (profile.city?.trim()) {
-        profileData.city = profile.city.trim();
+      if (formattedLocation.city) {
+        profileData.city = formattedLocation.city;
+      }
+      if (formattedLocation.state) {
+        profileData.state = formattedLocation.state;
       }
 
       console.log('Attempting to save profile with data:', profileData);
@@ -271,13 +281,20 @@ export default function ProfileEditPage() {
           }
         }
 
-        // Update profile with verified location
+        // Update profile with verified location (with proper capitalization)
+        const formattedLocation = formatLocation({
+          neighborhood: neighborhood,
+          city: profile.city,
+          state: profile.state
+        });
+        
         setProfile(prev => ({
           ...prev,
           display_lat: lat,
           display_lng: lng,
-          neighborhood: neighborhood,
-          city: profile.city // Use the city from the form
+          neighborhood: formattedLocation.neighborhood,
+          city: formattedLocation.city,
+          state: formattedLocation.state
         }));
 
         setAddressVerified(true);
@@ -680,25 +697,7 @@ export default function ProfileEditPage() {
               </div>
             )}
             
-            {profile.display_lat && profile.display_lng && (
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Location Preview:</h3>
-                <div className="w-full h-48 bg-gray-100 border border-gray-300 rounded-md flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-2xl mb-2">📍</div>
-                    <div className="text-sm text-gray-600">
-                      {profile.neighborhood && profile.city ? 
-                        `${profile.neighborhood}, ${profile.city}` : 
-                        `${profile.display_lat.toFixed(4)}, ${profile.display_lng.toFixed(4)}`
-                      }
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Approximate location for community matching
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+
             
             <div className="text-xs text-gray-500">
               💡 Your exact address is never shared publicly. Only your neighborhood and city are visible to help with community matching.

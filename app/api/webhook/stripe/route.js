@@ -1,12 +1,12 @@
-import configFile from "@/config";
-import { findCheckoutSession } from "@/libs/stripe";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import Stripe from "stripe";
+import configFile from "@/config";
+import { createHybridServiceRoleClient } from "@/libs/supabase/hybrid-server";
+import { findCheckoutSession } from "@/libs/stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-08-16",
+  apiVersion: "2023-10-16",
 });
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -14,19 +14,16 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 // It used to update the user data, send emails, etc...
 // By default, it'll store the user in the database
 // See more: https://shipfa.st/docs/features/payments
-export async function POST(req) {
-  const body = await req.text();
-
+export async function POST(request) {
+  const body = await request.text();
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = headers().get("stripe-signature");
 
   let eventType;
   let event;
 
-  // Create a private supabase client using the secret service_role API key
-  const supabase = new SupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  // Create a private supabase client using the hybrid service role client
+  const supabase = createHybridServiceRoleClient();
 
   // verify Stripe event is legit
   try {
