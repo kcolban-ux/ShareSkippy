@@ -3,7 +3,7 @@ import { useUser } from '@/libs/supabase/hooks';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
-import UserRatingsEnhanced from '../../components/ui/UserRatingsEnhanced';
+import UserReviews from '../../components/UserReviews';
 import { createClient } from '@/libs/supabase/client';
 import { formatLocation } from '@/libs/utils';
 
@@ -219,7 +219,7 @@ export default function ProfilePage() {
       {/* Reviews Section */}
       <div className="space-y-2">
         <h3 className="font-medium text-gray-700">My Reviews</h3>
-        <UserRatingsEnhanced userId={profile.id} userRole={profile.role} />
+        <UserReviews userId={profile.id} showAll={true} />
       </div>
 
       {/* Delete Account Modal */}

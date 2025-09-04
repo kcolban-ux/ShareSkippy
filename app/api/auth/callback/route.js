@@ -19,8 +19,8 @@ export async function GET(req) {
   const host = requestUrl.host;
   let origin;
   
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    // Development environment - use current origin
+  if (host.includes('localhost') || host.includes('127.0.0.1') || host.includes('192.168.')) {
+    // Development environment - use current origin (including network IP)
     origin = requestUrl.origin;
   } else {
     // Production environment - use config domain

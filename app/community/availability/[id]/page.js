@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/libs/supabase/client';
+import UserReviews from '../../../../components/UserReviews';
 
 export default function AvailabilityDetailPage() {
   const params = useParams();
@@ -793,6 +794,15 @@ export default function AvailabilityDetailPage() {
                   Contact Owner
                 </button>
               </div>
+            </div>
+
+            {/* Owner Reviews */}
+            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">⭐</span>
+                Reviews
+              </h2>
+              <UserReviews userId={availability.owner?.id} showAll={false} />
             </div>
 
             {/* Safety Reminder */}
