@@ -1,6 +1,5 @@
 "use client";
 import { useState } from 'react';
-import { supabase } from '@/libs/supabase';
 
 export default function MessageModal({ isOpen, onClose, recipient, availabilityPost }) {
   const [message, setMessage] = useState('');
@@ -14,16 +13,15 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!message.trim() || !recipient || !availabilityPost) {
+    if (!recipient || !availabilityPost || !message.trim()) {
       setError('Please fill in all required fields');
       return;
     }
 
+    setSending(true);
+    setError(null);
+
     try {
-      setSending(true);
-      setError(null);
-      
-      // Send message via API
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -32,15 +30,15 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         body: JSON.stringify({
           recipient_id: recipient.id,
           availability_id: availabilityPost.id,
-          subject: subject || `Re: ${availabilityPost.title}`,
+          subject: subject.trim() || `Re: ${availabilityPost.title}`,
           content: message.trim()
         }),
       });
 
-      const result = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to send message');
+        throw new Error(data.error || 'Failed to send message');
       }
 
       setSuccess(true);
@@ -52,7 +50,7 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         onClose();
         setSuccess(false);
       }, 2000);
-      
+
     } catch (error) {
       console.error('Error sending message:', error);
       setError(error.message || 'Failed to send message. Please try again.');
@@ -90,15 +88,14 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Subject
+              Subject (optional)
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Message subject"
-              required
+              placeholder={`Re: ${availabilityPost?.title || 'Availability Post'}`}
             />
           </div>
 
@@ -138,7 +135,7 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
             </button>
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || !message.trim()}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {sending ? 'Sending...' : 'Send Message'}

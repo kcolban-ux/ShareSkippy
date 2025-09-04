@@ -1,61 +1,51 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse } from "next/server";
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse } from 'next/server'
 
-// Helper function to get the appropriate Supabase URL and key
-function getSupabaseConfig() {
-  const isLocal = process.env.NODE_ENV === "development" && 
-                  process.env.NEXT_PUBLIC_SUPABASE_URL_LOCAL && 
-                  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_LOCAL;
-  
-  if (isLocal) {
-    return {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL_LOCAL,
-      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_LOCAL,
-    };
-  }
-  
-  return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  };
-}
-
-export async function updateSession(request) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
-
-  const config = getSupabaseConfig();
-  
-  if (!config.url || !config.anonKey) {
-    throw new Error("Supabase configuration is missing in middleware");
-  }
-
+export async function updateSession(request, response) {
   const supabase = createServerClient(
-    config.url,
-    config.anonKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
-  );
+  )
 
-  // refreshing the auth token
-  await supabase.auth.getUser();
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // response.cookies.setAll. Writing logic between the two will cause the
+  // response headers to be lost, breaking the authentication flow.
 
-  return supabaseResponse;
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (user) {
+    // Refresh session if expired - required for Server Components
+    // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      response.cookies.set('sb-access-token', session.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      })
+      
+      response.cookies.set('sb-refresh-token', session.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      })
+    }
+  }
+
+  return response
 }

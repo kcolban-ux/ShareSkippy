@@ -124,6 +124,12 @@ export default function CommunityPage() {
       
       const { data: dogPosts, error: dogError } = await dogQuery.order('created_at', { ascending: false });
 
+      // Debug logging for dog posts
+      console.log('Dog posts fetched:', dogPosts?.length || 0);
+      if (dogPosts && dogPosts.length > 0) {
+        console.log('First dog post owner data:', dogPosts[0].owner);
+      }
+
       // Fetch additional dogs for posts with multiple dogs
       if (dogPosts) {
         for (let post of dogPosts) {
@@ -173,6 +179,12 @@ export default function CommunityPage() {
       }
       
       const { data: petpalPosts, error: petpalError } = await petpalQuery.order('created_at', { ascending: false });
+
+      // Debug logging for petpal posts
+      console.log('Petpal posts fetched:', petpalPosts?.length || 0);
+      if (petpalPosts && petpalPosts.length > 0) {
+        console.log('First petpal post owner data:', petpalPosts[0].owner);
+      }
 
       if (petpalError) {
         console.error('Error fetching petpal posts:', petpalError);
@@ -305,6 +317,7 @@ export default function CommunityPage() {
   };
 
   const openMessageModal = (recipient, availabilityPost) => {
+    console.log('Opening message modal with:', { recipient, availabilityPost });
     setMessageModal({ isOpen: true, recipient, availabilityPost });
   };
 
@@ -526,7 +539,11 @@ export default function CommunityPage() {
 
                       {user && user.id !== post.owner_id ? (
                         <button
-                          onClick={() => openMessageModal(post.owner, post)}
+                          onClick={() => {
+                            console.log('Dog post owner data:', post.owner);
+                            console.log('Dog post owner_id:', post.owner_id);
+                            openMessageModal(post.owner, post);
+                          }}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           Send Message
@@ -664,7 +681,11 @@ export default function CommunityPage() {
                       </Link>
                       {user && user.id !== post.owner_id && (
                         <button
-                          onClick={() => openMessageModal(post.owner, post)}
+                          onClick={() => {
+                            console.log('Petpal post owner data:', post.owner);
+                            console.log('Petpal post owner_id:', post.owner_id);
+                            openMessageModal(post.owner, post);
+                          }}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           Send Message
@@ -841,9 +862,12 @@ export default function CommunityPage() {
                           View Details
                         </Link>
                         <div className="flex space-x-2">
-                          <button className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 transition-colors">
+                          <Link
+                            href={`/community/availability/${post.id}/edit`}
+                            className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700 transition-colors"
+                          >
                             Edit
-                          </button>
+                          </Link>
                           <button 
                             onClick={() => deletePost(post.id)}
                             className={`bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors ${deletingPost === post.id ? 'opacity-50 cursor-not-allowed' : ''}`}

@@ -1,8 +1,8 @@
 "use client";
-import { useUser } from '@/libs/supabase/hooks';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/libs/supabase/client';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/libs/supabase/client";
+import { useUser } from "@/libs/supabase/hooks";
 import toast from 'react-hot-toast';
 import PhotoUpload from '../../../components/ui/PhotoUpload';
 import { formatLocation } from '@/libs/utils';

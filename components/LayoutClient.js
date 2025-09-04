@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/libs/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { Crisp } from "crisp-sdk-web";
 import NextTopLoader from "nextjs-toploader";
@@ -13,29 +13,53 @@ import config from "@/config";
 // This component is separated from ClientLayout because it needs to be wrapped with <SessionProvider> to use useSession() hook
 const CrispChat = () => {
   const pathname = usePathname();
-
-  const supabase = createClient();
   const [data, setData] = useState(null);
+  const [crispInitialized, setCrispInitialized] = useState(false);
+
+  // Memoize the supabase client to prevent recreation on every render
+  const supabase = useMemo(() => createClient(), []);
 
   // This is used to get the user data from Supabase Auth (if logged in) => user ID is used to identify users in Crisp
   useEffect(() => {
+    let mounted = true;
+    
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setData({ user });
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (mounted && user) {
+          setData({ user });
+        }
+      } catch (error) {
+        console.error('Error getting user for Crisp:', error);
       }
     };
+    
     getUser();
-  }, []);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (mounted) {
+          setData(session?.user ? { user: session.user } : null);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   useEffect(() => {
-    if (config?.crisp?.id) {
-      // Set up Crisp
+    if (config?.crisp?.id && !crispInitialized) {
+      // Set up Crisp only once
       Crisp.configure(config.crisp.id);
+      setCrispInitialized(true);
+    }
+  }, [crispInitialized]);
 
+  useEffect(() => {
+    if (crispInitialized) {
       // (Optional) If onlyShowOnRoutes array is not empty in config.js file, Crisp will be hidden on the routes in the array.
       // Use <AppButtonSupport> instead to show it (user clicks on the button to show Crisp—it cleans the UI)
       if (
@@ -48,14 +72,14 @@ const CrispChat = () => {
         });
       }
     }
-  }, [pathname]);
+  }, [pathname, crispInitialized]);
 
   // Add User Unique ID to Crisp to easily identify users when reaching support (optional)
   useEffect(() => {
-    if (data?.user && config?.crisp?.id) {
+    if (data?.user && crispInitialized) {
       Crisp.session.setData({ userId: data.user?.id });
     }
-  }, [data]);
+  }, [data, crispInitialized]);
 
   return null;
 };

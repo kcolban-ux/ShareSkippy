@@ -1,48 +1,79 @@
-# Supabase Setup Guide
+# Remote Supabase Setup
 
-## Issue
-The share-availability page is stuck on "Loading..." because Supabase environment variables are not configured.
+This guide will help you set up your project to use only remote Supabase (no local development setup).
 
-## Solution
+## Prerequisites
 
-### 1. Create a `.env.local` file
-Create a `.env.local` file in the root directory of your project with the following content:
+1. A Supabase project at [supabase.com](https://supabase.com)
+2. Your project's URL and API keys
+
+## Setup Steps
+
+### 1. Environment Variables
+
+Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+
+```bash
+cp env.example .env.local
+```
+
+Edit `.env.local` with your actual values:
 
 ```env
 # Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-remote-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-remote-service-role-key
+
+# Resend API Key
+RESEND_API_KEY=your-resend-api-key
+
+# Environment
+NODE_ENV=development
+
+# Optional: Stripe (if you're using payments)
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+
+# Optional: OpenAI (if you're using AI features)
+OPENAI_API_KEY=your-openai-api-key
 ```
 
-### 2. Get your Supabase credentials
-1. Go to [supabase.com](https://supabase.com) and sign in
-2. Create a new project or select an existing one
-3. Go to Settings → API
-4. Copy the "Project URL" and paste it as the value for `NEXT_PUBLIC_SUPABASE_URL`
-5. Copy the "anon public" key and paste it as the value for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+### 2. Get Your Supabase Credentials
 
-### 3. Restart your development server
-After creating the `.env.local` file, restart your Next.js development server:
+1. Go to your Supabase project dashboard
+2. Navigate to Settings → API
+3. Copy the following values:
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role** → `SUPABASE_SERVICE_ROLE_KEY`
+
+### 3. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-### 4. Verify the setup
-- Open the browser console (F12)
-- Navigate to the share-availability page
-- You should see console logs showing the authentication process
-- The page should load properly instead of showing "Loading..."
+Your app will now connect directly to your remote Supabase instance.
 
-## Example `.env.local` file
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhtdG5wdmJqY2JqY2JqY2JqY2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjQ0NjQ0NDQsImV4cCI6MTk0MDA0MDQ0NH0.your_actual_key_here
-```
+## Database Schema
+
+Make sure your remote Supabase database has the required tables and policies. You can manage this through the Supabase dashboard or by running SQL commands in the SQL editor.
+
+## Benefits of Remote-Only Setup
+
+- ✅ No local database setup required
+- ✅ Consistent environment across development and production
+- ✅ Real-time data and authentication
+- ✅ Built-in Row Level Security (RLS)
+- ✅ Automatic backups and scaling
+- ✅ Team collaboration on the same data
 
 ## Troubleshooting
-- Make sure the `.env.local` file is in the root directory (same level as `package.json`)
-- Make sure there are no spaces around the `=` sign in the environment variables
-- Make sure you've restarted the development server after adding the environment variables
-- Check the browser console for any error messages
+
+If you encounter authentication issues:
+1. Check that your environment variables are correct
+2. Ensure your Supabase project is active
+3. Verify that Row Level Security policies are properly configured
+4. Check the browser console for any error messages
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import configFile from "@/config";
-import { createHybridServiceRoleClient } from "@/libs/supabase/hybrid-server";
+import { createClient } from "@/libs/supabase/server";
 import { findCheckoutSession } from "@/libs/stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -14,23 +14,21 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 // It used to update the user data, send emails, etc...
 // By default, it'll store the user in the database
 // See more: https://shipfa.st/docs/features/payments
-export async function POST(request) {
-  const body = await request.text();
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+export async function POST(req) {
+  const body = await req.text();
   const signature = headers().get("stripe-signature");
 
-  let eventType;
   let event;
 
-  // Create a private supabase client using the hybrid service role client
-  const supabase = createHybridServiceRoleClient();
+  // Create a private supabase client using the service role key
+  const supabase = createClient();
 
   // verify Stripe event is legit
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error(`Webhook signature verification failed. ${err.message}`);
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    return new Response('Webhook signature verification failed', { status: 400 });
   }
 
   eventType = event.type;
