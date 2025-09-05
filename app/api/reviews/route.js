@@ -106,6 +106,26 @@ export async function POST(request) {
     const reviewerRole = isRequester ? 'requester' : 'recipient';
     const reviewedRole = isRequester ? 'recipient' : 'requester';
 
+    // Debug logging
+    console.log('Review submission debug:', {
+      meetingId,
+      userId: user.id,
+      meetingRequesterId: meeting.requester_id,
+      meetingRecipientId: meeting.recipient_id,
+      isRequester,
+      revieweeId,
+      reviewerRole,
+      reviewedRole
+    });
+
+    // Validate roles
+    if (!['requester', 'recipient'].includes(reviewerRole)) {
+      return NextResponse.json({ error: `Invalid reviewer role: ${reviewerRole}` }, { status: 400 });
+    }
+    if (!['requester', 'recipient'].includes(reviewedRole)) {
+      return NextResponse.json({ error: `Invalid reviewed role: ${reviewedRole}` }, { status: 400 });
+    }
+
     // Check if user has already reviewed this meeting
     const { data: existingReviews, error: existingError } = await supabase
       .from('reviews')
@@ -120,17 +140,21 @@ export async function POST(request) {
     }
 
     // Create the review
+    const reviewData = {
+      meeting_id: meetingId,
+      reviewer_id: user.id,
+      reviewee_id: revieweeId,
+      reviewer_role: reviewerRole,
+      reviewed_role: reviewedRole,
+      rating,
+      comment: comment.trim()
+    };
+
+    console.log('Inserting review data:', reviewData);
+
     const { data: review, error: reviewError } = await supabase
       .from('reviews')
-      .insert({
-        meeting_id: meetingId,
-        reviewer_id: user.id,
-        reviewee_id: revieweeId,
-        reviewer_role: reviewerRole,
-        reviewed_role: reviewedRole,
-        rating,
-        comment: comment.trim()
-      })
+      .insert(reviewData)
       .select(`
         *,
         reviewer:profiles!reviews_reviewer_id_fkey(first_name, last_name, email, profile_photo_url),
@@ -139,7 +163,10 @@ export async function POST(request) {
       `)
       .single();
 
-    if (reviewError) throw reviewError;
+    if (reviewError) {
+      console.error('Review insert error:', reviewError);
+      throw reviewError;
+    }
 
     return NextResponse.json({ review });
   } catch (error) {
