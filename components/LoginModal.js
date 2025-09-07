@@ -17,7 +17,10 @@ export default function LoginModal({ isOpen, onClose }) {
 
     try {
       const { type, provider } = options;
-      const redirectURL = window.location.origin + "/api/auth/callback";
+      // Use production domain for OAuth redirects to avoid localhost issues
+      const redirectURL = window.location.hostname === 'localhost' || window.location.hostname.includes('192.168') 
+        ? window.location.origin + "/api/auth/callback"
+        : `https://shareskippy.com/api/auth/callback`;
 
       if (type === "oauth") {
         const { error } = await supabase.auth.signInWithOAuth({
