@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { metadata as pageMetadata } from './metadata';
 import FaqJsonLd from './FaqJsonLd';
 import ScrollSpyToc from '@/components/HowTo/ScrollSpyToc';
@@ -10,10 +9,6 @@ import Callout from '@/components/HowTo/Callout';
 import SafetyChecklist from '@/components/HowTo/SafetyChecklist';
 import Badge from '@/components/ui/Badge';
 
-// Dynamic import for client component
-const ContactForm = dynamic(() => import('@/components/HowTo/ContactForm'), {
-  ssr: false,
-});
 
 export const metadata: Metadata = pageMetadata;
 
@@ -581,7 +576,18 @@ export default function HowToUsePage() {
                       </Callout>
                     </div>
                     
-                    <ContactForm />
+                    <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact Support</h3>
+                      <p className="text-gray-600">
+                        Need help or want to report an issue? We're here to help!{' '}
+                        <a 
+                          href="mailto:kcolban@gmail.com" 
+                          className="text-purple-600 hover:text-purple-700 font-medium underline"
+                        >
+                          Email Us!
+                        </a>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </section>
