@@ -22,7 +22,9 @@ export default function DatePicker({ selectedDate, onDateSelect, minDate, placeh
   // Update selected day when selectedDate prop changes
   useEffect(() => {
     if (selectedDate) {
-      setSelectedDay(new Date(selectedDate));
+      // Parse the date string safely to avoid timezone issues
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      setSelectedDay(new Date(year, month - 1, day));
     }
   }, [selectedDate]);
 
@@ -96,13 +98,23 @@ export default function DatePicker({ selectedDate, onDateSelect, minDate, placeh
 
   const isDisabled = (date) => {
     if (!date) return false;
-    const minDateObj = minDate ? new Date(minDate) : new Date();
+    
+    // Parse minDate safely to avoid timezone issues
+    let minDateObj;
+    if (minDate) {
+      const [year, month, day] = minDate.split('-').map(Number);
+      minDateObj = new Date(year, month - 1, day);
+    } else {
+      minDateObj = new Date();
+    }
     minDateObj.setHours(0, 0, 0, 0);
     
     if (date < minDateObj) return true;
     
     if (maxDate) {
-      const maxDateObj = new Date(maxDate);
+      // Parse maxDate safely to avoid timezone issues
+      const [year, month, day] = maxDate.split('-').map(Number);
+      const maxDateObj = new Date(year, month - 1, day);
       maxDateObj.setHours(23, 59, 59, 999);
       return date > maxDateObj;
     }
@@ -126,7 +138,10 @@ export default function DatePicker({ selectedDate, onDateSelect, minDate, placeh
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between"
       >
         <span className={selectedDate ? 'text-gray-900' : 'text-gray-500'}>
-          {selectedDate ? formatDate(new Date(selectedDate)) : placeholder}
+          {selectedDate ? (() => {
+            const [year, month, day] = selectedDate.split('-').map(Number);
+            return formatDate(new Date(year, month - 1, day));
+          })() : placeholder}
         </span>
         <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
