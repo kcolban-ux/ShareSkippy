@@ -53,7 +53,7 @@ Your Resend configuration is already set up in `config.js`:
 resend: {
   fromNoReply: `ShareSkippy <noreply@kaia.dev>`,
   fromAdmin: `ShareSkippy <admin@kaia.dev>`,
-  supportEmail: "support@kaia.dev",
+  supportEmail: "kaia@shareskippy.com",
 }
 ```
 
