@@ -145,7 +145,7 @@ export default function AddDogPage() {
         return;
       }
 
-      router.push('/my-dogs');
+      router.push('/share-availability');
     } catch (error) {
       console.error('Error creating dog:', error);
       setError(error.message || 'Failed to create dog profile');
