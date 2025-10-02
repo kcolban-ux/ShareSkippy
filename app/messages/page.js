@@ -120,41 +120,25 @@ export default function MessagesPage() {
     try {
       setSending(true);
       
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
+      // Use the API route which handles both message creation and email sending
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
           subject: `Re: ${selectedConversation.availability.title}`,
           content: newMessage.trim()
-        });
+        })
+      });
 
-      if (error) throw error;
-
-      // Update conversation timestamp
-      await supabase
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', selectedConversation.id);
-
-      // Send email notification to recipient
-      try {
-        await fetch('/api/emails/send-new-message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipientId: selectedConversation.otherParticipant.id,
-            senderId: user.id,
-            messagePreview: newMessage.trim().substring(0, 100),
-            messageId: 'new-message' // We don't have the message ID here, but the email API can handle it
-          })
-        });
-      } catch (emailError) {
-        console.error('Error sending message notification email:', emailError);
-        // Don't fail the message sending if email fails
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send message');
       }
 
+      const result = await response.json();
+      
       // Refresh messages and conversations
       setNewMessage('');
       await fetchMessages(selectedConversation.id);
