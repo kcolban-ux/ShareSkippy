@@ -208,11 +208,14 @@ export default function MessagesPage() {
         .or(`and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`)
         .order('created_at', { ascending: true });
 
-      // ONLY add availability filter when it exists and is non-empty
-      if (availability_id) {
+      // Handle availability_id filtering properly
+      if (availability_id !== null && availability_id !== undefined) {
+        // For availability-specific conversations, only show messages with this availability_id
         query = query.eq('availability_id', availability_id);
+      } else {
+        // For general conversations (profile-based), only show messages without availability_id
+        query = query.is('availability_id', null);
       }
-      // Don't filter by null availability_id for now - let all messages through
 
       const { data, error } = await query;
 
