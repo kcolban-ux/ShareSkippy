@@ -127,7 +127,7 @@ export default function MessagesPage() {
         body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
-          subject: `Re: ${selectedConversation.availability.title}`,
+          subject: selectedConversation.availability ? `Re: ${selectedConversation.availability.title}` : 'New Message',
           content: newMessage.trim()
         })
       });
@@ -238,6 +238,7 @@ export default function MessagesPage() {
         h-[calc(100dvh)] md:h-screen
         overflow-hidden
         bg-white
+        messages-page
       "
     >
       {/* Header */}
@@ -365,11 +366,12 @@ export default function MessagesPage() {
                 id="message-scroll"
                 className="
                   flex-1 min-h-0
-                  overflow-y-auto ios-scroll
+                  overflow-y-auto overflow-x-hidden ios-scroll
                   px-4 py-4
                   bg-gray-50
                   break-words
                   space-y-3
+                  max-w-full
                 "
               >
                     {messages.map((message) => (
@@ -378,7 +380,7 @@ export default function MessagesPage() {
                         className={`flex ${message.sender_id === user.id ? 'justify-end' : 'justify-start'} message-container`}
                       >
                         <div
-                          className={`message-bubble px-4 py-3 rounded-2xl break-words shadow-sm ${
+                          className={`message-bubble px-4 py-3 rounded-2xl break-words shadow-sm max-w-full ${
                             message.sender_id === user.id
                               ? 'bg-blue-600 text-white'
                               : 'bg-white text-gray-900 border border-gray-200'
@@ -398,7 +400,7 @@ export default function MessagesPage() {
 
               {/* Message Input */}
               <div className="flex-shrink-0 border-t bg-white p-4 p-safe">
-                    <form onSubmit={sendMessage} className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <form onSubmit={sendMessage} className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 message-input">
                       <input
                         type="text"
                         value={newMessage}
