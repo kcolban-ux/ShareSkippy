@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSupabaseAuth } from '@/libs/supabase/hooks';
 import { supabase } from '@/libs/supabase';
 import MessageModal from '@/components/MessageModal';
@@ -16,6 +16,20 @@ export default function MessagesPage() {
   const [messageModal, setMessageModal] = useState({ isOpen: false, recipient: null, availabilityPost: null });
   const [meetingModal, setMeetingModal] = useState({ isOpen: false, recipient: null, conversation: null });
   const [showConversations, setShowConversations] = useState(false);
+  const [error, setError] = useState(null);
+  const abortControllerRef = useRef(null);
+
+  // Create a stable key that changes per conversation selection
+  const selectedConversationKey = useMemo(() => {
+    const c = selectedConversation;
+    if (!c) return 'none';
+    return [
+      c.id ?? 'noid',
+      c.participant1_id,
+      c.participant2_id,
+      c.availability_id ?? 'na'
+    ].join(':');
+  }, [selectedConversation]);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -24,10 +38,87 @@ export default function MessagesPage() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.id);
+    if (!selectedConversation) {
+      setMessages([]);
+      setError(null);
+      return;
     }
-  }, [selectedConversation]);
+
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    let cancelled = false;
+
+    setLoading(true);
+    setMessages([]); // Clear immediately to avoid showing previous thread
+    setError(null);
+
+    (async () => {
+      try {
+        const data = await fetchMessages(selectedConversation.id);
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          setMessages(data || []);
+        }
+      } catch (e) {
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          console.error('load messages failed', e);
+          setError('Failed to load messages. Please try again.');
+        }
+      } finally {
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [selectedConversationKey]); // IMPORTANT: depend on the key
+
+  // Real-time updates for the active conversation
+  useEffect(() => {
+    if (!selectedConversation) return;
+
+    const { participant1_id, participant2_id, availability_id } = selectedConversation;
+
+    const channel = supabase
+      .channel(`messages:${selectedConversationKey}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        (payload) => {
+          const m = payload.new;
+
+          const matchesParticipants =
+            (m.sender_id === participant1_id && m.recipient_id === participant2_id) ||
+            (m.sender_id === participant2_id && m.recipient_id === participant1_id);
+
+          const matchesAvailability =
+            availability_id == null ? m.availability_id == null : m.availability_id === availability_id;
+
+          if (matchesParticipants && matchesAvailability) {
+            setMessages((prev) => {
+              // avoid duplicates
+              if (prev.some((x) => x.id === m.id)) return prev;
+              return [...prev, m].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversationKey, selectedConversation]);
 
   const fetchConversations = async () => {
     if (!user) return;
@@ -88,10 +179,13 @@ export default function MessagesPage() {
   };
 
   const fetchMessages = async (conversationId) => {
-    if (!conversationId) return;
+    if (!conversationId || !selectedConversation) return;
 
     try {
-      const { data, error } = await supabase
+      const { participant1_id, participant2_id, availability_id } = selectedConversation;
+      
+      // Build the base query with participant filtering
+      let query = supabase
         .from('messages')
         .select(`
           *,
@@ -102,14 +196,28 @@ export default function MessagesPage() {
             profile_photo_url
           )
         `)
-        .eq('availability_id', selectedConversation.availability_id)
-        .or(`and(sender_id.eq.${selectedConversation.participant1_id},recipient_id.eq.${selectedConversation.participant2_id}),and(sender_id.eq.${selectedConversation.participant2_id},recipient_id.eq.${selectedConversation.participant1_id})`)
+        .or(`and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      // Only filter by availability_id if it's not null/undefined
+      if (availability_id !== null && availability_id !== undefined) {
+        query = query.eq('availability_id', availability_id);
+      } else {
+        // For general conversations, only include messages without availability_id
+        query = query.is('availability_id', null);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[fetchMessages] error', { error, conversationId, selectedConversation });
+        throw error;
+      }
+      
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setMessages([]); // Clear messages on error
     }
   };
 
@@ -363,6 +471,7 @@ export default function MessagesPage() {
 
               {/* Scrollable Messages */}
               <div
+                key={selectedConversationKey}
                 id="message-scroll"
                 className="
                   flex-1 min-h-0
@@ -395,6 +504,31 @@ export default function MessagesPage() {
                         </div>
                       </div>
                     ))}
+                
+                {/* Error Display */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                    <div className="flex items-center">
+                      <div className="text-red-600 mr-2">⚠️</div>
+                      <div>
+                        <p className="text-red-800 font-medium">Failed to load messages</p>
+                        <p className="text-red-600 text-sm">{error}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        if (selectedConversation) {
+                          fetchMessages(selectedConversation.id);
+                        }
+                      }}
+                      className="mt-2 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                
                 <div id="bottom-anchor" />
               </div>
 
