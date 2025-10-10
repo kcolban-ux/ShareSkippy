@@ -193,6 +193,18 @@ export default function MessagesPage() {
         conversationId
       });
       
+      // First, let's check if there are ANY messages for these participants
+      const { data: allMessages, error: allError } = await supabase
+        .from('messages')
+        .select('id, sender_id, recipient_id, availability_id, content, created_at')
+        .or(`and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`)
+        .order('created_at', { ascending: true });
+      
+      console.log('[fetchMessages] ALL messages for participants:', allMessages?.length ?? 0);
+      if (allMessages && allMessages.length > 0) {
+        console.log('[fetchMessages] Sample message:', allMessages[0]);
+      }
+      
       // Build the base query with participant filtering
       let query = supabase
         .from('messages')
@@ -210,14 +222,16 @@ export default function MessagesPage() {
 
       // ONLY add availability filter when it exists and is non-empty
       if (availability_id) {
+        console.log('[fetchMessages] Adding availability filter:', availability_id);
         query = query.eq('availability_id', availability_id);
+      } else {
+        console.log('[fetchMessages] No availability filter - showing all messages');
       }
-      // Don't filter by null availability_id for now - let all messages through
 
       const { data, error } = await query;
 
       // Log result size/errors
-      console.log('[fetchMessages] rows', data?.length ?? 0);
+      console.log('[fetchMessages] Filtered rows', data?.length ?? 0);
       if (error) {
         console.error('[fetchMessages] supabase error', error);
         throw error;
