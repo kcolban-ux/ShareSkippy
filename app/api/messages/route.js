@@ -13,16 +13,29 @@ export async function POST(request) {
 
     const { recipient_id, availability_id, subject, content } = await request.json();
 
-    if (!recipient_id || !availability_id || !content) {
+    if (!recipient_id || !content) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Check if a conversation already exists
-    const { data: existingConversation } = await supabase
-      .from('conversations')
-      .select('*')
-      .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${recipient_id},availability_id.eq.${availability_id}),and(participant1_id.eq.${recipient_id},participant2_id.eq.${user.id},availability_id.eq.${availability_id})`)
-      .single();
+    let existingConversation;
+    if (availability_id) {
+      // Look for conversation with specific availability post
+      const { data } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${recipient_id},availability_id.eq.${availability_id}),and(participant1_id.eq.${recipient_id},participant2_id.eq.${user.id},availability_id.eq.${availability_id})`)
+        .single();
+      existingConversation = data;
+    } else {
+      // Look for general conversation between these two users (no availability post)
+      const { data } = await supabase
+        .from('conversations')
+        .select('*')
+        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${recipient_id},availability_id.is.null),and(participant1_id.eq.${recipient_id},participant2_id.eq.${user.id},availability_id.is.null)`)
+        .single();
+      existingConversation = data;
+    }
 
     let conversationId;
 
@@ -41,7 +54,7 @@ export async function POST(request) {
         .insert({
           participant1_id: user.id,
           participant2_id: recipient_id,
-          availability_id: availability_id
+          availability_id: availability_id || null
         })
         .select()
         .single();
@@ -56,7 +69,7 @@ export async function POST(request) {
       .insert({
         sender_id: user.id,
         recipient_id: recipient_id,
-        availability_id: availability_id,
+        availability_id: availability_id || null,
         subject: subject || 'New Message',
         content: content
       })

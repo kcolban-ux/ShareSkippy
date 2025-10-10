@@ -13,7 +13,7 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!recipient || !availabilityPost || !message.trim()) {
+    if (!recipient || !message.trim()) {
       setError('Please fill in all required fields');
       return;
     }
@@ -29,8 +29,8 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         },
         body: JSON.stringify({
           recipient_id: recipient.id,
-          availability_id: availabilityPost.id,
-          subject: subject.trim() || `Re: ${availabilityPost.title}`,
+          availability_id: availabilityPost?.id || null,
+          subject: subject.trim() || (availabilityPost ? `Re: ${availabilityPost.title}` : 'New Message'),
           content: message.trim()
         }),
       });
@@ -82,6 +82,11 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
                 Re: <span className="font-medium">{availabilityPost.title || 'Availability Post'}</span>
               </p>
             )}
+            {!availabilityPost && (
+              <p className="text-sm text-gray-600 mt-1">
+                <span className="font-medium">General Message</span>
+              </p>
+            )}
           </div>
         )}
 
@@ -95,7 +100,7 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
-              placeholder={`Re: ${availabilityPost?.title || 'Availability Post'}`}
+              placeholder={availabilityPost ? `Re: ${availabilityPost.title}` : 'Subject (optional)'}
             />
           </div>
 
