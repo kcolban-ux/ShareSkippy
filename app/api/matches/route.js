@@ -69,7 +69,7 @@ export async function GET(request) {
 
     console.log('Matching criteria:', { targetRoles, needsBothLogic });
 
-    // Get all potential match profiles with location and bio
+    // Get all potential match profiles with location (bio not required)
     let profileQuery = supabase
       .from('profiles')
       .select(
@@ -88,9 +88,8 @@ export async function GET(request) {
       .in('role', targetRoles)
       .neq('id', user.id)
       .not('display_lat', 'is', null)
-      .not('display_lng', 'is', null)
-      .not('bio', 'is', null)
-      .neq('bio', ''); // Require bio for all matches
+      .not('display_lng', 'is', null);
+      // Removed bio requirement to match community page behavior
 
     const { data: profiles, error: profilesError } = await profileQuery;
 
@@ -102,7 +101,7 @@ export async function GET(request) {
       );
     }
 
-    console.log(`Found ${profiles?.length || 0} potential matches with bio`);
+    console.log(`Found ${profiles?.length || 0} potential matches`);
 
     // Get dog ownership information for filtering
     let dogOwnerIds = new Set();
