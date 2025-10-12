@@ -43,6 +43,9 @@ export async function GET(req) {
       const googleFamilyName = userMetadata?.family_name || userMetadata?.last_name;
       const googlePicture = userMetadata?.picture || userMetadata?.avatar_url;
       
+      // Track if this is a new user
+      let isNewUser = false;
+      
       // Check if profile exists
       const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
@@ -52,20 +55,31 @@ export async function GET(req) {
       
       // If profile doesn't exist, create it with Google data
       if (profileError && profileError.code === 'PGRST116') {
-        console.log('📝 Creating new profile with Google data...');
+        console.log('📝 NEW USER - Creating profile with Google data...');
+        isNewUser = true;
         
         const profileData = {
           id: data.user.id,
           email: data.user.email,
           first_name: googleGivenName || '',
           last_name: googleFamilyName || '',
-          profile_photo_url: googlePicture || null
+          profile_photo_url: googlePicture || null,
+          bio: null,
+          role: null,
+          phone_number: null
         };
         
         await supabase
           .from('profiles')
           .insert(profileData);
+          
+        console.log('✅ New profile created - will need to complete profile');
       } else if (existingProfile) {
+        console.log('🔍 EXISTING USER - Checking profile completeness...');
+        console.log('   Bio:', existingProfile.bio ? 'Has bio' : 'NO BIO');
+        console.log('   Role:', existingProfile.role ? existingProfile.role : 'NO ROLE');
+        console.log('   Phone:', existingProfile.phone_number ? 'Has phone' : 'NO PHONE');
+        
         // Update existing profile with Google data if name fields are empty
         const updateData = {};
         
@@ -109,29 +123,32 @@ export async function GET(req) {
       // ROUTING LOGIC - Determine where to redirect after sign in
       // ==================================================================
       
-      // Get the user's profile to check if it's complete
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('bio, role, phone_number')
-        .eq('id', data.user.id)
-        .single();
-      
       const origin = requestUrl.origin;
       
-      // Check if profile is complete
-      // Required: bio, role, phone_number must all be filled out
-      const hasCompleteBio = userProfile?.bio?.trim();
-      const hasRole = userProfile?.role?.trim();
-      const hasPhone = userProfile?.phone_number?.trim();
-      const isProfileComplete = hasCompleteBio && hasRole && hasPhone;
+      // If this is a brand new user, always send to profile edit
+      if (isNewUser) {
+        console.log("🆕 NEW USER DETECTED → Redirecting to /profile/edit");
+        return NextResponse.redirect(origin + "/profile/edit");
+      }
       
-      if (isProfileComplete) {
+      // For existing users, check if profile is complete
+      // Required: bio, role, phone_number must all be filled out
+      const hasCompleteBio = existingProfile?.bio && existingProfile.bio.trim().length > 0;
+      const hasRole = existingProfile?.role && existingProfile.role.trim().length > 0;
+      const hasPhone = existingProfile?.phone_number && existingProfile.phone_number.trim().length > 0;
+      
+      console.log('📊 Profile completeness check:');
+      console.log('   ✓ Bio:', hasCompleteBio ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Role:', hasRole ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Phone:', hasPhone ? '✅ Complete' : '❌ Missing');
+      
+      if (hasCompleteBio && hasRole && hasPhone) {
         // User has complete profile → Go to community
-        console.log("✅ Complete profile - Redirecting to /community");
+        console.log("✅ PROFILE COMPLETE → Redirecting to /community");
         return NextResponse.redirect(origin + "/community");
       } else {
         // User has incomplete profile → Go to profile edit
-        console.log("📝 Incomplete profile - Redirecting to /profile/edit");
+        console.log("📝 PROFILE INCOMPLETE → Redirecting to /profile/edit");
         return NextResponse.redirect(origin + "/profile/edit");
       }
     } catch (error) {
