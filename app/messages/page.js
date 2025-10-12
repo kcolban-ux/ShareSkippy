@@ -269,7 +269,6 @@ export default function MessagesPage() {
         body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
-          subject: selectedConversation.availability ? `Re: ${selectedConversation.availability.title}` : 'New Message',
           content: newMessage.trim()
         })
       });

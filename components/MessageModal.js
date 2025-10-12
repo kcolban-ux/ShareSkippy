@@ -3,7 +3,6 @@ import { useState } from 'react';
 
 export default function MessageModal({ isOpen, onClose, recipient, availabilityPost }) {
   const [message, setMessage] = useState('');
-  const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -30,7 +29,6 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         body: JSON.stringify({
           recipient_id: recipient.id,
           availability_id: null, // Always null for new messages
-          subject: subject.trim() || 'New Message',
           content: message.trim()
         }),
       });
@@ -43,7 +41,6 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
 
       setSuccess(true);
       setMessage('');
-      setSubject('');
       
       // Close modal after 2 seconds
       setTimeout(() => {
@@ -91,19 +88,6 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Subject (optional)
-            </label>
-            <input
-              type="text"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
-              placeholder={availabilityPost ? `Re: ${availabilityPost.title}` : 'Subject (optional)'}
-            />
-          </div>
-
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Message

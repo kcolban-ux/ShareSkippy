@@ -11,7 +11,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { recipient_id, availability_id, subject, content } = await request.json();
+    const { recipient_id, availability_id, content } = await request.json();
 
     if (!recipient_id || !content) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -59,7 +59,7 @@ export async function POST(request) {
         sender_id: user.id,
         recipient_id: recipient_id,
         availability_id: null, // Always null for new messages
-        subject: subject || 'New Message',
+        subject: null, // Subject is no longer used
         content: content
       })
       .select()
