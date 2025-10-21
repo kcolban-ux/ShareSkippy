@@ -1,4 +1,4 @@
-name: CI - Lint, Type Check, and Test
+name: CI - Quality Checks & Build
 
 # This workflow runs automatically on every Pull Request
 # It ensures code quality by checking linting, types, formatting, and tests
@@ -14,51 +14,44 @@ on:
       - main
       - setup/workflow-ci-testing
 
+# Global environment variables
+env:
+  NODE_VERSION: '20.11.1'
+  CI: true
+
 jobs:
+  # Combined quality check job - runs all checks in sequence
   quality-check:
-    name: Code Quality Checks
+    name: 🔍 Quality Checks & Build
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20.11.1]
-
+    
     steps:
-      # Step 1: Get the code from GitHub
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      # Step 2: Set up Node.js (the JavaScript runtime)
-      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Step 3: Install all the project dependencies
       - name: 📦 Install dependencies
         run: npm ci
 
-      # Step 4: Check code formatting with Prettier
-      - name: 💅 Check formatting
+      - name: 💅 Check code formatting
         run: npm run format:check
 
-      # Step 5: Run ESLint to check code quality
       - name: 🔍 Run ESLint
         run: npm run lint
 
-      # Step 6: Check TypeScript types
-      - name: 🔎 Type check
+      - name: 🔎 TypeScript type check
         run: npm run typecheck
 
-      # Step 7: Run all tests
       - name: 🧪 Run tests
         run: npm test
         env:
-          # Set CI environment variable so tests run in CI mode
-          CI: true
+          CI: ${{ env.CI }}
 
-      # Step 8: Upload test coverage (optional)
       - name: 📊 Upload coverage reports
         if: always()
         uses: codecov/codecov-action@v4
@@ -67,26 +60,8 @@ jobs:
           fail_ci_if_error: false
         continue-on-error: true
 
-  # Build check - make sure the app actually builds
-  build-check:
-    name: Build Verification
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.11.1
-          cache: 'npm'
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
       - name: 🏗️ Build application
         run: npm run build
         env:
-          # Add any required environment variables for build
+          # Skip environment validation for build
           SKIP_ENV_VALIDATION: true
