@@ -27,7 +27,7 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-  }, [user, userLoading]);
+  }, [user, userLoading, loadProfile]);
 
   const loadProfile = async () => {
     try {

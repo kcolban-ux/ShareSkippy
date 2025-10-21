@@ -163,7 +163,7 @@ const PhotoUpload = React.memo(
           setUploading(false);
         }
       },
-      [onPhotoUploaded]
+      [onPhotoUploaded, uploadToStorage]
     );
 
     const removePhoto = useCallback(async () => {

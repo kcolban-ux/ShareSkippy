@@ -10,7 +10,7 @@ export default function UserRatingsEnhanced({ userId, userRole }) {
   useEffect(() => {
     if (!userId) return;
     loadReviews();
-  }, [userId]);
+  }, [userId, loadReviews]);
 
   const loadReviews = async () => {
     try {

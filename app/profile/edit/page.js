@@ -51,7 +51,7 @@ export default function ProfileEditPage() {
     }
 
     loadProfile();
-  }, [user, userLoading, router]);
+  }, [user, userLoading, router, loadProfile]);
 
   const loadProfile = async () => {
     try {

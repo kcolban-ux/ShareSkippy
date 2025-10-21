@@ -24,7 +24,7 @@ export default function AvailabilityDetailPage() {
     if (params.id) {
       fetchAvailabilityDetails();
     }
-  }, [params.id]);
+  }, [params.id, fetchAvailabilityDetails]);
 
   // Scroll detection for mobile sticky bar
   useEffect(() => {

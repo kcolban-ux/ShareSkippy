@@ -48,7 +48,7 @@ export default function MessagesPage() {
     if (user && !authLoading) {
       fetchConversations();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, fetchConversations]);
 
   useEffect(() => {
     if (!selectedConversation) {

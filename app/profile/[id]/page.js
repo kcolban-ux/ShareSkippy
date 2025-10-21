@@ -22,7 +22,7 @@ export default function PublicProfilePage() {
   useEffect(() => {
     loadProfile();
     loadCurrentUser();
-  }, [profileId]);
+  }, [profileId, loadProfile]);
 
   const loadCurrentUser = async () => {
     try {

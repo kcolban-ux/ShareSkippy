@@ -43,7 +43,7 @@ export default function EditAvailability() {
     if (params.id) {
       fetchAvailabilityDetails();
     }
-  }, [user, authLoading, router, params.id]);
+  }, [user, authLoading, router, params.id, fetchAvailabilityDetails]);
 
   const fetchAvailabilityDetails = async () => {
     try {
