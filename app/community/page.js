@@ -13,7 +13,7 @@ export default function CommunityPage() {
   const [myAvailabilityPosts, setMyAvailabilityPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dog-availability');
-  const [joiningEvent, setJoiningEvent] = useState(null);
+  const [_joiningEvent, setJoiningEvent] = useState(null);
   const [messageModal, setMessageModal] = useState({
     isOpen: false,
     recipient: null,
@@ -345,7 +345,7 @@ export default function CommunityPage() {
     });
   };
 
-  const getRoleIcon = (role) => {
+  const _getRoleIcon = (role) => {
     switch (role) {
       case 'dog_owner':
         return '🐕';
@@ -358,7 +358,7 @@ export default function CommunityPage() {
     }
   };
 
-  const getEventIcon = (eventType) => {
+  const _getEventIcon = (eventType) => {
     switch (eventType) {
       case 'meetup':
         return '🤝';
@@ -371,7 +371,7 @@ export default function CommunityPage() {
     }
   };
 
-  const getPlaceIcon = (type) => {
+  const _getPlaceIcon = (type) => {
     switch (type) {
       case 'park':
         return '🌳';
@@ -384,7 +384,7 @@ export default function CommunityPage() {
     }
   };
 
-  const handleJoinEvent = async (eventId) => {
+  const _handleJoinEvent = async (eventId) => {
     setJoiningEvent(eventId);
     try {
       const response = await fetch(`/api/community/events/${eventId}/join`, {
@@ -398,7 +398,7 @@ export default function CommunityPage() {
         // Refresh events to show updated participant count
         const eventsResponse = await fetch('/api/community/events?limit=10');
         if (eventsResponse.ok) {
-          const eventsData = await eventsResponse.json();
+          const _eventsData = await eventsResponse.json();
           // Note: setCommunityEvents is not defined in this component
           // This will be handled by the parent component or removed if not needed
         }

@@ -1,12 +1,10 @@
-import { redirect } from 'next/navigation';
-import config from '@/config';
 import { createClient } from '@/libs/supabase/server';
 
 export default async function CommunityLayout({ children }) {
   const supabase = createClient();
 
   const {
-    data: { user },
+    data: { user: _user },
   } = await supabase.auth.getUser();
 
   // Temporarily allow unauthenticated access for testing

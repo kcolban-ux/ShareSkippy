@@ -9,7 +9,7 @@ import UserReviews from '../../../../components/UserReviews';
 
 export default function AvailabilityDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,7 +108,7 @@ export default function AvailabilityDetailPage() {
         query = query.eq('status', 'active');
       } else {
         // Check if user is the owner first
-        const { data: postData, error: postError } = await supabase
+        const { data: postData } = await supabase
           .from('availability')
           .select('owner_id, status')
           .eq('id', params.id)
@@ -161,7 +161,7 @@ export default function AvailabilityDetailPage() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const _formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -234,7 +234,7 @@ export default function AvailabilityDetailPage() {
     });
   };
 
-  const getSizeIcon = (size) => {
+  const _getSizeIcon = (size) => {
     // Handle weight ranges
     if (size && size.includes('-')) {
       const weight = parseInt(size.split('-')[0]);
@@ -650,7 +650,7 @@ export default function AvailabilityDetailPage() {
                 ) : (
                   // Multiple dogs display
                   <div className="space-y-6">
-                    {availability.allDogs.map((dog, index) => (
+                    {availability.allDogs.map((dog, _index) => (
                       <div key={dog.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-start space-x-4 mb-4">
                           {dog.photo_url ? (
