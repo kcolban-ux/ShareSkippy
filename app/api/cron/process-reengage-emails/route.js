@@ -4,18 +4,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    console.log('Starting re-engagement email processing...');
+    // Debug logging removed for production
+const result = await processReengageEmails();
 
-    const result = await processReengageEmails();
-
-    console.log('Re-engagement email processing completed:', {
-      processed: result.processed,
-      sent: result.sent,
-      skipped: result.skipped,
-      errors: result.errors.length,
-    });
-
-    return Response.json({
+    // Debug logging removed for production
+return Response.json({
       success: true,
       message: 'Re-engagement emails processed successfully',
       ...result,

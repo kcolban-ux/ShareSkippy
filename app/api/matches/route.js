@@ -36,16 +36,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Location not set', needsLocation: true }, { status: 400 });
     }
 
-    console.log('Current user profile:', {
-      id: currentProfile.id,
-      role: currentProfile.role,
-      location: {
-        lat: currentProfile.display_lat,
-        lng: currentProfile.display_lng,
-      },
-    });
-
-    // Determine matching strategy based on current user's role
+    // Debug logging removed for production
+// Determine matching strategy based on current user's role
     let targetRoles = [];
     let needsBothLogic = false;
 
@@ -61,9 +53,8 @@ export async function GET(request) {
       needsBothLogic = true; // Special filtering for "both" users
     }
 
-    console.log('Matching criteria:', { targetRoles, needsBothLogic });
-
-    // Get all potential match profiles with location (bio not required)
+    // Debug logging removed for production
+// Get all potential match profiles with location (bio not required)
     const profileQuery = supabase
       .from('profiles')
       .select(
@@ -96,9 +87,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
 
-    console.log(`Found ${profiles?.length || 0} potential matches`);
-
-    // Get dog ownership information for filtering
+    // Debug logging removed for production
+// Get dog ownership information for filtering
     let dogOwnerIds = new Set();
     let currentUserHasDogs = false;
 
@@ -114,8 +104,8 @@ export async function GET(request) {
         console.error('Error checking current user dogs:', currentDogsError);
       } else {
         currentUserHasDogs = (currentUserDogs?.length || 0) > 0;
-        console.log(`Current "both" user has dogs: ${currentUserHasDogs}`);
-      }
+        // Debug logging removed for production
+}
     }
 
     // For petpals and "both" users, get which dog owners actually have dogs
@@ -132,8 +122,8 @@ export async function GET(request) {
         console.error('Error fetching dogs:', dogsError);
       } else {
         dogOwnerIds = new Set(dogs?.map((d) => d.owner_id) || []);
-        console.log(`Found ${dogOwnerIds.size} dog owners with actual dogs`);
-      }
+        // Debug logging removed for production
+}
     }
 
     // Filter profiles based on matching criteria
@@ -171,9 +161,8 @@ export async function GET(request) {
       return true;
     });
 
-    console.log(`After filtering: ${filteredProfiles.length} matches`);
-
-    // Calculate distances and sort
+    // Debug logging removed for production
+// Calculate distances and sort
     const matchesWithDistance = filteredProfiles.map((profile) => {
       const distance = calculateDistance(
         currentProfile.display_lat,
@@ -182,9 +171,7 @@ export async function GET(request) {
         profile.display_lng
       );
 
-      console.log(`Distance to ${profile.first_name} (${profile.city}):`, {
-        distance: distance.toFixed(2),
-        fromLat: currentProfile.display_lat,
+      // Distance calculation completed
         fromLng: currentProfile.display_lng,
         toLat: profile.display_lat,
         toLng: profile.display_lng,
@@ -201,18 +188,16 @@ export async function GET(request) {
       .sort((a, b) => a.distance - b.distance)
       .slice(0, limit);
 
-    console.log(
-      `Sorted matches by distance:`,
-      nearestMatches.map((m) => ({
+    // Debug logging removed for production
+=> ({
         name: m.first_name,
         city: m.city,
         distance: m.distance.toFixed(2),
       }))
     );
 
-    console.log(`Returning top ${nearestMatches.length} nearest matches`);
-
-    // Fetch dogs for dog owners in the results
+    // Debug logging removed for production
+// Fetch dogs for dog owners in the results
     const matchIds = nearestMatches.map((m) => m.id);
     let dogsMap = {};
 

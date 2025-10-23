@@ -183,20 +183,8 @@ export async function POST(request) {
     }
 
     // Debug logging
-    console.log('Review submission debug:', {
-      meetingId,
-      userId: user.id,
-      meetingRequesterId: meeting.requester_id,
-      meetingRecipientId: meeting.recipient_id,
-      availabilityPostType: availability.post_type,
-      availabilityOwnerId: availability.owner_id,
-      isRequester,
-      revieweeId,
-      reviewerRole,
-      reviewedRole,
-    });
-
-    // Validate roles
+    // Debug logging removed for production
+// Validate roles
     if (!['owner', 'walker'].includes(reviewerRole)) {
       return NextResponse.json(
         { error: `Invalid reviewer role: ${reviewerRole}` },
@@ -237,9 +225,8 @@ export async function POST(request) {
       comment: comment.trim(),
     };
 
-    console.log('Inserting review data:', reviewData);
-
-    const { data: review, error: reviewError } = await supabase
+    // Debug logging removed for production
+const { data: review, error: reviewError } = await supabase
       .from('reviews')
       .insert(reviewData)
       .select(

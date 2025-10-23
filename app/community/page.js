@@ -85,8 +85,8 @@ export default function CommunityPage() {
           timestamp: new Date().toISOString(),
         };
         setNetworkInfo(info);
-        console.log('Network info:', info);
-      }
+        // Debug logging removed for production
+}
     };
 
     detectNetwork();
@@ -110,9 +110,8 @@ export default function CommunityPage() {
     try {
       const supabase = createClient();
 
-      console.log('Fetching availability data for user:', currentUser?.id || 'not logged in');
-
-      // Add cache-busting parameter to prevent stale data
+      // Debug logging removed for production
+// Add cache-busting parameter to prevent stale data
       const cacheBuster = Date.now();
 
       // Force fresh data by clearing any cached queries
@@ -129,9 +128,8 @@ export default function CommunityPage() {
         .select('id, title, post_type, status, owner_id')
         .limit(5);
 
-      console.log('All availability posts test:', allPosts?.length || 0, 'Error:', allPostsError);
-
-      // If we can't fetch any posts, there might be a database connection issue
+      // Debug logging removed for production
+// If we can't fetch any posts, there might be a database connection issue
       if (allPostsError) {
         console.error('Database connection error:', allPostsError);
         throw new Error(`Database error: ${allPostsError.message}`);
@@ -166,21 +164,21 @@ export default function CommunityPage() {
       // Only exclude current user's posts if they're logged in
       if (currentUser) {
         dogQuery = dogQuery.neq('owner_id', currentUser.id);
-        console.log('Excluding posts from user:', currentUser.id);
-      }
+        // Debug logging removed for production
+}
 
       const { data: dogPosts, error: dogError } = await dogQuery.order('created_at', {
         ascending: false,
       });
 
       // Debug logging for dog posts
-      console.log('Dog posts fetched:', dogPosts?.length || 0);
-      if (dogPosts && dogPosts.length > 0) {
-        console.log('First dog post owner data:', dogPosts[0].owner);
-        console.log('First dog post dog_id:', dogPosts[0].dog_id);
-        console.log('First dog post dog_ids:', dogPosts[0].dog_ids);
-        console.log('First dog post dog data:', dogPosts[0].dog);
-      }
+      // Debug logging removed for production
+if (dogPosts && dogPosts.length > 0) {
+        // Debug logging removed for production
+// Debug logging removed for production
+// Debug logging removed for production
+// Debug logging removed for production
+}
 
       // Fetch all dogs for each post (handle both single dog_id and dog_ids array)
       if (dogPosts) {
@@ -206,8 +204,8 @@ export default function CommunityPage() {
 
             if (!dogsError && allDogs) {
               post.allDogs = allDogs;
-              console.log('Successfully fetched dogs for post:', post.id, 'dogs:', allDogs);
-            } else {
+              // Debug logging removed for production
+} else {
               console.error('Error fetching dogs for post:', post.id, dogsError);
               post.allDogs = [];
             }
@@ -221,8 +219,8 @@ export default function CommunityPage() {
         console.error('Error fetching dog posts:', dogError);
         throw dogError;
       }
-      console.log('Dog posts fetched:', dogPosts?.length || 0);
-      setDogAvailabilityPosts(dogPosts || []);
+      // Debug logging removed for production
+setDogAvailabilityPosts(dogPosts || []);
 
       // Fetch petpal availability posts (excluding current user's posts if logged in)
       let petpalQuery = supabase
@@ -253,17 +251,17 @@ export default function CommunityPage() {
       });
 
       // Debug logging for petpal posts
-      console.log('Petpal posts fetched:', petpalPosts?.length || 0);
-      if (petpalPosts && petpalPosts.length > 0) {
-        console.log('First petpal post owner data:', petpalPosts[0].owner);
-      }
+      // Debug logging removed for production
+if (petpalPosts && petpalPosts.length > 0) {
+        // Debug logging removed for production
+}
 
       if (petpalError) {
         console.error('Error fetching petpal posts:', petpalError);
         throw petpalError;
       }
-      console.log('Petpal posts fetched:', petpalPosts?.length || 0);
-      setPetpalAvailabilityPosts(petpalPosts || []);
+      // Debug logging removed for production
+setPetpalAvailabilityPosts(petpalPosts || []);
 
       // Fetch user's own availability posts
       if (currentUser) {
@@ -322,14 +320,14 @@ export default function CommunityPage() {
           console.error('Error fetching user posts:', myError);
           throw myError;
         }
-        console.log('My posts fetched:', myPosts?.length || 0);
-        setMyAvailabilityPosts(myPosts || []);
+        // Debug logging removed for production
+setMyAvailabilityPosts(myPosts || []);
       }
     } catch (error) {
       console.error('Error fetching availability data:', error);
     } finally {
-      console.log('Setting loading to false');
-      setLoading(false);
+      // Debug logging removed for production
+setLoading(false);
     }
   };
 
@@ -415,8 +413,8 @@ export default function CommunityPage() {
   };
 
   const openMessageModal = (recipient, availabilityPost) => {
-    console.log('Opening message modal with:', { recipient, availabilityPost });
-    setMessageModal({ isOpen: true, recipient, availabilityPost });
+    // Debug logging removed for production
+setMessageModal({ isOpen: true, recipient, availabilityPost });
   };
 
   const closeMessageModal = () => {
@@ -592,16 +590,8 @@ export default function CommunityPage() {
                   </h3>
 
                   {/* Dog Information */}
-                  {console.log(
-                    'Rendering post:',
-                    post.id,
-                    'allDogs:',
-                    post.allDogs,
-                    'dog_id:',
-                    post.dog_id,
-                    'dog_ids:',
-                    post.dog_ids
-                  )}
+                  {// Debug logging removed for production
+}
                   {post.allDogs && post.allDogs.length > 0 && (
                     <div className="mb-4">
                       {post.allDogs.length === 1 ? (
@@ -749,9 +739,9 @@ export default function CommunityPage() {
                       {user && user.id !== post.owner_id ? (
                         <button
                           onClick={() => {
-                            console.log('Dog post owner data:', post.owner);
-                            console.log('Dog post owner_id:', post.owner_id);
-                            openMessageModal(post.owner, post);
+                            // Debug logging removed for production
+// Debug logging removed for production
+openMessageModal(post.owner, post);
                           }}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                         >
@@ -914,9 +904,9 @@ export default function CommunityPage() {
                       {user && user.id !== post.owner_id && (
                         <button
                           onClick={() => {
-                            console.log('Petpal post owner data:', post.owner);
-                            console.log('Petpal post owner_id:', post.owner_id);
-                            openMessageModal(post.owner, post);
+                            // Debug logging removed for production
+// Debug logging removed for production
+openMessageModal(post.owner, post);
                           }}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                         >

@@ -73,13 +73,12 @@ export async function PATCH(request, { params }) {
     }
 
     const { id } = params;
-    console.log('PATCH request for meeting ID:', id);
-
-    let requestBody;
+    // Debug logging removed for production
+let requestBody;
     try {
       requestBody = await request.json();
-      console.log('Request body:', requestBody);
-    } catch (parseError) {
+      // Debug logging removed for production
+} catch (parseError) {
       console.error('Error parsing request body:', parseError);
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
@@ -110,8 +109,8 @@ export async function PATCH(request, { params }) {
     }
 
     // Validate status transitions
-    console.log('Current meeting status:', currentMeeting.status, 'Trying to set to:', status);
-    if (status === 'scheduled' && currentMeeting.status !== 'pending') {
+    // Debug logging removed for production
+if (status === 'scheduled' && currentMeeting.status !== 'pending') {
       return NextResponse.json(
         {
           error: `Can only schedule pending meetings. Current status: ${currentMeeting.status}`,

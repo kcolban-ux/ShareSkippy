@@ -12,11 +12,8 @@ export async function POST(request) {
       error: authError,
     } = await supabase.auth.getUser();
 
-    // Log the authentication attempt for debugging
-    console.log('Auth check:', { user: user?.id, error: authError?.message });
-
+    // Check authentication
     if (authError || !user) {
-      console.log('Authentication failed:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -88,11 +85,10 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     // Log the authentication attempt for debugging
-    console.log('GET Auth check:', { user: user?.id, error: authError?.message });
-
-    if (authError || !user) {
-      console.log('GET Authentication failed:', authError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Debug logging removed for production
+if (authError || !user) {
+      // Debug logging removed for production
+return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user's deletion request status
@@ -145,9 +141,8 @@ export async function DELETE() {
   const startTime = Date.now();
 
   try {
-    console.log('Starting deletion cancellation request...');
-
-    const supabase = createClient();
+    // Debug logging removed for production
+const supabase = createClient();
 
     // Check authentication with timeout
     const authPromise = supabase.auth.getUser();
@@ -161,13 +156,12 @@ export async function DELETE() {
     } = await Promise.race([authPromise, authTimeout]);
 
     if (authError || !user) {
-      console.log('Authentication failed:', authError);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Debug logging removed for production
+return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log(`User authenticated: ${user.id}`);
-
-    // When cancelling, we need to start a new 30-day countdown
+    // Debug logging removed for production
+// When cancelling, we need to start a new 30-day countdown
     // So we update the scheduled_deletion_date to 30 days from now
     const newScheduledDate = new Date();
     newScheduledDate.setDate(newScheduledDate.getDate() + 30);
@@ -224,9 +218,8 @@ export async function DELETE() {
     }
 
     const duration = Date.now() - startTime;
-    console.log(`Deletion cancellation completed in ${duration}ms`);
-
-    return NextResponse.json({
+    // Debug logging removed for production
+return NextResponse.json({
       success: true,
       message:
         'Account deletion request cancelled successfully. A new 30-day countdown has started.',

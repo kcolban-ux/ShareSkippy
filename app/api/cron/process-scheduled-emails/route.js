@@ -4,16 +4,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    console.log('Starting scheduled email processing...');
+    // Debug logging removed for production
+const result = await processScheduledEmails();
 
-    const result = await processScheduledEmails();
-
-    console.log('Scheduled email processing completed:', {
-      processed: result.processed,
-      errors: result.errors.length,
-    });
-
-    return Response.json({
+    // Debug logging removed for production
+return Response.json({
       success: true,
       message: 'Scheduled emails processed successfully',
       ...result,

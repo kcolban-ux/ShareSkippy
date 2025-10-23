@@ -11,9 +11,8 @@ export async function GET(request) {
 
     const supabase = createClient();
 
-    console.log('Profiles API called with params:', { cursor, limit });
-
-    // Build the main query for eligible profiles
+    // Debug logging removed for production
+// Build the main query for eligible profiles
     // We'll use a different approach to exclude users with active availability
     const query = supabase
       .from('profiles')
@@ -42,9 +41,8 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
 
-    console.log('Raw profiles fetched:', profiles?.length || 0);
-
-    // Now get users with active availability posts to exclude them
+    // Debug logging removed for production
+// Now get users with active availability posts to exclude them
     const { data: activeAvailabilityUsers, error: availabilityError } = await supabase
       .from('availability')
       .select('owner_id')
@@ -60,10 +58,7 @@ export async function GET(request) {
     // Filter out profiles with active availability
     const filteredProfiles = profiles.filter((profile) => !excludedUserIds.has(profile.id));
 
-    console.log(
-      'Filtered profiles (after excluding active availability):',
-      filteredProfiles.length
-    );
+    // Profiles filtered successfully
 
     // Process the data to match the required format
     const processedProfiles = filteredProfiles.map((profile) => {
@@ -142,9 +137,8 @@ export async function GET(request) {
       nextCursor = `${lastProfile.last_online_at}|${lastProfile.id}`;
     }
 
-    console.log('Returning profiles:', resultProfiles.length, 'nextCursor:', nextCursor);
-
-    return NextResponse.json({
+    // Debug logging removed for production
+return NextResponse.json({
       items: resultProfiles,
       nextCursor,
     });

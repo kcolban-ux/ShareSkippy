@@ -62,9 +62,8 @@ export async function POST(request) {
       return NextResponse.json({ error: 'No users found' }, { status: 404 });
     }
 
-    console.log(`Found ${users.length} users to email`);
-
-    // Process users in batches
+    // Debug logging removed for production
+// Process users in batches
     const results = {
       totalUsers: users.length,
       successful: 0,
@@ -74,9 +73,7 @@ export async function POST(request) {
 
     for (let i = 0; i < users.length; i += batchSize) {
       const batch = users.slice(i, i + batchSize);
-      console.log(
-        `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(users.length / batchSize)}`
-      );
+      // Processing batch
 
       // Process batch in parallel with retry logic
       const batchPromises = batch.map(async (user) => {
@@ -147,9 +144,8 @@ export async function POST(request) {
       }
     }
 
-    console.log(`Bulk email completed: ${results.successful} successful, ${results.failed} failed`);
-
-    return NextResponse.json({
+    // Debug logging removed for production
+return NextResponse.json({
       message: 'Bulk email processing completed',
       results,
     });

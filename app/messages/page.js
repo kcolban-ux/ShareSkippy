@@ -13,9 +13,9 @@ export default function MessagesPage() {
 
   // Debug messages state changes
   useEffect(() => {
-    console.log('[Messages] State updated - messages count:', messages.length);
+    // Messages state updated
     if (messages.length > 0) {
-      console.log('[Messages] First message:', messages[0]);
+      // First message available
     }
   }, [messages]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,7 @@ export default function MessagesPage() {
       return;
     }
 
-    console.log('[Messages] Starting fetch for conversation:', selectedConversation.id);
+    // Starting fetch for conversation
 
     // Cancel any ongoing request
     if (abortControllerRef.current) {
@@ -75,17 +75,17 @@ export default function MessagesPage() {
     (async () => {
       try {
         const data = await fetchMessages(selectedConversation.id);
-        console.log('[Messages] fetchMessages returned:', data?.length ?? 0, 'messages');
+        // Fetch messages completed
         // Only update if not cancelled and not aborted
         if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          console.log('[Messages] Setting messages in state...');
+          // Setting messages in state
           setMessages(data || []);
           // Add a small delay to see if messages persist
           setTimeout(() => {
-            console.log('[Messages] Messages after 1 second:', data?.length ?? 0);
+            // Messages persisted after delay
           }, 1000);
         } else {
-          console.log('[Messages] Request was cancelled or aborted, not updating state');
+          // Request was cancelled or aborted
         }
       } catch (e) {
         // Only show error if not cancelled and not aborted
@@ -205,13 +205,7 @@ export default function MessagesPage() {
     try {
       const { participant1_id, participant2_id, availability_id } = selectedConversation;
 
-      // Log what we're querying
-      console.log('[fetchMessages] args', {
-        p1: participant1_id,
-        p2: participant2_id,
-        availability_id: availability_id ?? null,
-        conversationId,
-      });
+      // Fetch messages arguments
 
       // First, let's test if we can fetch ANY messages at all
       const { data: testMessages, error: testError } = await supabase
@@ -219,9 +213,9 @@ export default function MessagesPage() {
         .select('id, sender_id, recipient_id, content')
         .limit(3);
 
-      console.log('[fetchMessages] Test - any messages in DB:', testMessages?.length ?? 0);
+      // Test messages in DB
       if (testMessages && testMessages.length > 0) {
-        console.log('[fetchMessages] Sample message:', testMessages[0]);
+        // Sample message available
       }
       if (testError) {
         console.error('[fetchMessages] Test error:', testError);
@@ -247,13 +241,13 @@ export default function MessagesPage() {
         .order('created_at', { ascending: true });
 
       // Log result size/errors
-      console.log('[fetchMessages] Filtered rows', data?.length ?? 0);
+      // Filtered rows processed
       if (error) {
         console.error('[fetchMessages] supabase error', error);
         throw error;
       }
 
-      console.log('[fetchMessages] Returning messages:', data?.length ?? 0);
+      // Returning messages
 
       // Return the data so it can be used by the caller
       return data || [];

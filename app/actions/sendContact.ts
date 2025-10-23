@@ -105,15 +105,7 @@ This message was sent from the ShareSkippy contact form.
         replyTo: parsed.data.email, // This allows you to reply directly to the user
       });
 
-      // Also log for debugging
-      console.log('Contact form submission sent:', {
-        name: parsed.data.name,
-        email: parsed.data.email,
-        category: parsed.data.category,
-        subject: parsed.data.subject,
-        timestamp: new Date().toISOString(),
-        ip: ip,
-      });
+      // Contact form submission completed successfully
 
       return { ok: true };
     } catch (emailError) {
