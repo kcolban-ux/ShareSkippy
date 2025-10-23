@@ -23,11 +23,43 @@ ShareSkippy makes it easy for dog owners to find trusted community members who c
 
 ## Getting Started
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up environment variables (see `.env.example`)
-4. Run the development server: `npm run dev`
-5. Open [http://localhost:3000](http://localhost:3000)
+### Prerequisites
+
+- Node.js 20.x
+- Git
+- A code editor (we recommend VS Code)
+- [Taskfile](https://taskfile.dev/docs/installation)
+- Fork of the main repository
+
+### Local Development Setup
+
+1. **Clone the forked repository**
+
+   `git clone https://github.com/YOUR_USERNAME/ShareSkippy.git`
+
+   `cd ShareSkippy`
+
+2. **Install dependencies**
+
+   `task dev`
+
+   Enter 'n' for Supabase's init questions when prompted
+
+3. **Optional: Add Resend API Key**
+
+   For integration testing with Resend, add your API key to your .env.local file from [resend.com](https://resend.com).
+
+4. **Open your browser**
+
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+### Verify Setup
+
+Run these commands to ensure everything is working:
+
+```bash
+npm run validate  # Runs all checks: formatting, linting, type checking, tests
+```
 
 ## Development environment
 
@@ -37,6 +69,7 @@ ShareSkippy makes it easy for dog owners to find trusted community members who c
 ## Environment Variables
 
 Create a `.env.local` file with:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
