@@ -1,45 +1,40 @@
-"use client";
-import React, { useState, useEffect } from 'react';
+'use client';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import CommunitySupportSection from '@/components/CommunitySupportSection';
 import { useUser } from '@/contexts/UserContext';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
 import { createClient } from '@/libs/supabase/client';
-import AppLayout from '@/components/AppLayout';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/components/ui/Icon';
-import { Section } from '@/components/ui/Section';
-import Map from '@/components/map/Map';
-import CommunitySupportSection from '@/components/CommunitySupportSection';
 import { formatLocation } from '@/libs/utils';
 
 export default function ShareAvailability() {
   const { user, loading: authLoading } = useUser();
   const router = useRouter();
   const supabase = createClient();
-  
+
   // Use React Query hooks for data fetching
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: dogs, isLoading: dogsLoading } = useUserDogs();
-  
+
   // Check if Supabase is properly configured
   useEffect(() => {
     try {
       // Test the connection
-      console.log('Supabase client created successfully');
     } catch (error) {
       console.error('Error creating Supabase client:', error);
     }
   }, []);
-  
+
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
   const [postType, setPostType] = useState(null);
-  
+
   // Data states
   const [selectedDogs, setSelectedDogs] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Day scheduling
   const [selectedDays, setSelectedDays] = useState([]);
   const [daySchedules, setDaySchedules] = useState({
@@ -49,9 +44,9 @@ export default function ShareAvailability() {
     thursday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
     friday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
     saturday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
-    sunday: { enabled: false, timeSlots: [{ start: '', end: '' }] }
+    sunday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
   });
-  
+
   // Form data
   const [formData, setFormData] = useState({
     title: '',
@@ -91,7 +86,7 @@ export default function ShareAvailability() {
     can_help_low_income: false,
     can_help_disability: false,
     can_help_single_parent: false,
-    helping_others_context: ''
+    helping_others_context: '',
   });
 
   // User profile data for location (now from React Query)
@@ -102,7 +97,7 @@ export default function ShareAvailability() {
     if (authLoading) {
       return;
     }
-    
+
     if (!user) {
       router.push('/signin');
       return;
@@ -112,8 +107,12 @@ export default function ShareAvailability() {
   // Data is now fetched via React Query hooks
 
   const verifyCustomAddress = async () => {
-    if (!formData.custom_location_address.trim() || !formData.custom_location_city.trim() || 
-        !formData.custom_location_state.trim() || !formData.custom_location_zip_code.trim()) {
+    if (
+      !formData.custom_location_address.trim() ||
+      !formData.custom_location_city.trim() ||
+      !formData.custom_location_state.trim() ||
+      !formData.custom_location_zip_code.trim()
+    ) {
       setError('Please fill in all address fields');
       return;
     }
@@ -122,16 +121,20 @@ export default function ShareAvailability() {
     try {
       // Create a full address string for geocoding
       const fullAddress = `${formData.custom_location_address}, ${formData.custom_location_city}, ${formData.custom_location_state} ${formData.custom_location_zip_code}`;
-      
+
       // Get geocoding result
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&addressdetails=1`);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          fullAddress
+        )}&limit=1&addressdetails=1`
+      );
       const data = await response.json();
 
       if (data && data.length > 0) {
         const result = data[0];
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
-        
+
         // Pick area (first available) with mid-sized labels preferred:
         const area =
           result.address.suburb ||
@@ -140,8 +143,8 @@ export default function ShareAvailability() {
           result.address.quarter ||
           result.address.ward ||
           result.address.district ||
-          result.address.neighborhood ||      // US spelling
-          result.address.neighbourhood ||     // Intl spelling
+          result.address.neighborhood || // US spelling
+          result.address.neighbourhood || // Intl spelling
           result.address.locality ||
           result.address.residential ||
           '';
@@ -162,18 +165,18 @@ export default function ShareAvailability() {
         const formatted = formatLocation({
           neighborhood: area || '',
           city,
-          state
+          state,
         });
-        
+
         // Update form data with verified location (with proper capitalization)
-        
-        setFormData(prev => ({
+
+        setFormData((prev) => ({
           ...prev,
           custom_location_lat: lat,
           custom_location_lng: lng,
           custom_location_neighborhood: formatted.neighborhood,
           custom_location_city: formatted.city,
-          custom_location_state: formatted.state
+          custom_location_state: formatted.state,
         }));
 
         setError(null);
@@ -200,32 +203,28 @@ export default function ShareAvailability() {
   };
 
   const handleDogSelection = (dogId) => {
-    setSelectedDogs(prev => 
-      prev.includes(dogId) 
-        ? prev.filter(id => id !== dogId)
-        : [...prev, dogId]
+    setSelectedDogs((prev) =>
+      prev.includes(dogId) ? prev.filter((id) => id !== dogId) : [...prev, dogId]
     );
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Reset address verification when location option changes or custom address fields change
-    if (field === 'use_profile_location' || 
-        field === 'custom_location_address' || 
-        field === 'custom_location_city' || 
-        field === 'custom_location_state' || 
-        field === 'custom_location_zip_code') {
+    if (
+      field === 'use_profile_location' ||
+      field === 'custom_location_address' ||
+      field === 'custom_location_city' ||
+      field === 'custom_location_state' ||
+      field === 'custom_location_zip_code'
+    ) {
       setAddressVerified(false);
     }
   };
 
   const handleCheckboxChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleArrayChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleFormDataChange = (newFormData) => {
@@ -233,52 +232,50 @@ export default function ShareAvailability() {
   };
 
   const toggleDay = (day) => {
-    setDaySchedules(prev => ({
+    setDaySchedules((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        enabled: !prev[day].enabled
-      }
+        enabled: !prev[day].enabled,
+      },
     }));
-    
-    setSelectedDays(prev => 
-      prev.includes(day) 
-        ? prev.filter(d => d !== day)
-        : [...prev, day]
+
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
     );
   };
 
   const addTimeSlot = (day) => {
-    setDaySchedules(prev => ({
+    setDaySchedules((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        timeSlots: [...prev[day].timeSlots, { start: '', end: '' }]
-      }
+        timeSlots: [...prev[day].timeSlots, { start: '', end: '' }],
+      },
     }));
   };
 
   const removeTimeSlot = (day, index) => {
     if (daySchedules[day].timeSlots.length <= 1) return; // Keep at least one time slot
-    
-    setDaySchedules(prev => ({
+
+    setDaySchedules((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        timeSlots: prev[day].timeSlots.filter((_, i) => i !== index)
-      }
+        timeSlots: prev[day].timeSlots.filter((_, i) => i !== index),
+      },
     }));
   };
 
   const updateTimeSlot = (day, index, field, value) => {
-    setDaySchedules(prev => ({
+    setDaySchedules((prev) => ({
       ...prev,
       [day]: {
         ...prev[day],
-        timeSlots: prev[day].timeSlots.map((slot, i) => 
+        timeSlots: prev[day].timeSlots.map((slot, i) =>
           i === index ? { ...slot, [field]: value } : slot
-        )
-      }
+        ),
+      },
     }));
   };
 
@@ -286,7 +283,7 @@ export default function ShareAvailability() {
     for (const day of selectedDays) {
       const daySchedule = daySchedules[day];
       if (!daySchedule.enabled) continue;
-      
+
       for (const slot of daySchedule.timeSlots) {
         if (!slot.start || !slot.end) {
           setError(`Please fill in all time slots for ${day}.`);
@@ -319,12 +316,14 @@ export default function ShareAvailability() {
       return;
     }
 
-
-
     // Validate location data
     if (!formData.use_profile_location) {
-      if (!formData.custom_location_address.trim() || !formData.custom_location_city.trim() || 
-          !formData.custom_location_state.trim() || !formData.custom_location_zip_code.trim()) {
+      if (
+        !formData.custom_location_address.trim() ||
+        !formData.custom_location_city.trim() ||
+        !formData.custom_location_state.trim() ||
+        !formData.custom_location_zip_code.trim()
+      ) {
         setError('Please fill in all address fields for the custom location.');
         return;
       }
@@ -341,21 +340,21 @@ export default function ShareAvailability() {
       // Prepare the day schedules data
       const enabledDays = selectedDays;
       const daySchedulesData = {};
-      
-      selectedDays.forEach(day => {
+
+      selectedDays.forEach((day) => {
         daySchedulesData[day] = {
           enabled: true,
-          timeSlots: daySchedules[day].timeSlots
+          timeSlots: daySchedules[day].timeSlots,
         };
       });
 
       // Prepare location data based on user selection with proper capitalization
-      const locationData = formData.use_profile_location 
+      const locationData = formData.use_profile_location
         ? {
             use_profile_location: true,
             display_lat: userProfile?.display_lat || null,
             display_lng: userProfile?.display_lng || null,
-            city_label: userProfile?.city ? formatLocation({ city: userProfile.city }).city : null
+            city_label: userProfile?.city ? formatLocation({ city: userProfile.city }).city : null,
           }
         : {
             use_profile_location: false,
@@ -368,7 +367,9 @@ export default function ShareAvailability() {
             custom_location_lng: formData.custom_location_lng,
             display_lat: formData.custom_location_lat,
             display_lng: formData.custom_location_lng,
-            city_label: formData.custom_location_city ? formatLocation({ city: formData.custom_location_city }).city : null
+            city_label: formData.custom_location_city
+              ? formatLocation({ city: formData.custom_location_city }).city
+              : null,
           };
 
       // Create a single availability post (with multiple dogs if applicable)
@@ -378,7 +379,7 @@ export default function ShareAvailability() {
         owner_id: user.id,
         post_type: postType,
         enabled_days: enabledDays,
-        day_schedules: daySchedulesData
+        day_schedules: daySchedulesData,
       };
 
       // For dog availability, add dog information
@@ -392,7 +393,7 @@ export default function ShareAvailability() {
       const postsToCreate = [postToCreate];
 
       // Clean up the data to ensure proper types
-      const cleanedPosts = postsToCreate.map(post => ({
+      const cleanedPosts = postsToCreate.map((post) => ({
         ...post,
         // Ensure these are properly formatted for JSONB
         enabled_days: Array.isArray(post.enabled_days) ? post.enabled_days : [],
@@ -406,21 +407,10 @@ export default function ShareAvailability() {
         start_date: post.start_date || null,
         end_date: post.end_date || null,
         // Remove any undefined values
-        ...Object.fromEntries(
-          Object.entries(post).filter(([_, value]) => value !== undefined)
-        )
+        ...Object.fromEntries(Object.entries(post).filter(([_, value]) => value !== undefined)),
       }));
 
-      console.log('Form data before cleaning:', formData);
-      console.log('Posts to create:', postsToCreate);
-      console.log('Cleaned posts:', cleanedPosts);
-
-      console.log('Attempting to create availability posts:', cleanedPosts);
-      
-      const { data, error } = await supabase
-        .from('availability')
-        .insert(cleanedPosts)
-        .select();
+      const { error } = await supabase.from('availability').insert(cleanedPosts).select();
 
       if (error) {
         console.error('Error creating availability post:', error);
@@ -428,7 +418,7 @@ export default function ShareAvailability() {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
         });
         setError(`Failed to create availability post: ${error.message}`);
         return;
@@ -499,7 +489,7 @@ export default function ShareAvailability() {
     { key: 'thursday', label: 'Thu' },
     { key: 'friday', label: 'Fri' },
     { key: 'saturday', label: 'Sat' },
-    { key: 'sunday', label: 'Sun' }
+    { key: 'sunday', label: 'Sun' },
   ];
 
   return (
@@ -508,21 +498,39 @@ export default function ShareAvailability() {
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Share Availability</h1>
-          <p className="text-sm sm:text-base text-gray-600">Let your community know when you're available to help or need assistance</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            Let your community know when you&apos;re available to help or need assistance
+          </p>
         </div>
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className={`flex items-center ${currentStep >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'}`}>
+            <div
+              className={`flex items-center ${
+                currentStep >= 1 ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                  currentStep >= 1 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'
+                }`}
+              >
                 1
               </div>
               <span className="ml-2 font-medium">Choose Type</span>
             </div>
             <div className="w-8 h-1 bg-gray-300"></div>
-            <div className={`flex items-center ${currentStep >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'}`}>
+            <div
+              className={`flex items-center ${
+                currentStep >= 2 ? 'text-blue-600' : 'text-gray-400'
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
+                  currentStep >= 2 ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-300'
+                }`}
+              >
                 2
               </div>
               <span className="ml-2 font-medium">Details</span>
@@ -548,14 +556,23 @@ export default function ShareAvailability() {
         {currentStep === 1 && (
           <div className="bg-white rounded-lg shadow-md p-4 sm:p-8">
             <h2 className="text-2xl font-semibold mb-6">What are you sharing availability for?</h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Dog Availability Option */}
-              <div 
+              <div
+                role="button"
+                tabIndex={0}
                 className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  postType === 'dog_available' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  postType === 'dog_available'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handlePostTypeSelect('dog_available')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handlePostTypeSelect('dog_available');
+                  }
+                }}
               >
                 <div className="text-4xl mb-4">🐕</div>
                 <h3 className="text-xl font-semibold mb-2">My Dog wants a Pal</h3>
@@ -566,8 +583,8 @@ export default function ShareAvailability() {
                   <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
                     ⚠️ You need to add a dog to your profile first
                     <div className="mt-2">
-                      <a 
-                        href="/my-dogs/add" 
+                      <a
+                        href="/my-dogs/add"
                         className="text-yellow-900 underline font-medium hover:text-yellow-700 transition-colors"
                       >
                         Add a dog to your profile
@@ -583,20 +600,27 @@ export default function ShareAvailability() {
               </div>
 
               {/* Pet Sitter Availability Option */}
-              <div 
+              <div
+                role="button"
+                tabIndex={0}
                 className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
-                  postType === 'petpal_available' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                  postType === 'petpal_available'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handlePostTypeSelect('petpal_available')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handlePostTypeSelect('petpal_available');
+                  }
+                }}
               >
                 <div className="text-4xl mb-4">👤</div>
                 <h3 className="text-xl font-semibold mb-2">I am a PetPal</h3>
                 <p className="text-gray-600 mb-4">
-                  Share when you're available to get some puppy love.
+                  Share when you&apos;re available to get some puppy love.
                 </p>
-                <div className="text-sm text-gray-500">
-                  Help others in your neighborhood
-                </div>
+                <div className="text-sm text-gray-500">Help others in your neighborhood</div>
               </div>
             </div>
           </div>
@@ -607,7 +631,9 @@ export default function ShareAvailability() {
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0 mb-6">
               <h2 className="text-xl sm:text-2xl font-semibold">
-                {postType === 'dog_available' ? 'Dog Availability Details' : 'Pet Sitter Availability Details'}
+                {postType === 'dog_available'
+                  ? 'Dog Availability Details'
+                  : 'Pet Sitter Availability Details'}
               </h2>
               <button
                 type="button"
@@ -626,10 +652,19 @@ export default function ShareAvailability() {
                   {dogs.map((dog) => (
                     <div
                       key={dog.id}
+                      role="button"
+                      tabIndex={0}
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                        selectedDogs.includes(dog.id) ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                        selectedDogs.includes(dog.id)
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                       onClick={() => handleDogSelection(dog.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleDogSelection(dog.id);
+                        }
+                      }}
                     >
                       <div className="flex items-center space-x-3">
                         <input
@@ -638,9 +673,15 @@ export default function ShareAvailability() {
                           onChange={() => handleDogSelection(dog.id)}
                           className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded"
                         />
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden relative">
                           {dog.photo_url ? (
-                            <img src={dog.photo_url} alt={dog.name} className="w-full h-full object-cover rounded-full" />
+                            <Image
+                              src={dog.photo_url}
+                              alt={dog.name}
+                              className="w-full h-full object-cover rounded-full"
+                              width={48}
+                              height={48}
+                            />
                           ) : (
                             <span className="text-2xl">🐕</span>
                           )}
@@ -659,29 +700,33 @@ export default function ShareAvailability() {
             {/* Basic Information */}
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                   Title *
                 </label>
                 <input
                   type="text"
+                  id="title"
                   required
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder={postType === 'dog_available' ? 'e.g., Need dog walking help this week' : 'e.g., Available for dog walking'}
+                  placeholder={
+                    postType === 'dog_available'
+                      ? 'e.g., Need dog walking help this week'
+                      : 'e.g., Available for dog walking'
+                  }
                 />
               </div>
-
-
             </div>
 
             {/* Day Selection and Time Slots */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-4">Select Available Days and Times</h3>
               <p className="text-sm text-gray-600 mb-4">
-                Please propose times that you tend to be available to meet. We understand schedules may change, but providing your general availability helps match you with others.
+                Please propose times that you tend to be available to meet. We understand schedules
+                may change, but providing your general availability helps match you with others.
               </p>
-              
+
               {/* Day Selection */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-6">
                 {days.map(({ key, label }) => (
@@ -699,9 +744,7 @@ export default function ShareAvailability() {
                     <div className="text-xs hidden sm:block">
                       {daySchedules[key].enabled ? 'Selected' : 'Click to select'}
                     </div>
-                    <div className="text-xs sm:hidden">
-                      {daySchedules[key].enabled ? '✓' : '○'}
-                    </div>
+                    <div className="text-xs sm:hidden">{daySchedules[key].enabled ? '✓' : '○'}</div>
                   </button>
                 ))}
               </div>
@@ -721,15 +764,20 @@ export default function ShareAvailability() {
                           + Add Time Slot
                         </button>
                       </div>
-                      
+
                       <div className="space-y-3">
                         {daySchedules[day].timeSlots.map((slot, index) => (
-                          <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                          <div
+                            key={index}
+                            className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3"
+                          >
                             <div className="flex items-center space-x-2 w-full sm:w-auto">
                               <input
                                 type="time"
                                 value={slot.start}
-                                onChange={(e) => updateTimeSlot(day, index, 'start', e.target.value)}
+                                onChange={(e) =>
+                                  updateTimeSlot(day, index, 'start', e.target.value)
+                                }
                                 className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
                                 required
                               />
@@ -762,10 +810,11 @@ export default function ShareAvailability() {
 
             {/* Description */}
             <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
               <textarea
+                id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 rows={4}
@@ -776,10 +825,14 @@ export default function ShareAvailability() {
 
             {/* Special Instructions */}
             <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="special_instructions"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Special Instructions
               </label>
               <textarea
+                id="special_instructions"
                 value={formData.special_instructions}
                 onChange={(e) => handleInputChange('special_instructions', e.target.value)}
                 rows={3}
@@ -805,10 +858,14 @@ export default function ShareAvailability() {
 
               {formData.is_urgent && (
                 <div className="ml-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="urgency_notes"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Urgency Notes
                   </label>
                   <textarea
+                    id="urgency_notes"
                     value={formData.urgency_notes}
                     onChange={(e) => handleInputChange('urgency_notes', e.target.value)}
                     rows={2}
@@ -822,7 +879,7 @@ export default function ShareAvailability() {
             {/* Location Selection */}
             <div className="mb-8">
               <h3 className="text-lg font-semibold mb-4">Where are you located?</h3>
-              
+
               {/* Location Option Selection */}
               <div className="mb-6">
                 <div className="space-y-3">
@@ -835,11 +892,14 @@ export default function ShareAvailability() {
                       onChange={() => handleInputChange('use_profile_location', true)}
                       className="w-4 h-4 text-blue-600 mr-2"
                     />
-                    <label htmlFor="use_profile_location" className="text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="use_profile_location"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Use location in your profile
                     </label>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <input
                       type="radio"
@@ -849,7 +909,10 @@ export default function ShareAvailability() {
                       onChange={() => handleInputChange('use_profile_location', false)}
                       className="w-4 h-4 text-blue-600 mr-2"
                     />
-                    <label htmlFor="use_custom_location" className="text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="use_custom_location"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Share another location best for meeting
                     </label>
                   </div>
@@ -865,16 +928,20 @@ export default function ShareAvailability() {
                       const formattedLocation = formatLocation({
                         neighborhood: userProfile.neighborhood,
                         city: userProfile.city,
-                        state: userProfile.state
+                        state: userProfile.state,
                       });
                       return (
                         <>
-                          {formattedLocation.neighborhood && <div>Neighborhood: {formattedLocation.neighborhood}</div>}
+                          {formattedLocation.neighborhood && (
+                            <div>Neighborhood: {formattedLocation.neighborhood}</div>
+                          )}
                           {formattedLocation.city && <div>City: {formattedLocation.city}</div>}
                           {formattedLocation.state && <div>State: {formattedLocation.state}</div>}
-                          {(!formattedLocation.neighborhood && !formattedLocation.city && !formattedLocation.state) && (
-                            <div className="text-blue-600">No location set in your profile</div>
-                          )}
+                          {!formattedLocation.neighborhood &&
+                            !formattedLocation.city &&
+                            !formattedLocation.state && (
+                              <div className="text-blue-600">No location set in your profile</div>
+                            )}
                         </>
                       );
                     })()}
@@ -886,55 +953,75 @@ export default function ShareAvailability() {
               {!formData.use_profile_location && (
                 <div className="border border-gray-200 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-4">Custom Meeting Location</h4>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="custom_location_address"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Street Address *
                       </label>
                       <input
                         type="text"
+                        id="custom_location_address"
                         value={formData.custom_location_address}
-                        onChange={(e) => handleInputChange('custom_location_address', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('custom_location_address', e.target.value)
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="123 Main St"
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="custom_location_city"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         City *
                       </label>
                       <input
                         type="text"
+                        id="custom_location_city"
                         value={formData.custom_location_city}
                         onChange={(e) => handleInputChange('custom_location_city', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="City"
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="custom_location_state"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         State *
                       </label>
                       <input
                         type="text"
+                        id="custom_location_state"
                         value={formData.custom_location_state}
                         onChange={(e) => handleInputChange('custom_location_state', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="State"
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="custom_location_zip_code"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         ZIP Code *
                       </label>
                       <input
                         type="text"
+                        id="custom_location_zip_code"
                         value={formData.custom_location_zip_code}
-                        onChange={(e) => handleInputChange('custom_location_zip_code', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('custom_location_zip_code', e.target.value)
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="12345"
                       />
@@ -945,9 +1032,16 @@ export default function ShareAvailability() {
                   {formData.custom_location_neighborhood && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
                       <div className="text-sm text-green-800">
-                        <strong>Neighborhood:</strong> {formatLocation({ neighborhood: formData.custom_location_neighborhood }).neighborhood}
+                        <strong>Neighborhood:</strong>{' '}
+                        {
+                          formatLocation({
+                            neighborhood: formData.custom_location_neighborhood,
+                          }).neighborhood
+                        }
                         {addressVerified && (
-                          <div className="text-xs text-green-600 mt-1">✓ Address verified successfully!</div>
+                          <div className="text-xs text-green-600 mt-1">
+                            ✓ Address verified successfully!
+                          </div>
                         )}
                       </div>
                     </div>
@@ -957,7 +1051,13 @@ export default function ShareAvailability() {
                   <button
                     type="button"
                     onClick={verifyCustomAddress}
-                    disabled={verifyingCustomAddress || !formData.custom_location_address || !formData.custom_location_city || !formData.custom_location_state || !formData.custom_location_zip_code}
+                    disabled={
+                      verifyingCustomAddress ||
+                      !formData.custom_location_address ||
+                      !formData.custom_location_city ||
+                      !formData.custom_location_state ||
+                      !formData.custom_location_zip_code
+                    }
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {verifyingCustomAddress ? 'Verifying...' : 'Verify Address & Get Neighborhood'}
@@ -978,18 +1078,25 @@ export default function ShareAvailability() {
                     onChange={(e) => handleCheckboxChange('can_pick_up_drop_off', e.target.checked)}
                     className="w-4 h-4 text-blue-600 mr-2 bg-white border-gray-300 rounded"
                   />
-                  <label htmlFor="can_pick_up_drop_off" className="text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="can_pick_up_drop_off"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Can pick up/drop off
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                  htmlFor="preferred_meeting_location"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Preferred Meeting Location
                 </label>
                 <input
                   type="text"
+                  id="preferred_meeting_location"
                   value={formData.preferred_meeting_location}
                   onChange={(e) => handleInputChange('preferred_meeting_location', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1000,7 +1107,7 @@ export default function ShareAvailability() {
 
             {/* Community Support Section */}
             <div className="mb-8">
-              <CommunitySupportSection 
+              <CommunitySupportSection
                 formData={formData}
                 onFormDataChange={handleFormDataChange}
                 postType={postType}
