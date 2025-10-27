@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/libs/supabase/client";
 import { useUser } from "@/libs/supabase/hooks";
+import { useProfileDraft } from "@/hooks/useProfileDraft";
 import toast from 'react-hot-toast';
 import PhotoUpload from '../../../components/ui/PhotoUpload';
 import { formatLocation } from '@/libs/utils';
@@ -14,7 +15,8 @@ export default function ProfileEditPage() {
   const [saving, setSaving] = useState(false);
   const [verifyingAddress, setVerifyingAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
-  const [profile, setProfile] = useState({
+  // Initial profile state
+  const initialProfile = {
     first_name: '',
     last_name: '',
     phone_number: '',
@@ -40,7 +42,17 @@ export default function ProfileEditPage() {
     street_address: '',
     state: '',
     zip_code: ''
-  });
+  };
+
+  // Use the sessionStorage-based profile draft hook
+  const {
+    profile,
+    setProfile,
+    loadDraft,
+    clearDraft,
+    hasDraft,
+    draftSource
+  } = useProfileDraft(initialProfile);
 
   useEffect(() => {
     if (userLoading) return;
@@ -50,8 +62,16 @@ export default function ProfileEditPage() {
       return;
     }
     
-    loadProfile();
-  }, [user, userLoading, router]);
+    // Try to load draft first, then load profile
+    const draft = loadDraft();
+    if (draft) {
+      // eslint-disable-next-line no-console
+      console.log('📂 Restoring profile draft from sessionStorage');
+      setLoading(false);
+    } else {
+      loadProfile();
+    }
+  }, [user, userLoading, router, loadDraft]);
 
   const loadProfile = async () => {
     try {
@@ -231,8 +251,14 @@ export default function ProfileEditPage() {
         throw new Error(`Database error: ${error.message} (Code: ${error.code})`);
       }
 
+      // eslint-disable-next-line no-console
       console.log('Profile saved successfully:', data);
       toast.success('Profile saved successfully!');
+      
+      // Clear the draft since profile is now saved
+      clearDraft();
+      
+      // eslint-disable-next-line no-console
       console.log('Redirecting to welcome page...');
       
       // Use window.location for a full page navigation to ensure proper context loading
@@ -369,6 +395,24 @@ export default function ProfileEditPage() {
   return (
     <div className="min-h-screen w-full bg-white max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-black">Create Your Profile</h1>
+      
+      {/* Draft indicator */}
+      {hasDraft && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                📂 Draft restored from {draftSource === 'session' ? 'this session' : 'storage'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
