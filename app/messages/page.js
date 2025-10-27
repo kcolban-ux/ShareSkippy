@@ -132,7 +132,7 @@ export default function MessagesPage() {
     };
   }, [selectedConversationKey, selectedConversation]);
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -181,17 +181,12 @@ export default function MessagesPage() {
       });
 
       setConversations(processedConversations);
-
-      // Select the first conversation if none is selected
-      if (processedConversations.length > 0 && !selectedConversation) {
-        setSelectedConversation(processedConversations[0]);
-      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, selectedConversation, setSelectedConvsersation]);
 
   useEffect(() => {
     if (user && !authLoading) {
