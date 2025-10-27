@@ -17,7 +17,6 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
-    "@babel/preset-react": "^7.28.5",
     "@headlessui/react": "^1.7.18",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.45.0",
@@ -46,6 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@jest/globals": "^30.2.0",
     "@next/bundle-analyzer": "^14.2.5",
