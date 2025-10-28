@@ -1,24 +1,28 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ProfileCard({ profile, onMessage }) {
-  const { id, first_name, photo_url, city, neighborhood, role, bio_excerpt, last_online_at } = profile;
+  const { id, first_name, photo_url, city, neighborhood, role, bio_excerpt } = profile;
 
   const getRoleIcon = (role) => {
     switch (role) {
-      case 'dog_owner': return '🐕';
-      case 'petpal': return '🤝';
-      case 'both': return '🐕‍🦺';
-      default: return '👤';
+      case 'dog_owner':
+        return '🐕';
+      case 'petpal':
+        return '🤝';
+      case 'both':
+        return '🐕‍🦺';
+      default:
+        return '👤';
     }
   };
-
 
   return (
     <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200">
       {/* Profile Header */}
       <div className="flex items-center space-x-3 mb-4">
         {photo_url ? (
-          <img
+          <Image
             src={photo_url}
             alt={first_name}
             className="w-12 h-12 rounded-full object-cover"
@@ -29,7 +33,7 @@ export default function ProfileCard({ profile, onMessage }) {
             }}
           />
         ) : null}
-        <div 
+        <div
           className={`w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
         >
           <span className="text-xl">{getRoleIcon(role)}</span>
@@ -55,9 +59,7 @@ export default function ProfileCard({ profile, onMessage }) {
       {/* Bio */}
       {bio_excerpt && (
         <div className="mb-4">
-          <p className="text-sm text-gray-600 line-clamp-3">
-            {bio_excerpt}
-          </p>
+          <p className="text-sm text-gray-600 line-clamp-3">{bio_excerpt}</p>
         </div>
       )}
 
