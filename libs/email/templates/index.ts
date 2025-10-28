@@ -9,7 +9,7 @@ export interface EmailTemplate {
 }
 
 export interface TemplateVariables {
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 // Template registry mapping email types to template files
