@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import OptimizedImage from "./ui/OptimizedImage";
-import ButtonSignin from "./ButtonSignin";
-import logo from "@/app/icon.png";
-import config from "@/config";
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import OptimizedImage from './ui/OptimizedImage';
+import ButtonSignin from './ButtonSignin';
+import logo from '@/app/icon.png';
+import config from '@/config';
 
 const links = [];
 
@@ -17,6 +17,7 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
   }, [searchParams]);
 
@@ -41,9 +42,7 @@ const Header = () => {
               width={32}
               height={32}
             />
-            <span className="font-extrabold text-base sm:text-lg text-white">
-              {config.appName}
-            </span>
+            <span className="font-extrabold text-base sm:text-lg text-white">{config.appName}</span>
           </Link>
         </div>
 
@@ -91,7 +90,7 @@ const Header = () => {
       </nav>
 
       {/* Mobile menu */}
-      <div className={`relative z-50 ${isOpen ? "" : "hidden"}`}>
+      <div className={`relative z-50 ${isOpen ? '' : 'hidden'}`}>
         <div
           className={`fixed inset-y-0 right-0 z-10 w-full px-4 sm:px-6 lg:px-8 py-4 overflow-y-auto 
           bg-indigo-600 sm:max-w-sm sm:ring-1 sm:ring-white/10 
@@ -130,11 +129,7 @@ const Header = () => {
                 stroke="currentColor"
                 className="w-6 h-6"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
