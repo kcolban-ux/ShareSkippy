@@ -11,7 +11,7 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (rating === 0) {
       setError('Please select a rating');
       return;
@@ -26,8 +26,6 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
     setError('');
 
     try {
-      const supabase = createClient();
-      
       const response = await fetch('/api/reviews', {
         method: 'POST',
         headers: {
@@ -36,7 +34,7 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
         body: JSON.stringify({
           meetingId: pendingReview.meeting_id,
           rating,
-          comment: comment.trim()
+          comment: comment.trim(),
         }),
       });
 
@@ -50,12 +48,12 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
       // Reset form
       setRating(0);
       setComment('');
-      
+
       // Notify parent component
       if (onReviewSubmitted) {
         onReviewSubmitted(data.review);
       }
-      
+
       // Close modal
       onClose();
     } catch (error) {
@@ -76,36 +74,41 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
   if (!isOpen || !pendingReview) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto my-4 sm:my-0 shadow-xl">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Leave a Review</h2>
-            <button
-              onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           <div className="mb-4">
             <p className="text-gray-600 mb-2">
-              How was your meeting with <span className="font-medium">{pendingReview.other_participant_name}</span>?
+              How was your meeting with{' '}
+              <span className="font-medium">{pendingReview.other_participant_name}</span>?
             </p>
-            <p className="text-sm text-gray-500">
-              Meeting: {pendingReview.meeting_title}
-            </p>
+            <p className="text-sm text-gray-500">Meeting: {pendingReview.meeting_title}</p>
           </div>
 
           <form onSubmit={handleSubmit}>
             {/* Star Rating */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Rating *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Rating *</label>
               <div className="flex space-x-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -113,9 +116,7 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
                     type="button"
                     onClick={() => setRating(star)}
                     className={`text-2xl transition-colors ${
-                      star <= rating
-                        ? 'text-yellow-400'
-                        : 'text-gray-300 hover:text-yellow-300'
+                      star <= rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'
                     }`}
                   >
                     ★
@@ -147,7 +148,13 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
                 style={{ backgroundColor: 'white' }}
               />
               <p className="text-xs text-gray-500 mt-1">
-                {comment.trim().split(' ').filter(word => word.length > 0).length} words
+                {
+                  comment
+                    .trim()
+                    .split(' ')
+                    .filter((word) => word.length > 0).length
+                }{' '}
+                words
               </p>
             </div>
 
