@@ -13,6 +13,7 @@ export default defineConfig([
     ignores: [
       "**/package-lock.json",
       "**/node_modules/**",
+      "**/coverage/**",
     ],
   },
   {
