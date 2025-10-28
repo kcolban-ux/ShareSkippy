@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * Comprehensive tests for the centralized email system
  * Run with: npm test tests/email-system.test.js
