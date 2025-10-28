@@ -1,7 +1,8 @@
-"use client";
+'use client';
 import { useState } from 'react';
 import { supabase } from '@/libs/supabase';
 import DatePicker from '@/components/ui/DatePicker';
+import Image from 'next/image';
 
 // Utility function to format date as YYYY-MM-DD without timezone issues
 const formatDateForInput = (date) => {
@@ -11,7 +12,13 @@ const formatDateForInput = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-export default function MeetingModal({ isOpen, onClose, recipient, conversation, onMeetingCreated }) {
+export default function MeetingModal({
+  isOpen,
+  onClose,
+  recipient,
+  conversation,
+  onMeetingCreated,
+}) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,16 +26,16 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
     start_date: '',
     start_time: '',
     end_date: '',
-    end_time: ''
+    end_time: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -65,7 +72,10 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
       }
 
       // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
       if (authError || !user) {
         throw new Error('You must be logged in to schedule a meeting');
       }
@@ -83,7 +93,7 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
           meeting_place: formData.meeting_place.trim(),
           start_datetime: startDateTime.toISOString(),
           end_datetime: endDateTime.toISOString(),
-          status: 'pending'
+          status: 'pending',
         })
         .select()
         .single();
@@ -91,15 +101,13 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
       if (meetingError) throw meetingError;
 
       // Send a message in the chat about the meeting request
-      const { error: messageError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          recipient_id: recipient.id,
-          availability_id: conversation?.availability_id,
-          subject: `Meeting Request: ${formData.title}`,
-          content: `I've sent you a meeting request for "${formData.title}" on ${startDateTime.toLocaleDateString()} at ${startDateTime.toLocaleTimeString()}. Please check your meetings page to accept or reject.`
-        });
+      const { error: messageError } = await supabase.from('messages').insert({
+        sender_id: user.id,
+        recipient_id: recipient.id,
+        availability_id: conversation?.availability_id,
+        subject: `Meeting Request: ${formData.title}`,
+        content: `I've sent you a meeting request for "${formData.title}" on ${startDateTime.toLocaleDateString()} at ${startDateTime.toLocaleTimeString()}. Please check your meetings page to accept or reject.`,
+      });
 
       if (messageError) {
         console.error('Error sending meeting message:', messageError);
@@ -122,10 +130,10 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
         start_date: '',
         start_time: '',
         end_date: '',
-        end_time: ''
+        end_time: '',
       });
       onClose();
-      
+
       // Send meeting confirmation emails to both participants
       try {
         // Send to requester
@@ -134,8 +142,8 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             meetingId: meeting.id,
-            userId: user.id
-          })
+            userId: user.id,
+          }),
         });
 
         // Send to recipient
@@ -144,8 +152,8 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             meetingId: meeting.id,
-            userId: recipient.id
-          })
+            userId: recipient.id,
+          }),
         });
       } catch (emailError) {
         console.error('Error sending meeting confirmation emails:', emailError);
@@ -156,10 +164,9 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
       if (onMeetingCreated) {
         onMeetingCreated();
       }
-      
+
       // Show success message (you might want to add a toast notification here)
       alert('Meeting request sent successfully!');
-
     } catch (error) {
       console.error('Error creating meeting:', error);
       setError(error.message);
@@ -176,7 +183,7 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
       start_date: '',
       start_time: '',
       end_date: '',
-      end_time: ''
+      end_time: '',
     });
     setError('');
     onClose();
@@ -185,7 +192,13 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-start sm:items-center justify-center z-50 p-4"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto my-4 sm:my-0">
         <div className="p-6">
           {/* Header */}
@@ -196,7 +209,12 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -205,7 +223,7 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-3">
               {recipient.profile_photo_url ? (
-                <img
+                <Image
                   src={recipient.profile_photo_url}
                   alt={`${recipient.first_name} ${recipient.last_name}`}
                   className="w-12 h-12 rounded-full object-cover"
@@ -253,18 +271,19 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
             {/* Start Date and Time */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
                 <DatePicker
                   selectedDate={formData.start_date}
-                  onDateSelect={(date) => setFormData(prev => ({ ...prev, start_date: date }))}
+                  onDateSelect={(date) => setFormData((prev) => ({ ...prev, start_date: date }))}
                   minDate={formatDateForInput(new Date())}
                   placeholder="Select start date"
                 />
               </div>
               <div>
-                <label htmlFor="start_time" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="start_time"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Start Time *
                 </label>
                 <input
@@ -282,14 +301,20 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
             {/* End Date and Time */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
                 <DatePicker
                   selectedDate={formData.end_date}
-                  onDateSelect={(date) => setFormData(prev => ({ ...prev, end_date: date }))}
+                  onDateSelect={(date) => setFormData((prev) => ({ ...prev, end_date: date }))}
                   minDate={formData.start_date || formatDateForInput(new Date())}
-                  maxDate={formData.start_date ? formatDateForInput(new Date(new Date(formData.start_date).getTime() + 30 * 24 * 60 * 60 * 1000)) : null}
+                  maxDate={
+                    formData.start_date
+                      ? formatDateForInput(
+                          new Date(
+                            new Date(formData.start_date).getTime() + 30 * 24 * 60 * 60 * 1000
+                          )
+                        )
+                      : null
+                  }
                   placeholder="Select end date"
                 />
               </div>
@@ -311,7 +336,10 @@ export default function MeetingModal({ isOpen, onClose, recipient, conversation,
 
             {/* Meeting Place */}
             <div>
-              <label htmlFor="meeting_place" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="meeting_place"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Meeting Place *
               </label>
               <input
