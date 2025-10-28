@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr';
 
 export async function updateSession(request, response) {
   const supabase = createServerClient(
@@ -8,17 +7,17 @@ export async function updateSession(request, response) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
-          )
+          );
         },
       },
     }
-  )
+  );
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // response.cookies.setAll. Writing logic between the two will cause the
@@ -26,7 +25,7 @@ export async function updateSession(request, response) {
 
   // Let Supabase handle its own session management
   // The createServerClient will automatically handle session refresh and cookie management
-  await supabase.auth.getUser()
+  await supabase.auth.getUser();
 
-  return response
+  return response;
 }
