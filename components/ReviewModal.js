@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/libs/supabase/client';
 
 export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSubmitted }) {
   const [rating, setRating] = useState(0);
