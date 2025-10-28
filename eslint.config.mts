@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import nextVitals from "eslint-config-next/core-web-vitals";
+import jestPlugin from "eslint-plugin-jest";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
@@ -33,5 +34,16 @@ export default defineConfig([
     plugins: { css },
     language: "css/css",
     extends: ["css/recommended"],
+  },
+  {
+    files: ["tests/**/*", "**/*.test.*"],
+    plugins: {
+      jest: jestPlugin,
+    },
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
+    },
   },
 ]);
