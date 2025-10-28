@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/libs/supabase/client';
 
 const UserContext = createContext({
@@ -25,7 +25,7 @@ export const UserProvider = ({ children }) => {
   // Memoize the supabase client to prevent recreation on every render
   const supabase = useMemo(() => createClient(), []);
 
-  const refreshUser = useMemo(async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -41,7 +41,7 @@ export const UserProvider = ({ children }) => {
     }
   }, [supabase]);
 
-  const signOut = useMemo(async () => {
+  const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
