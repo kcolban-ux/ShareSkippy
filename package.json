@@ -11,7 +11,7 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next eslint .",
     "typecheck": "echo 'Typecheck configured in Task 2'",
     "test": "jest",
     "analyze": "ANALYZE=true next build"
@@ -61,8 +61,8 @@
     "dotenv": "^17.2.2",
     "eslint": "^9.38.0",
     "eslint-config-next": "^16.0.0",
-    "eslint-plugin-react": "^7.37.5",
     "globals": "^16.4.0",
+    "jiti": "^2.6.1",
     "next-sitemap": "^4.2.3",
     "postcss": "^8.4.38",
     "supabase": "^2.51.0",
