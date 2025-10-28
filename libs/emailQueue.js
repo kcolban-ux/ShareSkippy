@@ -10,12 +10,12 @@ export class EmailQueue {
       maxEmails: 100, // Max emails per hour
       windowMs: 60 * 60 * 1000, // 1 hour in milliseconds
       emailsSent: 0,
-      windowStart: Date.now()
+      windowStart: Date.now(),
     };
     this.retryConfig = {
       maxRetries: 3,
       baseDelay: 1000, // 1 second
-      maxDelay: 30000 // 30 seconds
+      maxDelay: 30000, // 30 seconds
     };
   }
 
@@ -35,8 +35,8 @@ export class EmailQueue {
         retries: 0,
         maxRetries: options.maxRetries || this.retryConfig.maxRetries,
         createdAt: Date.now(),
-        ...options
-      }
+        ...options,
+      },
     };
 
     // Add to queue based on priority
@@ -73,7 +73,7 @@ export class EmailQueue {
       }
 
       const queueItem = this.queue.shift();
-      
+
       try {
         await this.sendEmail(queueItem);
         this.rateLimit.emailsSent++;
@@ -95,27 +95,25 @@ export class EmailQueue {
    */
   async sendEmail(queueItem) {
     const { emailData, sendFunction } = queueItem;
-    
-    try {
-      const result = await sendFunction(emailData);
-      
-      // Track successful send
-      if (process.env.EMAIL_DEBUG_LOG === '1') {
-        console.log(JSON.stringify({
+
+    const result = await sendFunction(emailData);
+
+    // Track successful send
+    if (process.env.EMAIL_DEBUG_LOG === '1') {
+      console.log(
+        JSON.stringify({
           email_key: emailData.emailType || 'unknown',
           user_id: emailData.userId || 'unknown',
           trigger: emailData.trigger || 'unknown',
           timestamp: new Date().toISOString(),
           decision: 'sent',
           reason: 'Email sent successfully',
-          queue_id: queueItem.id
-        }));
-      }
-
-      return result;
-    } catch (error) {
-      throw error;
+          queue_id: queueItem.id,
+        })
+      );
     }
+
+    return result;
   }
 
   /**
@@ -132,8 +130,10 @@ export class EmailQueue {
         this.retryConfig.maxDelay
       );
 
-      console.log(`Retrying email ${queueItem.id} in ${delay}ms (attempt ${queueItem.options.retries})`);
-      
+      console.log(
+        `Retrying email ${queueItem.id} in ${delay}ms (attempt ${queueItem.options.retries})`
+      );
+
       // Re-add to queue with delay
       setTimeout(() => {
         this.queue.push(queueItem);
@@ -143,18 +143,20 @@ export class EmailQueue {
       }, delay);
     } else {
       console.error(`Email ${queueItem.id} failed after ${queueItem.options.maxRetries} retries`);
-      
+
       // Track failed email
       if (process.env.EMAIL_DEBUG_LOG === '1') {
-        console.log(JSON.stringify({
-          email_key: queueItem.emailData.emailType || 'unknown',
-          user_id: queueItem.emailData.userId || 'unknown',
-          trigger: queueItem.emailData.trigger || 'unknown',
-          timestamp: new Date().toISOString(),
-          decision: 'failed',
-          reason: `Failed after ${queueItem.options.maxRetries} retries`,
-          queue_id: queueItem.id
-        }));
+        console.log(
+          JSON.stringify({
+            email_key: queueItem.emailData.emailType || 'unknown',
+            user_id: queueItem.emailData.userId || 'unknown',
+            trigger: queueItem.emailData.trigger || 'unknown',
+            timestamp: new Date().toISOString(),
+            decision: 'failed',
+            reason: `Failed after ${queueItem.options.maxRetries} retries`,
+            queue_id: queueItem.id,
+          })
+        );
       }
     }
   }
@@ -164,7 +166,7 @@ export class EmailQueue {
    */
   checkRateLimit() {
     const now = Date.now();
-    
+
     // Reset window if needed
     if (now - this.rateLimit.windowStart >= this.rateLimit.windowMs) {
       this.rateLimit.emailsSent = 0;
@@ -180,7 +182,7 @@ export class EmailQueue {
   async waitForRateLimit() {
     const now = Date.now();
     const timeUntilReset = this.rateLimit.windowMs - (now - this.rateLimit.windowStart);
-    
+
     if (timeUntilReset > 0) {
       console.log(`Waiting ${timeUntilReset}ms for rate limit reset`);
       await this.delay(timeUntilReset);
@@ -199,7 +201,7 @@ export class EmailQueue {
    * @param {number} ms - Milliseconds to delay
    */
   delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -213,8 +215,8 @@ export class EmailQueue {
         emailsSent: this.rateLimit.emailsSent,
         maxEmails: this.rateLimit.maxEmails,
         windowStart: this.rateLimit.windowStart,
-        timeUntilReset: this.rateLimit.windowMs - (Date.now() - this.rateLimit.windowStart)
-      }
+        timeUntilReset: this.rateLimit.windowMs - (Date.now() - this.rateLimit.windowStart),
+      },
     };
   }
 
@@ -233,7 +235,7 @@ export class EmailQueue {
   updateRateLimit(config) {
     this.rateLimit = {
       ...this.rateLimit,
-      ...config
+      ...config,
     };
   }
 }
