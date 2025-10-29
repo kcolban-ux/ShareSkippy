@@ -20,12 +20,6 @@ export default function AvailabilityDetailPage() {
   });
   const [showStickyBar, setShowStickyBar] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchAvailabilityDetails();
-    }
-  }, [params.id]);
-
   // Scroll detection for mobile sticky bar
   useEffect(() => {
     const handleScroll = () => {
@@ -43,7 +37,7 @@ export default function AvailabilityDetailPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [availability]);
 
-  const fetchAvailabilityDetails = async () => {
+  const fetchAvailabilityDetails = useCallback(async () => {
     try {
       const supabase = createClient();
 
@@ -159,7 +153,13 @@ export default function AvailabilityDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchAvailabilityDetails();
+    }
+  }, [params.id, fetchAvailabilityDetails]);
 
   // const formatDate = (dateString) => {
   //   const date = new Date(dateString);
