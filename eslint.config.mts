@@ -1,45 +1,47 @@
-import js from '@eslint/js';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import jestPlugin from 'eslint-plugin-jest';
-import json from '@eslint/json';
-import markdown from '@eslint/markdown';
-import css from '@eslint/css';
-import { defineConfig } from 'eslint/config';
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import nextVitals from "eslint-config-next";
+import jestPlugin from "eslint-plugin-jest";
+import json from "@eslint/json";
+import markdown from "@eslint/markdown";
+import css from "@eslint/css";
+import tailwind from "eslint-plugin-tailwindcss";
+import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   {
-    ignores: ['**/package-lock.json', '**/node_modules/**', '**/coverage/**'],
+    ignores: ["**/package-lock.json", "**/node_modules/**", "**/coverage/**"],
   },
   {
-    files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     plugins: { js },
-    extends: ['js/recommended'],
+    extends: ["js/recommended"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   tseslint.configs.recommended,
   ...nextVitals,
   {
-    files: ['**/*.json'],
+    files: ["**/*.json"],
     plugins: { json },
-    language: 'json/json',
-    extends: ['json/recommended'],
+    language: "json/json",
+    extends: ["json/recommended"],
   },
   {
-    files: ['**/*.md'],
+    files: ["**/*.md"],
     plugins: { markdown },
-    language: 'markdown/gfm',
-    extends: ['markdown/recommended'],
+    language: "markdown/gfm",
+    extends: ["markdown/recommended"],
   },
+  ...tailwind.configs["flat/recommended"],
   {
-    files: ['**/*.css'],
+    files: ["**/*.css"],
     plugins: { css },
-    language: 'css/css',
-    extends: ['css/recommended'],
+    language: "css/css",
+    extends: ["css/recommended"],
   },
   {
-    files: ['tests/**/*', '**/*.test.*'],
+    files: ["tests/**/*", "**/*.test.*"],
     plugins: {
       jest: jestPlugin,
     },
