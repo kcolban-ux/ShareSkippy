@@ -1,4 +1,5 @@
 'use client';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -18,6 +19,18 @@ export default function PublicProfilePage() {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [messageModal, setMessageModal] = useState({ isOpen: false, recipient: null });
+
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    } catch (err) {
+      console.error('Error loading current user:', err);
+    }
+  }, [setCurrentUser]);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -53,24 +66,12 @@ export default function PublicProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [profileId]);
+  }, [profileId, setProfile]);
 
   useEffect(() => {
     loadProfile();
     loadCurrentUser();
-  }, [profileId, loadProfile]);
-
-  const loadCurrentUser = async () => {
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    } catch (err) {
-      console.error('Error loading current user:', err);
-    }
-  };
+  }, [loadProfile, loadCurrentUser]);
 
   const openMessageModal = () => {
     setMessageModal({ isOpen: true, recipient: profile });
