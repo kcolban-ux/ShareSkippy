@@ -1,10 +1,10 @@
 'use client';
-import { useQueryClient } from '@tanstack/react-query';
-import { Image } from 'next/image';
 import { useState } from 'react';
-import { useUser } from '@/components/providers/SupabaseUserProvider';
-import ReviewModal from '@/components/ReviewModal';
+import Image from 'next/image';
+import { useUser } from '@/contexts/UserContext';
 import { useMeetings, useUpdateMeetingStatus } from '@/hooks/useMeetings';
+import { useQueryClient } from '@tanstack/react-query';
+import ReviewModal from '@/components/ReviewModal';
 
 export default function MeetingsPage() {
   const { user, loading: authLoading } = useUser();
