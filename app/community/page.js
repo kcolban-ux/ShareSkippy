@@ -629,7 +629,7 @@ export default function CommunityPage() {
                         <div>
                           <h4 className="font-medium mb-2">Dogs Available:</h4>
                           <div className="grid grid-cols-2 gap-2">
-                            {post.allDogs.map((dog, index) => (
+                            {post.allDogs.map((dog) => (
                               <div key={dog.id} className="flex items-center space-x-2">
                                 {dog.photo_url ? (
                                   <Image
@@ -1022,7 +1022,7 @@ export default function CommunityPage() {
                           <div>
                             <h4 className="font-medium mb-2">Dogs Available:</h4>
                             <div className="grid grid-cols-2 gap-2">
-                              {post.allDogs.map((dog, index) => (
+                              {post.allDogs.map((dog) => (
                                 <div key={dog.id} className="flex items-center space-x-2">
                                   {dog.photo_url ? (
                                     <Image
