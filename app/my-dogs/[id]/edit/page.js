@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSupabaseAuth } from '@/libs/supabase/hooks';
@@ -49,17 +49,7 @@ export default function EditDogPage() {
     'Dog Parks',
   ];
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      router.push('/signin');
-      return;
-    }
-
-    fetchDog();
-  }, [user, authLoading, id]);
-
-  const fetchDog = async () => {
+  const fetchDog = useCallback(async () => {
     if (!user || !id) return;
 
     try {
@@ -103,7 +93,17 @@ export default function EditDogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+
+    fetchDog();
+  }, [authLoading, id, router, user, fetchDog]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
