@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/libs/supabase/client';
 import UserReviews from '../../../../components/UserReviews';
@@ -9,7 +9,6 @@ import MessageModal from '../../../../components/MessageModal';
 
 export default function AvailabilityDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const [availability, setAvailability] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,7 +107,7 @@ export default function AvailabilityDetailPage() {
         query = query.eq('status', 'active');
       } else {
         // Check if user is the owner first
-        const { data: postData, error: postError } = await supabase
+        const { data: postData } = await supabase
           .from('availability')
           .select('owner_id, status')
           .eq('id', params.id)
@@ -161,17 +160,17 @@ export default function AvailabilityDetailPage() {
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  // const formatDate = (dateString) => {
+  //   const date = new Date(dateString);
+  //   return date.toLocaleDateString('en-US', {
+  //     weekday: 'long',
+  //     year: 'numeric',
+  //     month: 'long',
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit',
+  //   });
+  // };
 
   const formatTime = (timeString) => {
     if (!timeString) return '';
@@ -234,32 +233,32 @@ export default function AvailabilityDetailPage() {
     });
   };
 
-  const getSizeIcon = (size) => {
-    // Handle weight ranges
-    if (size && size.includes('-')) {
-      const weight = parseInt(size.split('-')[0]);
-      if (weight <= 10) return '🐕';
-      if (weight <= 25) return '🐕‍🦺';
-      if (weight <= 40) return '🐕‍🦺';
-      if (weight <= 70) return '🦮';
-      if (weight <= 90) return '🦮';
-      if (weight <= 110) return '🐺';
-    }
+  // const getSizeIcon = (size) => {
+  //   // Handle weight ranges
+  //   if (size && size.includes('-')) {
+  //     const weight = parseInt(size.split('-')[0]);
+  //     if (weight <= 10) return '🐕';
+  //     if (weight <= 25) return '🐕‍🦺';
+  //     if (weight <= 40) return '🐕‍🦺';
+  //     if (weight <= 70) return '🦮';
+  //     if (weight <= 90) return '🦮';
+  //     if (weight <= 110) return '🐺';
+  //   }
 
-    // Fallback for old size values or any other cases
-    switch (size) {
-      case 'small':
-        return '🐕';
-      case 'medium':
-        return '🐕‍🦺';
-      case 'large':
-        return '🦮';
-      case 'extra_large':
-        return '🐺';
-      default:
-        return '🐕';
-    }
-  };
+  //   // Fallback for old size values or any other cases
+  //   switch (size) {
+  //     case 'small':
+  //       return '🐕';
+  //     case 'medium':
+  //       return '🐕‍🦺';
+  //     case 'large':
+  //       return '🦮';
+  //     case 'extra_large':
+  //       return '🐺';
+  //     default:
+  //       return '🐕';
+  //   }
+  // };
 
   const getEnergyLevelColor = (level) => {
     switch (level) {
@@ -650,7 +649,7 @@ export default function AvailabilityDetailPage() {
                 ) : (
                   // Multiple dogs display
                   <div className="space-y-6">
-                    {availability.allDogs.map((dog, index) => (
+                    {availability.allDogs.map((dog) => (
                       <div key={dog.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-start space-x-4 mb-4">
                           {dog.photo_url ? (
