@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/libs/supabase/client';
@@ -18,12 +18,7 @@ export default function PublicProfilePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [messageModal, setMessageModal] = useState({ isOpen: false, recipient: null });
 
-  useEffect(() => {
-    loadProfile();
-    loadCurrentUser();
-  }, [profileId]);
-
-  const loadCurrentUser = async () => {
+  const loadCurrentUser = useCallback(async () => {
     try {
       const supabase = createClient();
       const {
@@ -33,9 +28,9 @@ export default function PublicProfilePage() {
     } catch (err) {
       console.error('Error loading current user:', err);
     }
-  };
+  }, [setCurrentUser]);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const supabase = createClient();
 
@@ -71,7 +66,12 @@ export default function PublicProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profileId, setProfile]);
+
+  useEffect(() => {
+    loadProfile();
+    loadCurrentUser();
+  }, [loadProfile, loadCurrentUser]);
 
   const openMessageModal = () => {
     setMessageModal({ isOpen: true, recipient: profile });
