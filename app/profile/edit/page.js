@@ -6,7 +6,7 @@ import { createClient } from '@/libs/supabase/client';
 import { useUser } from '@/libs/supabase/hooks';
 import { formatLocation } from '@/libs/utils';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
-import PhotoUpload from '../../../components/ui/PhotoUpload';
+import PhotoUpload from '@/components/ui/PhotoUpload';
 
 const initialProfileState = {
   first_name: '',
@@ -43,19 +43,12 @@ export default function ProfileEditPage() {
   const [saving, setSaving] = useState(false);
   const [verifyingAddress, setVerifyingAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
-  
+
   // Use the sessionStorage-based profile draft hook
-  const {
-    profile,
-    setProfile,
-    loadDraft,
-    clearDraft,
-    hasDraft,
-  } = useProfileDraft(initialProfileState);
+  const { profile, setProfile, loadDraft, clearDraft, hasDraft } =
+    useProfileDraft(initialProfileState);
 
   const loadProfile = useCallback(async () => {
-    if (!user || !user.id) return;
-
     try {
       const supabase = createClient();
 
@@ -98,7 +91,7 @@ export default function ProfileEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, setProfile, setLoading]);
 
   useEffect(() => {
     if (userLoading) return;
@@ -204,7 +197,7 @@ export default function ProfileEditPage() {
 
       // Clear draft after successful save
       clearDraft();
-      
+
       toast.success('Profile saved successfully!');
       window.location.href = '/onboarding/welcome';
     } catch (err) {
@@ -240,6 +233,15 @@ export default function ProfileEditPage() {
       [name]: value,
     }));
   };
+
+  // const handleSupportPreferenceChange = (preference) => {
+  //   setProfile((prev) => ({
+  //     ...prev,
+  //     support_preferences: prev.support_preferences.includes(preference)
+  //       ? prev.support_preferences.filter((p) => p !== preference)
+  //       : [...prev.support_preferences, preference],
+  //   }));
+  // };
 
   const handlePhotoUpload = (photoUrl) => {
     setProfile((prev) => ({
