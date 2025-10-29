@@ -12,7 +12,7 @@ export default function MeetingsPage() {
   const [selectedReview, setSelectedReview] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: meetingsData, isLoading: loading, error } = useMeetings();
+  const { data: meetingsData, isLoading: loading } = useMeetings();
   const updateMeetingStatusMutation = useUpdateMeetingStatus();
 
   const meetings = meetingsData?.meetings || [];
@@ -140,7 +140,7 @@ export default function MeetingsPage() {
     setIsReviewModalOpen(true);
   };
 
-  const handleReviewSubmitted = (review) => {
+  const handleReviewSubmitted = () => {
     // Invalidate and refetch meetings to update the review status
     queryClient.invalidateQueries({ queryKey: ['meetings', user?.id] });
     setIsReviewModalOpen(false);
