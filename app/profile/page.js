@@ -1,8 +1,7 @@
 'use client';
 import { useUser } from '@/libs/supabase/hooks';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
 import UserReviews from '../../components/UserReviews';
 import DeletionRequestStatus from '../../components/DeletionRequestStatus';
@@ -11,25 +10,12 @@ import { formatLocation } from '@/libs/utils';
 
 export default function ProfilePage() {
   const { user, loading: userLoading } = useUser();
-  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  useEffect(() => {
-    if (userLoading) return;
-
-    if (!user) {
-      setLoading(false);
-      setError('No session');
-      return;
-    }
-
-    loadProfile();
-  }, [user, userLoading]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -47,7 +33,19 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (userLoading) return;
+
+    if (!user) {
+      setLoading(false);
+      setError('No session');
+      return;
+    }
+
+    loadProfile();
+  }, [user, userLoading, loadProfile]);
 
   if (loading || userLoading) {
     return (
