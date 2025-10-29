@@ -116,7 +116,7 @@ Example:
 
 ### Text Template
 
-```
+```txt
 Hello {{first_name}}!
 
 Your message content here...

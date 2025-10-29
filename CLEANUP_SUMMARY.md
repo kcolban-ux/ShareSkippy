@@ -117,7 +117,7 @@ import { Button, Testimonial, Icon, Section } from '@/components/ui';
 
 ## 📁 New File Structure
 
-```
+```txt
 components/
 ├── ui/                    # Consolidated UI components
 │   ├── Button.js         # All button variants

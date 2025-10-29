@@ -10,7 +10,7 @@ This guide helps you debug and fix profile save issues in the ShareSkippy applic
 
 Make sure your `.env.local` file has the correct Supabase credentials:
 
-```
+```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```

@@ -48,7 +48,7 @@ Created a comprehensive utility module with two main functions:
 
 ### Before Implementation:
 
-```
+```txt
 Neighborhood: gourmet ghetto
 City: berkeley
 State: ca
@@ -56,7 +56,7 @@ State: ca
 
 ### After Implementation:
 
-```
+```txt
 Neighborhood: Gourmet Ghetto
 City: Berkeley
 State: CA

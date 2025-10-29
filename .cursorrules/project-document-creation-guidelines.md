@@ -16,7 +16,7 @@ Project documents should go into [plans](plans/) directory of the project. (**NO
 
 All project documents should have the following format to begin with:
 
-```
+```markdown
 # <Project Name>
 
 ## Overview

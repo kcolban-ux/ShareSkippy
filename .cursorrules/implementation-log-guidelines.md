@@ -27,7 +27,7 @@ Your first step is to use your own judgment about what the most appropriate choi
 
 For an MVP first plan, your first phase should be all about creating the MVP for the project. This phase should be broken down into three sections, which you should create placeholders for as follows:
 
-```
+```markdown
 ## Implementation Log
 
 ### Phase 1: MVP
@@ -59,7 +59,7 @@ Next, under Section 1.1, you should create two bullet lists. The first should be
 
 For a straight shot plan, you'll also have phases, except phase 1 won't be to build an MVP. Each of your phases will incrementally build to full functionality. Often you won't need more than two or three phases. You can begin by inserting the following skeleton into the project document:
 
-```
+```markdown
 ## Implementation Log
 
 ### Phase 1: …
@@ -120,7 +120,7 @@ Next, it's time to add the tasks. For each phase, sequentially, spawn a Task too
      - There are only two types of testing tasks you should ever write: (1) tasks that request the implementation of programmatic tests, e.g., unit tests; and (2) tasks that request the user to do QA testing of an interface or interaction. Do not write any other kinds of tasks.
      - When writing a task asking the user to do QA testing, don't use a checkbox. Also, include the user's name in bold at the start.
      - For example:
-       - GOOD: "- [ ] Write and run unit tests for <X>" (clearly calls for programmatic testing)
+       - GOOD: "- [] Write and run unit tests for <X>" (clearly calls for programmatic testing)
        - GOOD: "- **For <user>:** Open the browser and do <Y> to ensure that <X> works" (clearly calls for human testing; should have sub-bullets explaining what to do step by step)
        - BAD: "Test <X> to ensure that it works"
 

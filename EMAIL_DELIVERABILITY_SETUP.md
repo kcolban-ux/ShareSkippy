@@ -21,7 +21,7 @@
 
 #### 1. SPF Record for shareskippy.com
 
-```
+```txt
 Name: @ (or shareskippy.com)
 Type: TXT
 Value: v=spf1 include:_spf.google.com include:amazonses.com ~all
@@ -31,7 +31,7 @@ _Note: Includes both Google (for manual emails) and Amazon SES (used by Resend f
 
 #### 2. DMARC Record for shareskippy.com
 
-```
+```txt
 Name: _dmarc
 Type: TXT
 Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@shareskippy.com; ruf=mailto:dmarc@shareskippy.com; sp=quarantine; adkim=r; aspf=r;
@@ -41,7 +41,7 @@ Value: v=DMARC1; p=quarantine; rua=mailto:dmarc@shareskippy.com; ruf=mailto:dmar
 
 #### 3. SPF Record for send.shareskippy.com ✅ VERIFIED
 
-```
+```txt
 Name: send.send
 Type: TXT
 Value: v=spf1 include:amazons... (as shown in your Resend dashboard)
@@ -49,7 +49,7 @@ Value: v=spf1 include:amazons... (as shown in your Resend dashboard)
 
 #### 4. DKIM Record for send.shareskippy.com ✅ VERIFIED
 
-```
+```txt
 Name: resend._domainkey.send
 Type: TXT
 Value: p=MIGfMA0GCSqGSIb3DQEB... (as shown in your Resend dashboard)
@@ -57,7 +57,7 @@ Value: p=MIGfMA0GCSqGSIb3DQEB... (as shown in your Resend dashboard)
 
 #### 5. DMARC Record for send.shareskippy.com ✅ VERIFIED
 
-```
+```txt
 Name: _dmarc
 Type: TXT
 Value: v=DMARC1; p=none; (as shown in your Resend dashboard)
@@ -115,7 +115,7 @@ Value: v=DMARC1; p=none; (as shown in your Resend dashboard)
 
 Set up email forwarding in Namecheap control panel:
 
-```
+```txt
 admin@shareskippy.com → admin@shareskippy.com (your Gmail)
 admin@send.shareskippy.com → admin@shareskippy.com (for Resend transactional emails)
 support@shareskippy.com → admin@shareskippy.com (for support requests)

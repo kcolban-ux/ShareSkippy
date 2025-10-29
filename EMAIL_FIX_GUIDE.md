@@ -21,7 +21,7 @@ The email system is **partially working** but has critical issues that need to b
 
 Go to your Vercel dashboard and ensure these environment variables are set:
 
-```
+```bash
 RESEND_API_KEY=your_resend_api_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 NEXT_PUBLIC_APP_URL=https://www.shareskippy.com
