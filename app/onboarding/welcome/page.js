@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { createClient } from '@/libs/supabase/client';
@@ -177,7 +178,7 @@ export default function WelcomePage() {
               >
                 <div className="flex items-start space-x-4">
                   {/* Profile Photo */}
-                  <img
+                  <Image
                     src={match.profile_photo_url || '/default-avatar.png'}
                     alt={match.first_name}
                     className="w-20 h-20 rounded-full object-cover flex-shrink-0"
