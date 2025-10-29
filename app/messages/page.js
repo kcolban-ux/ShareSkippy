@@ -49,7 +49,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!selectedConversation) return;
 
-    const { participant1_id, participant2_id, availability_id } = selectedConversation;
+    const { participant1_id, participant2_id } = selectedConversation;
 
     const channel = supabase
       .channel(`messages:${selectedConversationKey}`)
@@ -290,8 +290,6 @@ export default function MessagesPage() {
         throw new Error(errorData.error || 'Failed to send message');
       }
 
-      const result = await response.json();
-
       // Refresh messages and conversations
       setNewMessage('');
       await fetchMessages(selectedConversation.id);
@@ -303,9 +301,9 @@ export default function MessagesPage() {
     }
   };
 
-  const openMessageModal = (recipient, availabilityPost) => {
-    setMessageModal({ isOpen: true, recipient, availabilityPost });
-  };
+  // const openMessageModal = (recipient, availabilityPost) => {
+  //   setMessageModal({ isOpen: true, recipient, availabilityPost });
+  // };
 
   const closeMessageModal = () => {
     setMessageModal({ isOpen: false, recipient: null, availabilityPost: null });
