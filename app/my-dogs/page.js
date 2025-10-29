@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
 import { useUserDogs } from '@/hooks/useProfile';
@@ -121,7 +122,7 @@ export default function MyDogsPage() {
                 {/* Dog Photo */}
                 <div className="aspect-square bg-gray-100 relative group">
                   {dog.photo_url ? (
-                    <img
+                    <Image
                       src={dog.photo_url}
                       alt={dog.name}
                       className="w-full h-full object-cover"
