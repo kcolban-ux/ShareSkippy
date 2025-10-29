@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/libs/supabase/client';
 import { formatLocation } from '@/libs/utils';
 import UserReviews from '@/components/UserReviews';
