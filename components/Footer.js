@@ -1,8 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
-import config from "@/config";
-import logo from "@/app/icon.png";
-import { LEGAL } from "@/lib/legal";
+import Link from 'next/link';
+import { LEGAL } from '@/lib/legal';
 
 // Footer component matching the ShareSkippy design - updated
 const Footer = () => {
@@ -15,11 +12,10 @@ const Footer = () => {
           <div className="text-center md:text-left">
             <h3 className="text-2xl font-bold mb-4 text-white">ShareSkippy</h3>
             <p className="text-sm mb-4 text-white">
-              Connecting dog lovers with dog owners for free, community-based dog sharing experiences.
+              Connecting dog lovers with dog owners for free, community-based dog sharing
+              experiences.
             </p>
-            <p className="text-sm text-white">
-              © 2025 ShareSkippy. All rights reserved.
-            </p>
+            <p className="text-sm text-white">© 2025 ShareSkippy. All rights reserved.</p>
           </div>
 
           {/* Middle Column - Quick Links */}
@@ -54,10 +50,16 @@ const Footer = () => {
               <Link href="/tos" className="text-white hover:text-gray-300 transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/privacy-policy" className="text-white hover:text-gray-300 transition-colors">
+              <Link
+                href="/privacy-policy"
+                className="text-white hover:text-gray-300 transition-colors"
+              >
                 Privacy Policy
               </Link>
-              <Link href="/community-guidelines" className="text-white hover:text-gray-300 transition-colors">
+              <Link
+                href="/community-guidelines"
+                className="text-white hover:text-gray-300 transition-colors"
+              >
                 Community Guidelines
               </Link>
               <Link href="/safety" className="text-white hover:text-gray-300 transition-colors">
@@ -75,15 +77,12 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             <div className="text-center md:text-left">
               <p className="text-white mb-2">
-                ShareSkippy is a free marketplace platform. Users are responsible for their own safety and interactions.
+                ShareSkippy is a free marketplace platform. Users are responsible for their own
+                safety and interactions.
               </p>
-              <p className="text-xs text-white/80">
-                {LEGAL.getCurrentDisclosure()}
-              </p>
+              <p className="text-xs text-white/80">{LEGAL.getCurrentDisclosure()}</p>
             </div>
-            <p className="text-white">
-              Made with ❤️ for dog lovers
-            </p>
+            <p className="text-white">Made with ❤️ for dog lovers</p>
           </div>
         </div>
       </div>
