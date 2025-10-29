@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { createClient } from '@/libs/supabase/client';
@@ -15,16 +15,7 @@ export default function WelcomePage() {
   const [sent, setSent] = useState({});
   const [currentProfile, setCurrentProfile] = useState(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/signin');
-      return;
-    }
-    fetchCurrentProfile();
-    fetchMatches();
-  }, [user]);
-
-  const fetchCurrentProfile = async () => {
+  const fetchCurrentProfile = useCallback(async () => {
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -38,9 +29,9 @@ export default function WelcomePage() {
     } catch (error) {
       console.error('Error fetching current profile:', error);
     }
-  };
+  }, [user, setCurrentProfile]);
 
-  const fetchMatches = async () => {
+  const fetchMatches = useCallback(async () => {
     try {
       const response = await fetch('/api/matches?limit=4');
       const data = await response.json();
@@ -61,7 +52,16 @@ export default function WelcomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, setLoading, setMatches]);
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+    fetchCurrentProfile();
+    fetchMatches();
+  }, [router, user, fetchCurrentProfile, fetchMatches]);
 
   const sendInterest = async (matchUserId, matchName) => {
     setSending((prev) => ({ ...prev, [matchUserId]: true }));
