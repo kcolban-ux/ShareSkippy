@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSupabaseAuth } from '@/libs/supabase/hooks';
@@ -13,17 +13,7 @@ export default function DogDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      router.push('/signin');
-      return;
-    }
-
-    fetchDog();
-  }, [user, authLoading, id]);
-
-  const fetchDog = async () => {
+  const fetchDog = useCallback(async () => {
     if (!user || !id) return;
 
     try {
@@ -54,7 +44,17 @@ export default function DogDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+
+    fetchDog();
+  }, [authLoading, id, router, user, fetchDog]);
 
   const deleteDog = async () => {
     if (
