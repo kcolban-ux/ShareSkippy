@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useUser } from '@/components/providers/SupabaseUserProvider';
+import { useUser } from '@/contexts/UserContext';
 import { useUserDogs } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/libs/supabase';
