@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/libs/supabase/client';
 import { useUser } from '@/libs/supabase/hooks';
@@ -11,7 +10,6 @@ import DeletionRequestStatus from '../../components/DeletionRequestStatus';
 
 export default function ProfilePage() {
   const { user, loading: userLoading } = useUser();
-  const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
