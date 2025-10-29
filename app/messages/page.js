@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import { useSupabaseAuth } from '@/libs/supabase/hooks';
 import { supabase } from '@/libs/supabase';
 import MessageModal from '@/components/MessageModal';
@@ -18,6 +18,7 @@ export default function MessagesPage() {
       console.log('[Messages] First message:', messages[0]);
     }
   }, [messages]);
+
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [newMessage, setNewMessage] = useState('');
@@ -43,69 +44,6 @@ export default function MessagesPage() {
       ':'
     );
   }, [selectedConversation]);
-
-  useEffect(() => {
-    if (user && !authLoading) {
-      fetchConversations();
-    }
-  }, [user, authLoading]);
-
-  useEffect(() => {
-    if (!selectedConversation) {
-      setMessages([]);
-      setError(null);
-      return;
-    }
-
-    console.log('[Messages] Starting fetch for conversation:', selectedConversation.id);
-
-    // Cancel any ongoing request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
-    let cancelled = false;
-
-    setLoading(true);
-    // Don't clear messages immediately - let the new data replace it
-    setError(null);
-
-    (async () => {
-      try {
-        const data = await fetchMessages(selectedConversation.id);
-        console.log('[Messages] fetchMessages returned:', data?.length ?? 0, 'messages');
-        // Only update if not cancelled and not aborted
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          console.log('[Messages] Setting messages in state...');
-          setMessages(data || []);
-          // Add a small delay to see if messages persist
-          setTimeout(() => {
-            console.log('[Messages] Messages after 1 second:', data?.length ?? 0);
-          }, 1000);
-        } else {
-          console.log('[Messages] Request was cancelled or aborted, not updating state');
-        }
-      } catch (e) {
-        // Only show error if not cancelled and not aborted
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          console.error('load messages failed', e);
-          setError('Failed to load messages. Please try again.');
-        }
-      } finally {
-        // Only update loading state if not cancelled and not aborted
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      // Don't call setState after unmount/switch
-    };
-  }, [selectedConversationKey]); // IMPORTANT: depend on the key
 
   // Real-time updates for the active conversation
   useEffect(() => {
@@ -138,7 +76,7 @@ export default function MessagesPage() {
     };
   }, [selectedConversationKey, selectedConversation]);
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -197,41 +135,48 @@ export default function MessagesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedConversation, user]);
 
-  const fetchMessages = async (conversationId) => {
-    if (!conversationId || !selectedConversation) return;
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchConversations();
+    }
+  }, [user, authLoading, fetchConversations]);
 
-    try {
-      const { participant1_id, participant2_id, availability_id } = selectedConversation;
+  const fetchMessages = useCallback(
+    async (conversationId) => {
+      if (!conversationId || !selectedConversation) return;
 
-      // Log what we're querying
-      console.log('[fetchMessages] args', {
-        p1: participant1_id,
-        p2: participant2_id,
-        availability_id: availability_id ?? null,
-        conversationId,
-      });
+      try {
+        const { participant1_id, participant2_id, availability_id } = selectedConversation;
 
-      // First, let's test if we can fetch ANY messages at all
-      const { data: testMessages, error: testError } = await supabase
-        .from('messages')
-        .select('id, sender_id, recipient_id, content')
-        .limit(3);
+        // Log what we're querying
+        console.log('[fetchMessages] args', {
+          p1: participant1_id,
+          p2: participant2_id,
+          availability_id: availability_id ?? null,
+          conversationId,
+        });
 
-      console.log('[fetchMessages] Test - any messages in DB:', testMessages?.length ?? 0);
-      if (testMessages && testMessages.length > 0) {
-        console.log('[fetchMessages] Sample message:', testMessages[0]);
-      }
-      if (testError) {
-        console.error('[fetchMessages] Test error:', testError);
-      }
+        // First, let's test if we can fetch ANY messages at all
+        const { data: testMessages, error: testError } = await supabase
+          .from('messages')
+          .select('id, sender_id, recipient_id, content')
+          .limit(3);
 
-      // Simplified query - only filter by participants, ignore availability_id completely
-      const { data, error } = await supabase
-        .from('messages')
-        .select(
-          `
+        console.log('[fetchMessages] Test - any messages in DB:', testMessages?.length ?? 0);
+        if (testMessages && testMessages.length > 0) {
+          console.log('[fetchMessages] Sample message:', testMessages[0]);
+        }
+        if (testError) {
+          console.error('[fetchMessages] Test error:', testError);
+        }
+
+        // Simplified query - only filter by participants, ignore availability_id completely
+        const { data, error } = await supabase
+          .from('messages')
+          .select(
+            `
           *,
           sender:profiles!messages_sender_id_fkey (
             id,
@@ -240,28 +185,87 @@ export default function MessagesPage() {
             profile_photo_url
           )
         `
-        )
-        .or(
-          `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
-        )
-        .order('created_at', { ascending: true });
+          )
+          .or(
+            `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
+          )
+          .order('created_at', { ascending: true });
 
-      // Log result size/errors
-      console.log('[fetchMessages] Filtered rows', data?.length ?? 0);
-      if (error) {
-        console.error('[fetchMessages] supabase error', error);
-        throw error;
+        // Log result size/errors
+        console.log('[fetchMessages] Filtered rows', data?.length ?? 0);
+        if (error) {
+          console.error('[fetchMessages] supabase error', error);
+          throw error;
+        }
+
+        console.log('[fetchMessages] Returning messages:', data?.length ?? 0);
+
+        // Return the data so it can be used by the caller
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        return []; // Return empty array on error
       }
+    },
+    [selectedConversation]
+  );
 
-      console.log('[fetchMessages] Returning messages:', data?.length ?? 0);
-
-      // Return the data so it can be used by the caller
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      return []; // Return empty array on error
+  useEffect(() => {
+    if (!selectedConversation) {
+      setMessages([]);
+      setError(null);
+      return;
     }
-  };
+
+    console.log('[Messages] Starting fetch for conversation:', selectedConversation.id);
+
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    let cancelled = false;
+
+    setLoading(true);
+    // Don't clear messages immediately - let the new data replace it
+    setError(null);
+
+    (async () => {
+      try {
+        const data = await fetchMessages(selectedConversation.id);
+        console.log('[Messages] fetchMessages returned:', data?.length ?? 0, 'messages');
+        // Only update if not cancelled and not aborted
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          console.log('[Messages] Setting messages in state...');
+          setMessages(data || []);
+          // Add a small delay to see if messages persist
+          setTimeout(() => {
+            console.log('[Messages] Messages after 1 second:', data?.length ?? 0);
+          }, 1000);
+        } else {
+          console.log('[Messages] Request was cancelled or aborted, not updating state');
+        }
+      } catch (e) {
+        // Only show error if not cancelled and not aborted
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          console.error('load messages failed', e);
+          setError('Failed to load messages. Please try again.');
+        }
+      } finally {
+        // Only update loading state if not cancelled and not aborted
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      // Don't call setState after unmount/switch
+    };
+  }, [selectedConversation, selectedConversationKey, fetchMessages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
