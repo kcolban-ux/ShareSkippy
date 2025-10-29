@@ -298,8 +298,8 @@ export default function WelcomePage() {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">🌟 Want Even More Matches?</h3>
           <p className="text-gray-700 mb-4">
-            Share your availability to help people know when you're free. You'll show up in more
-            searches and get more messages!
+            Share your availability to help people know when you&apos;re free. You&apos;ll show up
+            in more searches and get more messages!
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
