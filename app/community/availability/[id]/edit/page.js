@@ -640,7 +640,7 @@ export default function EditAvailability() {
                   ) : (
                     // Multiple dogs display
                     <div className="space-y-6">
-                      {availability.allDogs.map((dog, index) => (
+                      {availability.allDogs.map((dog) => (
                         <div key={dog.id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-start space-x-4 mb-4">
                             {dog.photo_url ? (
