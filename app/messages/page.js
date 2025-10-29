@@ -115,7 +115,7 @@ export default function MessagesPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedConversationKey, fetchMessages]);
+  }, [selectedConversation, selectedConversationKey, fetchMessages]);
 
   useEffect(() => {
     if (!selectedConversation) return;
