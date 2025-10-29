@@ -242,9 +242,9 @@ export default function MessagesPage() {
     }
   };
 
-  const openMessageModal = (recipient, availabilityPost) => {
-    setMessageModal({ isOpen: true, recipient, availabilityPost });
-  };
+  // const openMessageModal = (recipient, availabilityPost) => {
+  //   setMessageModal({ isOpen: true, recipient, availabilityPost });
+  // };
 
   const closeMessageModal = () => {
     setMessageModal({ isOpen: false, recipient: null, availabilityPost: null });
