@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface SectionHeadingProps {
   id: string;
   children: React.ReactNode;
