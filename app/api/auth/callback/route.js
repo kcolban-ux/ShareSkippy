@@ -3,6 +3,11 @@ import { createClient } from '@/libs/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Determines the final redirect origin URL after successful authentication.
+ * Overrides the request origin with VERCEL_URL in production environments
+ * to ensure the final redirect goes to the public domain, not a preview URL.
+ */
 function getFinalRedirectOrigin(requestUrl) {
   const vercelUrl = process.env.VERCEL_URL;
 
@@ -49,6 +54,7 @@ export async function GET(req) {
       console.log('Session created successfully for user:', data.user?.id);
       console.log('User created at:', data.user?.created_at);
 
+      // Check if the user is new. Uses a 30-second window to detect the first successful sign-up.
       const userCreatedAt = new Date(data.user.created_at);
       const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
       const isNewUser = userCreatedAt > thirtySecondsAgo;
@@ -66,6 +72,7 @@ export async function GET(req) {
         .eq('id', data.user.id)
         .single();
 
+      // Merge data: prefer fresh Google metadata, but fall back to existing profile data.
       const updateData = {
         first_name: googleGivenName || existingProfile?.first_name || '',
         last_name: googleFamilyName || existingProfile?.last_name || '',
@@ -94,15 +101,16 @@ export async function GET(req) {
         }
       }
 
+      // Check for minimum profile completeness required for community access.
       const hasCompleteBio = updatedProfile?.bio && updatedProfile.bio.trim().length > 0;
       const hasRole = updatedProfile?.role && updatedProfile.role.trim().length > 0;
       const hasPhone =
         updatedProfile?.phone_number && updatedProfile.phone_number.trim().length > 0;
 
       console.log('📊 Profile completeness check:');
-      console.log('   ✓ Bio:', hasCompleteBio ? '✅ Complete' : '❌ Missing');
-      console.log('   ✓ Role:', hasRole ? '✅ Complete' : '❌ Missing');
-      console.log('   ✓ Phone:', hasPhone ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Bio:', hasCompleteBio ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Role:', hasRole ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Phone:', hasPhone ? '✅ Complete' : '❌ Missing');
 
       if (isNewUser) {
         console.log('🆕 NEW USER → Redirecting to /profile/edit');
