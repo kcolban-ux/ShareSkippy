@@ -69,7 +69,7 @@ const ClientLayout = ({ children }) => {
   return (
     <>
       {/* Show a progress bar at the top when navigating between pages */}
-      <NextTopLoader color={config.colors.main} showSpinner={false} />
+      <NextTopLoader color="light" showSpinner={false} />
 
       {/* Content inside app/page.js files  */}
       {children}
