@@ -12,6 +12,12 @@ export async function middleware(request) {
 }
 
 export const config = {
+  unstable_allowDynamic: [
+    './node_modules/@supabase/supabase-js/dist/module/index.js',
+    './node_modules/@supabase/realtime-js/dist/module/index.js',
+    './node_modules/@supabase/realtime-js/**',
+    './node_modules/@supabase/supabase-js/**',
+  ],
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
