@@ -1,18 +1,18 @@
-'use server';
+"use server";
 
-import { z } from 'zod';
-import { headers } from 'next/headers';
-import { rateLimit } from '@/lib/ratelimit';
+import { z } from "zod";
+import { headers } from "next/headers";
+import { rateLimit } from "@/lib/ratelimit";
 
 const contactSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  category: z.enum(['general', 'bug', 'safety', 'feature', 'account', 'other']),
-  subject: z.string().min(3, 'Subject must be at least 3 characters'),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  category: z.enum(["general", "bug", "safety", "feature", "account", "other"]),
+  subject: z.string().min(3, "Subject must be at least 3 characters"),
   message: z
     .string()
-    .min(5, 'Message must be at least 5 characters')
-    .max(2000, 'Message must be less than 2000 characters'),
+    .min(5, "Message must be at least 5 characters")
+    .max(2000, "Message must be less than 2000 characters"),
   hp: z.string().optional(), // Honeypot field
 });
 
@@ -31,29 +31,31 @@ export async function sendContact(formData: FormData) {
     }
 
     // Honeypot check - if hp field is filled, it's likely a bot
-    if (data.hp && data.hp.trim() !== '') {
+    if (data.hp && data.hp.trim() !== "") {
       return { ok: true }; // Silently succeed for bots
     }
 
     // Rate limiting
     const headersList = await headers();
-    const ip = headersList.get('x-forwarded-for') ?? headersList.get('x-real-ip') ?? 'unknown';
+    const ip = headersList.get("x-forwarded-for") ??
+      headersList.get("x-real-ip") ?? "unknown";
 
-    const rateLimitOk = await rateLimit(ip, 'contact:submit', 5, 600); // 5 submissions per 10 minutes
+    const rateLimitOk = await rateLimit(ip, "contact:submit", 5, 600); // 5 submissions per 10 minutes
     if (!rateLimitOk) {
       return {
         ok: false,
         errors: {
-          _: ['Too many requests. Please try again later.'],
+          _: ["Too many requests. Please try again later."],
         },
       };
     }
 
     // Send email to support
     try {
-      const { sendEmail } = await import('@/libs/resend');
+      const { sendEmail } = await import("@/libs/resend.js");
 
-      const emailSubject = `[${parsed.data.category.toUpperCase()}] ${parsed.data.subject}`;
+      const emailSubject =
+        `[${parsed.data.category.toUpperCase()}] ${parsed.data.subject}`;
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333; border-bottom: 2px solid #8b5cf6; padding-bottom: 10px;">
@@ -98,7 +100,7 @@ This message was sent from the ShareSkippy contact form.
       `;
 
       await sendEmail({
-        to: 'support@shareskippy.com',
+        to: "support@shareskippy.com",
         subject: emailSubject,
         text: emailText,
         html: emailHtml,
@@ -106,7 +108,7 @@ This message was sent from the ShareSkippy contact form.
       });
 
       // Also log for debugging
-      console.log('Contact form submission sent:', {
+      console.log("Contact form submission sent:", {
         name: parsed.data.name,
         email: parsed.data.email,
         category: parsed.data.category,
@@ -117,22 +119,22 @@ This message was sent from the ShareSkippy contact form.
 
       return { ok: true };
     } catch (emailError) {
-      console.error('Error sending contact email:', emailError);
+      console.error("Error sending contact email:", emailError);
       return {
         ok: false,
         errors: {
           _: [
-            'Failed to send message. Please try again or contact support directly at support@shareskippy.com.',
+            "Failed to send message. Please try again or contact support directly at support@shareskippy.com.",
           ],
         },
       };
     }
   } catch (error) {
-    console.error('Error processing contact form:', error);
+    console.error("Error processing contact form:", error);
     return {
       ok: false,
       errors: {
-        _: ['An unexpected error occurred. Please try again.'],
+        _: ["An unexpected error occurred. Please try again."],
       },
     };
   }
