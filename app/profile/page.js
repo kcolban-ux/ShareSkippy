@@ -1,11 +1,13 @@
 'use client';
-import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import DeleteAccountModal from '../../components/DeleteAccountModal';
-import UserReviews from '../../components/UserReviews';
-import DeletionRequestStatus from '../../components/DeletionRequestStatus';
+import { useCallback, useEffect, useState } from 'react';
+import DeleteAccountModal from '@/components/DeleteAccountModal';
+import DeletionRequestStatus from '@/components/DeletionRequestStatus';
+import { useUser, createClient } from '@/components/providers/SupabaseUserProvider';
+import UserReviews from '@/components/UserReviews';
+import formatLocation from '@/libs/utils';
 
 export default function ProfilePage() {
   const { user, loading: userLoading } = useUser();
@@ -38,7 +40,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  });
+  }, [user, setProfile, setLoading, setError]);
 
   useEffect(() => {
     if (userLoading) return;
