@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
-import { useUser } from "@/contexts/UserContext";
-import Header from "./Header";
-import LoggedInNav from "./LoggedInNav";
-import Footer from "./Footer";
-import ReviewBanner from "./ReviewBanner";
-import ReviewModal from "./ReviewModal";
+import { usePathname } from 'next/navigation';
+import { useState, useCallback } from 'react';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
+import Footer from './Footer';
+import Header from './Header';
+import LoggedInNav from './LoggedInNav';
+import ReviewBanner from './ReviewBanner';
+import ReviewModal from './ReviewModal';
 
 const AppLayout = ({ children }) => {
   const { user, loading } = useUser();
@@ -16,7 +16,7 @@ const AppLayout = ({ children }) => {
   const pathname = usePathname();
 
   // Don't show header/footer on auth pages
-  const isAuthPage = pathname === "/signin" || pathname.startsWith("/signin");
+  const isAuthPage = pathname === '/signin' || pathname.startsWith('/signin');
 
   const handleReviewClick = useCallback((review) => {
     setSelectedReview(review);
@@ -35,16 +35,18 @@ const AppLayout = ({ children }) => {
   }, []);
 
   if (loading) {
-    return <div className="min-h-screen w-full bg-white flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen w-full bg-white flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Show appropriate header based on authentication status */}
-      {!isAuthPage && (
-        user ? <LoggedInNav /> : <Header />
-      )}
-      
+      {!isAuthPage && (user ? <LoggedInNav /> : <Header />)}
+
       {/* Main content */}
       <main className="flex-1 w-full bg-white">
         {/* Show review banner for logged-in users */}
@@ -55,10 +57,10 @@ const AppLayout = ({ children }) => {
         )}
         {children}
       </main>
-      
+
       {/* Show footer on all pages except auth pages */}
       {!isAuthPage && <Footer />}
-      
+
       {/* Review Modal */}
       <ReviewModal
         isOpen={isReviewModalOpen}

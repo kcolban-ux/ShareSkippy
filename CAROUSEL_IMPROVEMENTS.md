@@ -38,7 +38,7 @@
 
 1. **Flexible Layout**
    - Uses `flex-1` for carousel content to adapt to available space
-   - Buttons are `flex-shrink-0` to maintain size
+   - Buttons are `shrink-0` to maintain size
    - Gap reduces from 4 to 2 on mobile (sm breakpoint)
 
 2. **Responsive Sizing**

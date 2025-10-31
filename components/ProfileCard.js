@@ -30,7 +30,7 @@ export default function ProfileCard({ profile, onMessage }) {
           />
         ) : null}
         <div 
-          className={`w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
+          className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
         >
           <span className="text-xl">{getRoleIcon(role)}</span>
         </div>

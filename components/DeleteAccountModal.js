@@ -45,7 +45,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
         <div className="bg-white rounded-lg max-w-md w-full p-6">
           <h2 className="text-xl font-bold text-green-600 mb-4">Deletion Request Submitted</h2>
           
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-sm mb-4">
             <p className="font-semibold">Your account deletion request has been submitted.</p>
             <p className="text-sm mt-2">
               Your account will be permanently deleted in 30 days. You can cancel this request at any time before the deletion date.
@@ -57,7 +57,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
 
           <button
             onClick={onClose}
-            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            className="w-full bg-green-600 text-white px-4 py-2 rounded-sm hover:bg-green-700"
           >
             Close
           </button>
@@ -71,7 +71,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
       <div className="bg-white rounded-lg max-w-md w-full p-6">
         <h2 className="text-xl font-bold text-red-600 mb-4">Request Account Deletion</h2>
         
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-sm mb-4">
           <p className="font-semibold">Important: 30-Day Waiting Period</p>
           <p className="text-sm mt-1">
             To prevent fraud and protect our community, account deletions require a 30-day waiting period. 
@@ -79,7 +79,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
           </p>
         </div>
 
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-sm mb-4">
           <p className="font-semibold">⚠️ Account Recreation Prevention</p>
           <p className="text-sm mt-1">
             <strong>Deleting your account will prevent you from recreating an account with the same email address.</strong> 
@@ -100,7 +100,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Help us improve by sharing why you're leaving..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-red-500 focus:border-red-500"
             rows={3}
             maxLength={500}
           />
@@ -108,7 +108,7 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm mb-4">
             {error}
           </div>
         )}
@@ -117,14 +117,14 @@ export default function DeleteAccountModal({ isOpen, onClose }) {
           <button
             onClick={onClose}
             disabled={isSubmitting}
-            className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
+            className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-sm hover:bg-gray-400 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleRequestDeletion}
             disabled={isSubmitting}
-            className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
+            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-sm hover:bg-red-700 disabled:opacity-50"
           >
             {isSubmitting ? 'Submitting...' : 'Request Deletion'}
           </button>

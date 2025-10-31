@@ -1,0 +1,79 @@
+version: '3'
+
+vars:
+  ENV_FILE: .env.local
+  ENV_EXAMPLE: .env.example
+
+tasks:
+  dev:
+    desc: 'Sets up everything needed for local development and starts the application.'
+    run: once
+    cmds:
+      - task: setup:all
+      - cmd: npm run dev
+      - defer: services:stop
+
+  setup:all:
+    desc: 'Runs all necessary setup steps (init, env, services).'
+    cmds:
+      - task: setup:init
+      - task: services:start
+      - task: setup:env
+
+  setup:init:
+    desc: 'Initializes the Supabase project locally and installs dependencies.'
+    interactive: true
+    cmds:
+      - cmd: npm install
+      - cmd: test -f supabase/config.toml || npx supabase init
+
+  setup:env:
+    desc: 'Ensures .env.local exists and is populated with local Supabase variables.'
+    cmds:
+      # Idempotent .env.local creation
+      - cmd: |
+          if [ ! -f {{.ENV_FILE}} ]; then
+            cp {{.ENV_EXAMPLE}} {{.ENV_FILE}}
+            echo "Created {{.ENV_FILE}} from {{.ENV_EXAMPLE}}."
+          fi
+      - task: setup:env:supabase:populate
+      - task: setup:env:resend_info
+
+  setup:env:supabase:populate:
+    desc: 'Dynamically retrieves and sets local Supabase variables using PowerShell.'
+    deps:
+      - services:start
+    cmds:
+      # Execute the entire logic inside a single PowerShell command string
+      - cmd: powershell scripts/populate-env-keys.ps1 {{.ENV_FILE}}
+        platforms: [windows]
+      - cmd: chmod +x scripts/populate-env-keys.sh
+        platforms: [linux, darwin]
+      - cmd: populate-env-keys.sh
+        platforms: [linux, darwin]
+
+  setup:env:resend_info:
+    desc: 'Provides instructions for obtaining the Resend API key.'
+    cmds:
+      - cmd: |
+          echo "======================================================================"
+          echo " 📧 Resend Integration: For local integration testing (e.g., transactional emails),"
+          echo "    you will need to manually add a RESEND_API_KEY to your {{.ENV_FILE}}."
+          echo "    Get your API key from the Resend Dashboard."
+          echo "======================================================================"
+
+  services:start:
+    desc: 'Starts the local Supabase stack.'
+    silent: true
+    cmds:
+      - cmd: npx supabase start
+
+  services:stop:
+    desc: 'Stops all local services cleanly.'
+    cmds:
+      - cmd: npx supabase stop
+
+  db:reset:
+    desc: 'Resets the local database, applying all migrations and seeds.'
+    cmds:
+      - cmd: npx supabase db reset

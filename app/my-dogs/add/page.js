@@ -208,7 +208,7 @@ export default function AddDogPage() {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xs border border-gray-200 p-6 space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-gray-900">Basic Information</h2>
@@ -315,7 +315,7 @@ export default function AddDogPage() {
                 name="neutered"
                 checked={formData.neutered}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
               />
               <label htmlFor="neutered" className="ml-2 block text-sm text-gray-700">
                 Neutered/Spayed
@@ -365,7 +365,7 @@ export default function AddDogPage() {
                   name="dog_friendly"
                   checked={formData.dog_friendly}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="dog_friendly" className="ml-2 block text-sm text-gray-700">
                   Dog friendly
@@ -379,7 +379,7 @@ export default function AddDogPage() {
                   name="cat_friendly"
                   checked={formData.cat_friendly}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="cat_friendly" className="ml-2 block text-sm text-gray-700">
                   Cat friendly
@@ -393,7 +393,7 @@ export default function AddDogPage() {
                   name="kid_friendly"
                   checked={formData.kid_friendly}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="kid_friendly" className="ml-2 block text-sm text-gray-700">
                   Kid friendly
@@ -414,7 +414,7 @@ export default function AddDogPage() {
                   name="leash_trained"
                   checked={formData.leash_trained}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="leash_trained" className="ml-2 block text-sm text-gray-700">
                   Leash trained
@@ -428,7 +428,7 @@ export default function AddDogPage() {
                   name="crate_trained"
                   checked={formData.crate_trained}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="crate_trained" className="ml-2 block text-sm text-gray-700">
                   Crate trained
@@ -442,7 +442,7 @@ export default function AddDogPage() {
                   name="house_trained"
                   checked={formData.house_trained}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="house_trained" className="ml-2 block text-sm text-gray-700">
                   House trained
@@ -456,7 +456,7 @@ export default function AddDogPage() {
                   name="fully_vaccinated"
                   checked={formData.fully_vaccinated}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                 />
                 <label htmlFor="fully_vaccinated" className="ml-2 block text-sm text-gray-700">
                   Fully vaccinated
@@ -481,7 +481,7 @@ export default function AddDogPage() {
                     id={`activity-${activity}`}
                     checked={formData.activities.includes(activity)}
                     onChange={() => handleActivityChange(activity)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor={`activity-${activity}`} className="ml-2 block text-sm text-gray-700">
                     {activity}
@@ -504,7 +504,7 @@ export default function AddDogPage() {
                     id={`temperament-${trait}`}
                     checked={formData.temperament.includes(trait)}
                     onChange={() => handleTemperamentChange(trait)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor={`temperament-${trait}`} className="ml-2 block text-sm text-gray-700">
                     {trait}

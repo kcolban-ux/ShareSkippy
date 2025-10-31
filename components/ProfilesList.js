@@ -112,20 +112,20 @@ export default function ProfilesList({ role, onMessage }) {
       <div className="flex items-center space-x-3 mb-4">
         <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
         <div className="flex-1">
-          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-32"></div>
+          <div className="h-4 bg-gray-200 rounded-sm w-24 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded-sm w-32"></div>
         </div>
       </div>
       <div className="mb-3">
-        <div className="h-3 bg-gray-200 rounded w-40"></div>
+        <div className="h-3 bg-gray-200 rounded-sm w-40"></div>
       </div>
       <div className="mb-4">
-        <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-3 bg-gray-200 rounded-sm w-full mb-2"></div>
+        <div className="h-3 bg-gray-200 rounded-sm w-3/4"></div>
       </div>
       <div className="flex space-x-2">
-        <div className="h-8 bg-gray-200 rounded w-20"></div>
-        <div className="h-8 bg-gray-200 rounded w-20"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-20"></div>
+        <div className="h-8 bg-gray-200 rounded-sm w-20"></div>
       </div>
     </div>
   );
@@ -173,7 +173,7 @@ export default function ProfilesList({ role, onMessage }) {
         <div className="text-center">
           <button
             onClick={loadMore}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+            className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
           >
             Load More Profiles
           </button>

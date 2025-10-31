@@ -160,7 +160,7 @@ export default function DogDetailsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           {/* Dog Photo */}
           <div className="aspect-video bg-gray-100 relative">
             {dog.photo_url ? (

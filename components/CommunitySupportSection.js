@@ -18,7 +18,7 @@ export default function CommunitySupportSection({
   return (
     <div className="space-y-6">
       {/* Community Support Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+      <div className="bg-linear-to-r from-blue-50 to-purple-50 rounded-lg p-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Community Support
         </h3>
@@ -37,7 +37,7 @@ export default function CommunitySupportSection({
                   name="need_extra_help"
                   checked={formData.need_extra_help}
                   onChange={handleInputChange}
-                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 bg-white"
+                  className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500 bg-white"
                 />
                 <span className="font-medium text-gray-800">I could use some extra support</span>
               </div>
@@ -50,7 +50,7 @@ export default function CommunitySupportSection({
                       name="help_reason_elderly"
                       checked={formData.help_reason_elderly}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 bg-white"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500 bg-white"
                     />
                     <span className="text-sm">Elderly</span>
                   </label>
@@ -61,7 +61,7 @@ export default function CommunitySupportSection({
                       name="help_reason_sick"
                       checked={formData.help_reason_sick}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="text-sm">Sick/Recovering</span>
                   </label>
@@ -72,7 +72,7 @@ export default function CommunitySupportSection({
                       name="help_reason_low_income"
                       checked={formData.help_reason_low_income}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="text-sm">Financial constraints</span>
                   </label>
@@ -83,7 +83,7 @@ export default function CommunitySupportSection({
                       name="help_reason_disability"
                       checked={formData.help_reason_disability}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="text-sm">Disability or mobility issues</span>
                   </label>
@@ -94,7 +94,7 @@ export default function CommunitySupportSection({
                       name="help_reason_single_parent"
                       checked={formData.help_reason_single_parent}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="text-sm">Single parent responsibilities</span>
                   </label>
@@ -105,7 +105,7 @@ export default function CommunitySupportSection({
                       name="help_reason_other"
                       checked={formData.help_reason_other}
                       onChange={handleInputChange}
-                      className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                      className="rounded-sm border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
                     <span className="text-sm">Other/Private</span>
                   </label>
@@ -163,7 +163,7 @@ export default function CommunitySupportSection({
                     name="can_help_everyone"
                     checked={formData.can_help_everyone}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Everyone</span>
                 </label>
@@ -174,7 +174,7 @@ export default function CommunitySupportSection({
                     name="can_help_elderly"
                     checked={formData.can_help_elderly}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Elderly</span>
                 </label>
@@ -185,7 +185,7 @@ export default function CommunitySupportSection({
                     name="can_help_sick"
                     checked={formData.can_help_sick}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Sick/Recovering</span>
                 </label>
@@ -196,7 +196,7 @@ export default function CommunitySupportSection({
                     name="can_help_low_income"
                     checked={formData.can_help_low_income}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Financial constraints</span>
                 </label>
@@ -207,7 +207,7 @@ export default function CommunitySupportSection({
                     name="can_help_disability"
                     checked={formData.can_help_disability}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Disability or mobility issues</span>
                 </label>
@@ -218,7 +218,7 @@ export default function CommunitySupportSection({
                     name="can_help_single_parent"
                     checked={formData.can_help_single_parent}
                     onChange={handleInputChange}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    className="rounded-sm border-gray-300 text-green-600 focus:ring-green-500"
                   />
                   <span className="text-sm">Single parent responsibilities</span>
                 </label>

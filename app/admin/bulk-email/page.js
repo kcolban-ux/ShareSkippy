@@ -55,7 +55,7 @@ export default function BulkEmailPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-sm p-8">
+        <div className="bg-white rounded-lg shadow-xs p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Send Bulk Email</h1>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,7 +70,7 @@ export default function BulkEmailPage() {
                 value={formData.subject}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 placeholder="Enter email subject"
               />
             </div>
@@ -86,7 +86,7 @@ export default function BulkEmailPage() {
                 onChange={handleChange}
                 required
                 rows={12}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
                 placeholder="Enter HTML content. Use {{first_name}}, {{last_name}}, {{email}} for personalization"
               />
             </div>
@@ -101,7 +101,7 @@ export default function BulkEmailPage() {
                 value={formData.textContent}
                 onChange={handleChange}
                 rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
                 placeholder="Enter plain text content (optional)"
               />
             </div>
@@ -119,7 +119,7 @@ export default function BulkEmailPage() {
                   onChange={handleChange}
                   min="1"
                   max="100"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">Number of emails to send per batch (1-100)</p>
               </div>
@@ -136,7 +136,7 @@ export default function BulkEmailPage() {
                   onChange={handleChange}
                   min="0"
                   max="10000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-1">Delay in milliseconds between batches</p>
               </div>
@@ -155,7 +155,7 @@ export default function BulkEmailPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-purple-600 text-white py-3 px-4 rounded-md hover:bg-purple-700 focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Sending Emails...' : 'Send Bulk Email'}
             </button>

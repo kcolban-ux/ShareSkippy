@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { createClient } from '@/libs/supabase/client';
-import { useUser } from '@/contexts/UserContext';
 
 // Fetch user profile
 export const useUserProfile = () => {

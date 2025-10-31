@@ -3,76 +3,84 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
-const OptimizedImage = React.memo(({
-  src,
-  alt,
-  width,
-  height,
-  className = '',
-  priority = false,
-  placeholder = 'blur',
-  blurDataURL,
-  quality = 75,
-  sizes,
-  fill = false,
-  ...props
-}) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+const VALID_PLACEHOLDERS = ['blur', 'empty'];
 
-  // Generate a simple blur placeholder if none provided
-  const defaultBlurDataURL = blurDataURL || 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+const OptimizedImage = React.memo(
+  ({
+    src,
+    alt,
+    width,
+    height,
+    className = '',
+    priority = false,
+    placeholder = 'blur-sm',
+    blurDataURL,
+    quality = 75,
+    sizes,
+    fill = false,
+    ...props
+  }) => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
-  const handleLoad = () => {
-    setIsLoading(false);
-  };
+    const finalPlaceholder = VALID_PLACEHOLDERS.includes(placeholder) ? placeholder : 'blur';
 
-  const handleError = () => {
-    setHasError(true);
-    setIsLoading(false);
-  };
+    // Generate a simple blur placeholder if none provided
+    const defaultBlurDataURL =
+      blurDataURL ||
+      'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
 
-  if (hasError) {
+    const handleLoad = () => {
+      setIsLoading(false);
+    };
+
+    const handleError = () => {
+      setHasError(true);
+      setIsLoading(false);
+    };
+
+    if (hasError) {
+      return (
+        <div
+          className={`bg-gray-200 flex items-center justify-center ${className}`}
+          style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+        >
+          <span className="text-gray-400 text-sm">Failed to load image</span>
+        </div>
+      );
+    }
+
     return (
-      <div 
-        className={`bg-gray-200 flex items-center justify-center ${className}`}
-        style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
-      >
-        <span className="text-gray-400 text-sm">Failed to load image</span>
+      <div className={`relative ${className}`}>
+        {isLoading && (
+          <div
+            className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center"
+            style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+          >
+            <div className="text-gray-400 text-sm">Loading...</div>
+          </div>
+        )}
+
+        <Image
+          src={src}
+          alt={alt}
+          width={fill ? undefined : width}
+          height={fill ? undefined : height}
+          fill={fill}
+          className={`transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+          priority={priority}
+          placeholder={finalPlaceholder}
+          blurDataURL={defaultBlurDataURL}
+          quality={quality}
+          sizes={sizes}
+          onLoad={handleLoad}
+          onError={handleError}
+          {...props}
+        />
       </div>
     );
   }
-
-  return (
-    <div className={`relative ${className}`}>
-      {isLoading && (
-        <div 
-          className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center"
-          style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
-        >
-          <div className="text-gray-400 text-sm">Loading...</div>
-        </div>
-      )}
-      
-      <Image
-        src={src}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
-        fill={fill}
-        className={`transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-        priority={priority}
-        placeholder={placeholder}
-        blurDataURL={defaultBlurDataURL}
-        quality={quality}
-        sizes={sizes}
-        onLoad={handleLoad}
-        onError={handleError}
-        {...props}
-      />
-    </div>
-  );
-});
+);
 
 OptimizedImage.displayName = 'OptimizedImage';
 

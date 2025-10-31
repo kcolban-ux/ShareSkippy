@@ -155,7 +155,7 @@ const Tabs = () => {
 						role="tab"
 						className={`flex cursor-pointer select-none items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium ${
 							activeTab === tab.id
-								? "animate-opacity bg-base-100 shadow"
+								? "animate-opacity bg-base-100 shadow-sm"
 								: "text-base-content/75"
 						}`}
 						onClick={() => setActiveTab(tab.id)}

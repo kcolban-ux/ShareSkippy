@@ -135,7 +135,7 @@ export default function DatePicker({ selectedDate, onDateSelect, minDate, placeh
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between"
       >
         <span className={selectedDate ? 'text-gray-900' : 'text-gray-500'}>
           {selectedDate ? (() => {

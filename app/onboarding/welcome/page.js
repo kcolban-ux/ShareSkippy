@@ -1,10 +1,11 @@
-"use client";
-import { useState, useEffect } from 'react';
+'use client';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/contexts/UserContext';
-import { createClient } from '@/libs/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { formatDistance } from '@/libs/distance';
+import { createClient } from '@/libs/supabase/client';
 
 export default function WelcomePage() {
   const { user } = useUser();
@@ -15,16 +16,10 @@ export default function WelcomePage() {
   const [sent, setSent] = useState({});
   const [currentProfile, setCurrentProfile] = useState(null);
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/signin');
-      return;
-    }
-    fetchCurrentProfile();
-    fetchMatches();
-  }, [user]);
-
-  const fetchCurrentProfile = async () => {
+  // 1. Wrap functions that use external state/router in useCallback to stabilize the dependency array
+  const fetchCurrentProfile = useCallback(async () => {
+    // Check for user existence inside the function in case of initial null state
+    if (!user) return;
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -38,9 +33,9 @@ export default function WelcomePage() {
     } catch (error) {
       console.error('Error fetching current profile:', error);
     }
-  };
+  }, [user]);
 
-  const fetchMatches = async () => {
+  const fetchMatches = useCallback(async () => {
     try {
       const response = await fetch('/api/matches?limit=4');
       const data = await response.json();
@@ -61,9 +56,10 @@ export default function WelcomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const sendInterest = async (matchUserId, matchName) => {
+  const sendInterest = async (matchUserId, _matchName) => {
+    // 2. Renamed matchName to _matchName to fix unused var error
     setSending((prev) => ({ ...prev, [matchUserId]: true }));
 
     try {
@@ -125,12 +121,12 @@ export default function WelcomePage() {
         .eq('id', conversationId);
 
       setSent((prev) => ({ ...prev, [matchUserId]: true }));
-      
+
       // Show success message and redirect to share availability
       toast.success(`Your interest was successfully sent! Share your availability now.`, {
         duration: 3000,
       });
-      
+
       // Redirect after a brief delay
       setTimeout(() => {
         router.push('/share-availability');
@@ -142,6 +138,15 @@ export default function WelcomePage() {
       setSending((prev) => ({ ...prev, [matchUserId]: false }));
     }
   };
+
+  useEffect(() => {
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+    fetchCurrentProfile();
+    fetchMatches();
+  }, [user, router, fetchCurrentProfile, fetchMatches]);
 
   if (loading) {
     return (
@@ -159,9 +164,7 @@ export default function WelcomePage() {
       <div className="max-w-3xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🎉 Welcome to ShareSkippy!
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">🎉 Welcome to ShareSkippy!</h1>
           <p className="text-lg text-gray-600">
             {matches.length > 0
               ? 'Here are a few people near you. Reach out now!'
@@ -179,10 +182,10 @@ export default function WelcomePage() {
               >
                 <div className="flex items-start space-x-4">
                   {/* Profile Photo */}
-                  <img
+                  <Image
                     src={match.profile_photo_url || '/default-avatar.png'}
                     alt={match.first_name}
-                    className="w-20 h-20 rounded-full object-cover flex-shrink-0"
+                    className="w-20 h-20 rounded-full object-cover shrink-0"
                   />
 
                   {/* Profile Info */}
@@ -195,7 +198,13 @@ export default function WelcomePage() {
                         <p className="text-sm text-gray-500">
                           📍 {formatDistance(match.distance)}
                           {(match.neighborhood || match.city) && (
-                            <> • {match.neighborhood || match.city}{match.neighborhood && match.city && match.neighborhood !== match.city ? `, ${match.city}` : ''}</>
+                            <>
+                              {' '}
+                              • {match.neighborhood || match.city}
+                              {match.neighborhood && match.city && match.neighborhood !== match.city
+                                ? `, ${match.city}`
+                                : ''}
+                            </>
                           )}
                         </p>
                       </div>
@@ -208,15 +217,15 @@ export default function WelcomePage() {
                           match.role === 'dog_owner'
                             ? 'bg-blue-100 text-blue-800'
                             : match.role === 'petpal'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-green-100 text-green-800'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-green-100 text-green-800'
                         }`}
                       >
                         {match.role === 'dog_owner'
                           ? '🐕 Dog Owner'
                           : match.role === 'petpal'
-                          ? '👤 PetPal'
-                          : '🐕👤 Both'}
+                            ? '👤 PetPal'
+                            : '🐕👤 Both'}
                       </span>
                     </div>
 
@@ -242,9 +251,7 @@ export default function WelcomePage() {
 
                     {/* Bio */}
                     {match.bio && (
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                        {match.bio}
-                      </p>
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{match.bio}</p>
                     )}
 
                     {/* Action Buttons */}
@@ -260,9 +267,7 @@ export default function WelcomePage() {
                       >
                         {sending[match.id] ? (
                           <>
-                            <span className="inline-block animate-spin mr-2">
-                              ⏳
-                            </span>
+                            <span className="inline-block animate-spin mr-2">⏳</span>
                             Sending...
                           </>
                         ) : sent[match.id] ? (
@@ -280,12 +285,10 @@ export default function WelcomePage() {
         ) : (
           <div className="bg-white rounded-lg shadow-md p-8 text-center mb-8">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No matches found yet
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No matches found yet</h3>
             <p className="text-gray-600 mb-4">
-              More people are joining ShareSkippy every day! Check back soon or
-              browse the community.
+              More people are joining ShareSkippy every day! Check back soon or browse the
+              community.
             </p>
             <button
               onClick={() => router.push('/community')}
@@ -297,13 +300,11 @@ export default function WelcomePage() {
         )}
 
         {/* Availability Upsell */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            🌟 Want Even More Matches?
-          </h3>
+        <div className="bg-linear-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">🌟 Want Even More Matches?</h3>
           <p className="text-gray-700 mb-4">
-            Share your availability to help people know when you're free. You'll
-            show up in more searches and get more messages!
+            Share your availability to help people know when you&apos;re free. You&apos;ll show up
+            in more searches and get more messages!
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
@@ -324,12 +325,10 @@ export default function WelcomePage() {
         {/* Quick Stats */}
         {matches.length > 0 && (
           <div className="mt-6 text-center text-sm text-gray-500">
-            💡 Tip: The more you engage, the more visible you become in the
-            community!
+            💡 Tip: The more you engage, the more visible you become in the community!
           </div>
         )}
       </div>
     </div>
   );
 }
-

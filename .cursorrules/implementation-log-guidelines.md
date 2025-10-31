@@ -2,7 +2,7 @@
 
 ## Overview
 
-In order to code a project, it helps tremendously to have that project broken down into a series of phases that progress in a sensible order. And recursively, it helps for each of those phases to be broken down into a series of tasks that also progress in a sensible order. Not only will these phases and tasks help you as a coder to walk through a project, but also the record they leave behind will serve as a valuable reference for any who must later maintain or extend the project.
+To code a project, it helps to have that project broken down into a series of phases that progress in a sensible order. And recursively, it helps for each of those phases to be broken down into a series of tasks that also progress in a sensible order. Not only will these phases and tasks help you as a coder to walk through a project, but also the record they leave behind will serve as a valuable reference for any who must later maintain or extend the project.
 
 This document will guide you through the creation of the "Implementation Log" section of the project document, which will include subheadings that represent phases and task lists within each phase.
 

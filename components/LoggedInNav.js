@@ -1,37 +1,37 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSearchParams, usePathname } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { useUser } from "@/contexts/UserContext";
-import logo from "@/app/icon.png";
-import config from "@/config";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useSearchParams, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import logo from '@/app/icon.png';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
+import config from '@/config';
 
 const navigationItems = [
   {
-    href: "/community",
-    label: "Community",
+    href: '/community',
+    label: 'Community',
   },
   {
-    href: "/share-availability",
-    label: "Share Availability",
+    href: '/share-availability',
+    label: 'Share Availability',
   },
   {
-    href: "/messages",
-    label: "Messages",
+    href: '/messages',
+    label: 'Messages',
   },
   {
-    href: "/meetings",
-    label: "Meetings",
+    href: '/meetings',
+    label: 'Meetings',
   },
   {
-    href: "/my-dogs",
-    label: "My Dogs",
+    href: '/my-dogs',
+    label: 'My Dogs',
   },
   {
-    href: "/profile",
-    label: "Profile",
+    href: '/profile',
+    label: 'Profile',
   },
 ];
 
@@ -48,9 +48,9 @@ const LoggedInNav = () => {
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
-      console.error("Error signing out:", error);
+      console.error('Error signing out:', error);
     } else {
-      window.location.href = "/";
+      window.location.href = '/';
     }
   };
 
@@ -112,7 +112,7 @@ const LoggedInNav = () => {
               href={item.href}
               key={item.href}
               className={`px-2 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 text-sm whitespace-nowrap ${
-                pathname === item.href ? "bg-white/20 text-white" : ""
+                pathname === item.href ? 'bg-white/20 text-white' : ''
               }`}
               title={item.label}
             >
@@ -133,7 +133,7 @@ const LoggedInNav = () => {
       </nav>
 
       {/* Mobile menu */}
-      <div className={`relative z-50 ${isOpen ? "" : "hidden"}`}>
+      <div className={`relative z-50 ${isOpen ? '' : 'hidden'}`}>
         <div
           className={`fixed inset-y-0 right-0 z-10 w-full px-4 sm:px-6 lg:px-8 py-4 overflow-y-auto bg-indigo-600 sm:max-w-sm sm:ring-1 sm:ring-neutral/10 transform origin-right transition ease-in-out duration-300`}
         >
@@ -144,16 +144,18 @@ const LoggedInNav = () => {
               title={`${config.appName} home`}
               href="/"
             >
-            <Image
-              src={logo}
-              alt={`${config.appName} logo`}
-              className="w-6 sm:w-8"
-              placeholder="blur"
-              priority={true}
-              width={32}
-              height={32}
-            />
-            <span className="font-extrabold text-base sm:text-lg text-white">{config.appName}</span>
+              <Image
+                src={logo}
+                alt={`${config.appName} logo`}
+                className="w-6 sm:w-8"
+                placeholder="blur"
+                priority={true}
+                width={32}
+                height={32}
+              />
+              <span className="font-extrabold text-base sm:text-lg text-white">
+                {config.appName}
+              </span>
             </Link>
             <button
               type="button"
@@ -169,11 +171,7 @@ const LoggedInNav = () => {
                 stroke="currentColor"
                 className="w-6 h-6"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -187,7 +185,7 @@ const LoggedInNav = () => {
                     href={item.href}
                     key={item.href}
                     className={`w-full px-3 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 ${
-                      pathname === item.href ? "bg-white/20 text-white" : ""
+                      pathname === item.href ? 'bg-white/20 text-white' : ''
                     }`}
                     title={item.label}
                   >

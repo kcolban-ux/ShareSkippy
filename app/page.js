@@ -131,7 +131,7 @@ export default function Home() {
   // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
@@ -143,7 +143,7 @@ export default function Home() {
   // Show loading state while redirecting logged-in users
   if (user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Redirecting to community...</p>
@@ -155,7 +155,7 @@ export default function Home() {
   return (
     <>
       {renderSchemaTags()}
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -177,7 +177,7 @@ export default function Home() {
                 <button
                   onClick={goToPrevious}
                   aria-label="Previous message"
-                  className="flex-shrink-0 p-2 sm:p-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all transform hover:scale-110 active:scale-95"
+                  className="shrink-0 p-2 sm:p-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all transform hover:scale-110 active:scale-95"
                 >
                   <svg 
                     className="w-6 h-6 sm:w-8 sm:h-8" 
@@ -195,11 +195,11 @@ export default function Home() {
 
                 {/* Carousel Content */}
                 <div 
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 flex-1 border border-blue-200 shadow-lg cursor-pointer transition-all hover:shadow-xl"
+                  className="bg-white/80 backdrop-blur-xs rounded-2xl p-4 sm:p-6 flex-1 border border-blue-200 shadow-lg cursor-pointer transition-all hover:shadow-xl"
                   onClick={togglePause}
                   title={isPaused ? "Click to resume auto-play" : "Click to pause auto-play"}
                 >
-                  <p className="text-base sm:text-lg md:text-xl text-gray-800 italic min-h-[3rem] flex items-center justify-center">
+                  <p className="text-base sm:text-lg md:text-xl text-gray-800 italic min-h-12 flex items-center justify-center">
                     {carouselMessages[currentMessageIndex]}
                   </p>
                   <div className="flex justify-center items-center mt-4 space-x-2">
@@ -222,7 +222,7 @@ export default function Home() {
                 <button
                   onClick={goToNext}
                   aria-label="Next message"
-                  className="flex-shrink-0 p-2 sm:p-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all transform hover:scale-110 active:scale-95"
+                  className="shrink-0 p-2 sm:p-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full transition-all transform hover:scale-110 active:scale-95"
                 >
                   <svg 
                     className="w-6 h-6 sm:w-8 sm:h-8" 
@@ -319,7 +319,7 @@ export default function Home() {
       </section>
 
       {/* Why ShareSkippy Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <section className="py-20 bg-linear-to-r from-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -394,7 +394,7 @@ export default function Home() {
       </section>
 
       {/* Safety & Trust Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <section className="py-20 bg-linear-to-r from-blue-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
@@ -447,7 +447,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {communityStories.slice(0, 6).map((story, index) => (
-              <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
+              <div key={index} className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all">
                 <p className="text-lg text-gray-800 mb-4 italic">
                   &ldquo;{story.quote}&rdquo;
                 </p>
@@ -470,7 +470,7 @@ export default function Home() {
       </section>
 
       {/* Closing CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-indigo-600">
+      <section className="py-20 bg-linear-to-br from-blue-600 to-indigo-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             Join the dog-sharing community that puts love before money.

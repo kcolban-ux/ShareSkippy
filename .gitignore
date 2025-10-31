@@ -42,3 +42,6 @@ public/sitemap-0.xml
 
 # credentials
 .supabase-credentials
+
+# temp
+supabase/.temp

@@ -257,7 +257,7 @@ export default function EditAvailability() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading availability details...</p>
@@ -268,7 +268,7 @@ export default function EditAvailability() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😔</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
@@ -286,7 +286,7 @@ export default function EditAvailability() {
 
   if (!availability) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😔</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Availability Not Found</h1>
@@ -314,7 +314,7 @@ export default function EditAvailability() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
@@ -325,7 +325,7 @@ export default function EditAvailability() {
             <span className="mr-2">←</span>
             Back to Availability
           </button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Edit: {formData.title || availability?.title}
           </h1>
           <div className="flex items-center space-x-4 text-gray-600">
@@ -439,7 +439,7 @@ export default function EditAvailability() {
                       name="can_pick_up_drop_off"
                       checked={formData.can_pick_up_drop_off}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                     />
                     <label htmlFor="can_pick_up_drop_off" className="ml-2 block text-sm font-medium text-gray-700">
                       Can pick up and drop off
@@ -453,7 +453,7 @@ export default function EditAvailability() {
                       name="is_urgent"
                       checked={formData.is_urgent}
                       onChange={handleInputChange}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                     />
                     <label htmlFor="is_urgent" className="ml-2 block text-sm font-medium text-gray-700">
                       Mark as urgent
@@ -506,16 +506,16 @@ export default function EditAvailability() {
                           <h3 className="text-2xl font-bold text-gray-900 mb-2">{availability.allDogs[0].name}</h3>
                           <p className="text-gray-600 mb-2">{availability.allDogs[0].breed}</p>
                           <div className="flex flex-wrap gap-2">
-                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-sm text-sm">
                               {availability.allDogs[0].size && availability.allDogs[0].size.includes('-') ? `${availability.allDogs[0].size} lbs` : availability.allDogs[0].size} size
                             </span>
                             {availability.allDogs[0].gender && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-sm text-sm">
                                 {availability.allDogs[0].gender}
                               </span>
                             )}
                             {availability.allDogs[0].neutered && (
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-sm text-sm">
                                 Neutered
                               </span>
                             )}
@@ -604,16 +604,16 @@ export default function EditAvailability() {
                               <h3 className="text-xl font-bold text-gray-900 mb-2">{dog.name}</h3>
                               <p className="text-gray-600 mb-2">{dog.breed}</p>
                               <div className="flex flex-wrap gap-2">
-                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-sm text-sm">
                                   {dog.size && dog.size.includes('-') ? `${dog.size} lbs` : dog.size} size
                                 </span>
                                 {dog.gender && (
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-sm">
+                                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-sm text-sm">
                                     {dog.gender}
                                   </span>
                                 )}
                                 {dog.neutered && (
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-sm text-sm">
                                     Neutered
                                   </span>
                                 )}
@@ -654,7 +654,7 @@ export default function EditAvailability() {
                             id={`day-${day}`}
                             checked={formData.enabled_days.includes(day)}
                             onChange={() => handleDayToggle(day)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                           />
                           <label htmlFor={`day-${day}`} className="ml-2 block text-sm font-medium text-gray-700">
                             {dayNames[day]}
@@ -749,7 +749,7 @@ export default function EditAvailability() {
                     className="w-20 h-20 rounded-full object-cover shadow-md mx-auto mb-4"
                   />
                 ) : (
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-2xl shadow-md mx-auto mb-4">
+                  <div className="w-20 h-20 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-2xl shadow-md mx-auto mb-4">
                     👤
                   </div>
                 )}
@@ -776,7 +776,7 @@ export default function EditAvailability() {
               {availability?.owner?.community_support_badge && (
                 <div className="mb-6">
                   <h4 className="font-medium text-gray-900 mb-2">Community Support</h4>
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3 border border-green-200">
+                  <div className="bg-linear-to-r from-green-50 to-blue-50 rounded-lg p-3 border border-green-200">
                     <div className="flex items-center mb-2">
                       <span className="text-green-600 mr-2">🏆</span>
                       <span className="font-medium text-green-800">{availability.owner.community_support_badge}</span>
@@ -793,7 +793,7 @@ export default function EditAvailability() {
                   <h4 className="font-medium text-gray-900 mb-2">Support Preferences</h4>
                   <div className="flex flex-wrap gap-2">
                     {availability.owner.support_preferences.map((pref, index) => (
-                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-sm text-sm">
                         {pref}
                       </span>
                     ))}
@@ -868,14 +868,14 @@ export default function EditAvailability() {
               )}
 
               <div className="pt-4 border-t border-gray-200">
-                <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium">
+                <button className="w-full bg-linear-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium">
                   Contact Owner
                 </button>
               </div>
             </div>
 
             {/* Safety Reminder */}
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200">
+            <div className="bg-linear-to-r from-yellow-50 to-orange-50 rounded-xl p-6 border border-yellow-200">
               <h3 className="text-lg font-semibold text-yellow-800 mb-3 flex items-center">
                 <span className="mr-2">🛡️</span>
                 Safety First

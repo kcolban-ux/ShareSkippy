@@ -230,7 +230,7 @@ export default function EditDogPage() {
           <h1 className="text-3xl font-bold text-gray-900">Edit {formData.name}</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xs border border-gray-200 p-8">
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -401,7 +401,7 @@ export default function EditDogPage() {
                     name="neutered"
                     checked={formData.neutered}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="neutered" className="ml-2 block text-sm text-gray-900">
                     Neutered/Spayed
@@ -415,7 +415,7 @@ export default function EditDogPage() {
                     name="leash_trained"
                     checked={formData.leash_trained}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="leash_trained" className="ml-2 block text-sm text-gray-900">
                     Leash Trained
@@ -429,7 +429,7 @@ export default function EditDogPage() {
                     name="house_trained"
                     checked={formData.house_trained}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="house_trained" className="ml-2 block text-sm text-gray-900">
                     House Trained
@@ -443,7 +443,7 @@ export default function EditDogPage() {
                     name="crate_trained"
                     checked={formData.crate_trained}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="crate_trained" className="ml-2 block text-sm text-gray-900">
                     Crate Trained
@@ -457,7 +457,7 @@ export default function EditDogPage() {
                     name="fully_vaccinated"
                     checked={formData.fully_vaccinated}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="fully_vaccinated" className="ml-2 block text-sm text-gray-900">
                     Fully Vaccinated
@@ -471,7 +471,7 @@ export default function EditDogPage() {
                     name="dog_friendly"
                     checked={formData.dog_friendly}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="dog_friendly" className="ml-2 block text-sm text-gray-900">
                     Dog Friendly
@@ -485,7 +485,7 @@ export default function EditDogPage() {
                     name="cat_friendly"
                     checked={formData.cat_friendly}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="cat_friendly" className="ml-2 block text-sm text-gray-900">
                     Cat Friendly
@@ -499,7 +499,7 @@ export default function EditDogPage() {
                     name="kid_friendly"
                     checked={formData.kid_friendly}
                     onChange={handleInputChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor="kid_friendly" className="ml-2 block text-sm text-gray-900">
                     Kid Friendly
@@ -518,7 +518,7 @@ export default function EditDogPage() {
                           id={`temperament-${trait}`}
                           checked={formData.temperament.includes(trait)}
                           onChange={() => handleTemperamentChange(trait)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                         />
                         <label htmlFor={`temperament-${trait}`} className="ml-2 block text-sm text-gray-700">
                           {trait}
@@ -542,7 +542,7 @@ export default function EditDogPage() {
                     id={`activity-${activity}`}
                     checked={formData.activities.includes(activity)}
                     onChange={() => handleActivityChange(activity)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded-sm"
                   />
                   <label htmlFor={`activity-${activity}`} className="ml-2 block text-sm text-gray-900">
                     {activity}

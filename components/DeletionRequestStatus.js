@@ -59,10 +59,10 @@ export default function DeletionRequestStatus({ userId }) {
 
   if (loading) {
     return (
-      <div className="bg-gray-50 p-3 rounded">
+      <div className="bg-gray-50 p-3 rounded-sm">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-200 rounded-sm w-3/4 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded-sm w-1/2"></div>
         </div>
       </div>
     );
@@ -70,7 +70,7 @@ export default function DeletionRequestStatus({ userId }) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
         <p className="text-sm">Error loading deletion status: {error}</p>
       </div>
     );
@@ -175,7 +175,7 @@ export default function DeletionRequestStatus({ userId }) {
       </div>
       
       {isVeryUrgent && (
-        <div className="mt-3 p-2 bg-red-100 border border-red-300 rounded">
+        <div className="mt-3 p-2 bg-red-100 border border-red-300 rounded-sm">
           <p className="text-xs text-red-800 font-medium">
             🚨 Your account will be deleted very soon! If you want to keep your account, cancel the deletion request now.
           </p>

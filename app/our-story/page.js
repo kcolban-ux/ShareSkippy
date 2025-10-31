@@ -4,9 +4,9 @@ import Link from 'next/link';
 
 export default function OurStoryPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
@@ -85,7 +85,7 @@ export default function OurStoryPage() {
         </section>
 
         {/* What Makes ShareSkippy Different */}
-        <section className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-8 md:p-12 mb-8 text-white">
+        <section className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-8 md:p-12 mb-8 text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white">
             What Makes ShareSkippy Different
           </h2>
@@ -170,7 +170,7 @@ export default function OurStoryPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-8 md:p-12 text-center text-white">
+        <section className="bg-linear-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-8 md:p-12 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-6 text-white">
             Ready to Join Our Community?
           </h2>

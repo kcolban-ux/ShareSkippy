@@ -108,7 +108,7 @@ export default function MessageModal({ isOpen, onClose, recipient, availabilityP
                 textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
               }}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black auto-resize-textarea modal-textarea"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black auto-resize-textarea modal-textarea"
               placeholder="Type your message here..."
               required
             />

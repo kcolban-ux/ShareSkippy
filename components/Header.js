@@ -147,7 +147,7 @@ const Header = () => {
                   <Link
                     href={link.href}
                     key={link.href}
-                    className="hover:text-indigo-100 hover:bg-indigo-700/50 rounded px-2 py-1 transition w-full"
+                    className="hover:text-indigo-100 hover:bg-indigo-700/50 rounded-sm px-2 py-1 transition w-full"
                     title={link.label}
                   >
                     {link.label}

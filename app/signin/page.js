@@ -1,41 +1,41 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { createClient } from "@/libs/supabase/client";
-import toast from "react-hot-toast";
-import config from "@/config";
-import { useSearchParams } from "next/navigation";
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/libs/supabase/client';
+import toast from 'react-hot-toast';
+import config from '@/config';
+import { useSearchParams } from 'next/navigation';
 
 // This a login/singup page for Supabase Auth.
 // Successfull login redirects to /api/auth/callback where the Code Exchange is processed (see app/api/auth/callback/route.js).
 export default function Login() {
   const supabase = createClient();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   const searchParams = useSearchParams();
 
   // Handle error messages from OAuth callback
   useEffect(() => {
-    const error = searchParams.get("error");
+    const error = searchParams.get('error');
     if (error) {
-      let errorMessage = "Sign-in failed. Please try again.";
-      
+      let errorMessage = 'Sign-in failed. Please try again.';
+
       switch (error) {
-        case "session_exchange_failed":
-          errorMessage = "Failed to establish session. Please try signing in again.";
+        case 'session_exchange_failed':
+          errorMessage = 'Failed to establish session. Please try signing in again.';
           break;
-        case "no_session":
-          errorMessage = "Session not created. Please try signing in again.";
+        case 'no_session':
+          errorMessage = 'Session not created. Please try signing in again.';
           break;
-        case "unexpected_error":
-          errorMessage = "An unexpected error occurred. Please try again.";
+        case 'unexpected_error':
+          errorMessage = 'An unexpected error occurred. Please try again.';
           break;
         default:
           errorMessage = `Sign-in error: ${error}`;
       }
-      
+
       toast.error(errorMessage);
     }
   }, [searchParams]);
@@ -48,11 +48,9 @@ export default function Login() {
     try {
       const { type, provider } = options;
       // Use production domain for OAuth redirects to avoid localhost issues
-      const redirectURL = window.location.hostname === 'localhost' || window.location.hostname.includes('192.168') 
-        ? window.location.origin + "/api/auth/callback"
-        : `https://${config.domainName}/api/auth/callback`;
+      const redirectURL = window.location.origin + '/api/auth/callback';
 
-      if (type === "oauth") {
+      if (type === 'oauth') {
         // Use Supabase's built-in OAuth but with custom branding
         const { error } = await supabase.auth.signInWithOAuth({
           provider,
@@ -61,17 +59,17 @@ export default function Login() {
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',
-              scope: 'openid profile email'
-            }
+              scope: 'openid profile email',
+            },
           },
         });
-        
+
         if (error) {
-          console.error("OAuth sign-in error:", error);
-          toast.error("Failed to sign in with Google. Please try again.");
+          console.error('OAuth sign-in error:', error);
+          toast.error('Failed to sign in with Google. Please try again.');
         }
-      } else if (type === "magic_link") {
-        console.log("Magic link redirect URL:", redirectURL);
+      } else if (type === 'magic_link') {
+        console.log('Magic link redirect URL:', redirectURL);
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -80,16 +78,16 @@ export default function Login() {
         });
 
         if (error) {
-          console.error("Magic link error:", error);
-          toast.error("Failed to send magic link. Please try again.");
+          console.error('Magic link error:', error);
+          toast.error('Failed to send magic link. Please try again.');
         } else {
-          toast.success("Check your emails!");
+          toast.success('Check your emails!');
           setIsDisabled(true);
         }
       }
     } catch (error) {
-      console.error("Unexpected sign-in error:", error);
-      toast.error("Something went wrong. Please try again.");
+      console.error('Unexpected sign-in error:', error);
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -115,25 +113,19 @@ export default function Login() {
         </Link>
       </div>
       <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-center mb-12">
-        Sign-in to {config.appName}{" "}
+        Sign-in to {config.appName}{' '}
       </h1>
 
       <div className="space-y-8 max-w-xl mx-auto">
         <button
           className="btn btn-block bg-white text-black border-gray-300 hover:bg-gray-50"
-          onClick={(e) =>
-            handleSignup(e, { type: "oauth", provider: "google" })
-          }
+          onClick={(e) => handleSignup(e, { type: 'oauth', provider: 'google' })}
           disabled={isLoading}
         >
           {isLoading ? (
             <span className="loading loading-spinner loading-xs"></span>
           ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6"
-              viewBox="0 0 48 48"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 48 48">
               <path
                 fill="#FFC107"
                 d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
@@ -155,13 +147,11 @@ export default function Login() {
           Sign-up with Google
         </button>
 
-        <div className="divider text-xs text-base-content/50 font-medium">
-          OR
-        </div>
+        <div className="divider text-xs text-base-content/50 font-medium">OR</div>
 
         <form
           className="form-control w-full space-y-4"
-          onSubmit={(e) => handleSignup(e, { type: "magic_link" })}
+          onSubmit={(e) => handleSignup(e, { type: 'magic_link' })}
         >
           <input
             required
@@ -178,9 +168,7 @@ export default function Login() {
             disabled={isLoading || isDisabled}
             type="submit"
           >
-            {isLoading && (
-              <span className="loading loading-spinner loading-xs"></span>
-            )}
+            {isLoading && <span className="loading loading-spinner loading-xs"></span>}
             Send Magic Link
           </button>
         </form>

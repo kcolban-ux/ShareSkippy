@@ -53,7 +53,7 @@ const Testimonial = ({
 
   const variants = {
     default: (
-      <div className={`bg-base-100 p-6 rounded-lg shadow-sm ${className}`}>
+      <div className={`bg-base-100 p-6 rounded-lg shadow-xs ${className}`}>
         <div className="rating mb-4">
           {renderStars(rating)}
         </div>
@@ -88,7 +88,7 @@ const Testimonial = ({
     ),
     small: (
       <div className={`space-y-6 max-w-lg mx-auto px-8 py-16 md:py-32 ${className}`}>
-        <div className="rating !flex justify-center">
+        <div className="rating flex! justify-center">
           {renderStars(rating)}
         </div>
         <div className="text-base leading-relaxed space-y-2 max-w-md mx-auto text-center">

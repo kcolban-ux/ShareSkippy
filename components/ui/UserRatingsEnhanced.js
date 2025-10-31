@@ -161,7 +161,7 @@ export default function UserRatingsEnhanced({ userId, userRole }) {
             
             {review.review_type && (
               <div className="mt-2">
-                <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded-sm text-xs">
                   {review.review_type === 'dog_sitting' && '🐕 Dog Sitting'}
                   {review.review_type === 'dog_walking' && '🚶 Dog Walking'}
                   {review.review_type === 'dog_boarding' && '🏠 Dog Boarding'}

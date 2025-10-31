@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { useUser } from "@/contexts/UserContext";
-import { Crisp } from "crisp-sdk-web";
-import NextTopLoader from "nextjs-toploader";
-import { Toaster } from "react-hot-toast";
-import { Tooltip } from "react-tooltip";
-import config from "@/config";
+import { Crisp } from 'crisp-sdk-web';
+import { usePathname } from 'next/navigation';
+import NextTopLoader from 'nextjs-toploader';
+import { useEffect, useState } from 'react';
+import { Toaster } from 'react-hot-toast';
+import { Tooltip } from 'react-tooltip';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
+import config from '@/config';
 
 // Crisp customer chat support:
 // This component is separated from ClientLayout because it needs to be wrapped with <SessionProvider> to use useSession() hook
@@ -28,10 +28,7 @@ const CrispChat = () => {
     if (crispInitialized) {
       // (Optional) If onlyShowOnRoutes array is not empty in config.js file, Crisp will be hidden on the routes in the array.
       // Use <AppButtonSupport> instead to show it (user clicks on the button to show Crisp—it cleans the UI)
-      if (
-        config.crisp.onlyShowOnRoutes &&
-        !config.crisp.onlyShowOnRoutes?.includes(pathname)
-      ) {
+      if (config.crisp.onlyShowOnRoutes && !config.crisp.onlyShowOnRoutes?.includes(pathname)) {
         Crisp.chat.hide();
         Crisp.chat.onChatClosed(() => {
           Crisp.chat.hide();
@@ -44,12 +41,12 @@ const CrispChat = () => {
   useEffect(() => {
     if (user && crispInitialized) {
       Crisp.session.setData({ userId: user.id });
-      
+
       // Set user data in Crisp for better support experience
       Crisp.user.setEmail(user.email);
       Crisp.user.setNickname(user.user_metadata?.full_name || user.email);
       Crisp.user.setAvatar(user.user_metadata?.avatar_url);
-      
+
       // Set custom data
       Crisp.user.setData({
         id: user.id,
@@ -84,10 +81,7 @@ const ClientLayout = ({ children }) => {
       />
 
       {/* Show tooltips if any JSX elements has these 2 attributes: data-tooltip-id="tooltip" data-tooltip-content="" */}
-      <Tooltip
-        id="tooltip"
-        className="z-[60] !opacity-100 max-w-sm shadow-lg"
-      />
+      <Tooltip id="tooltip" className="z-60 opacity-100! max-w-sm shadow-lg" />
 
       {/* Set Crisp customer chat support */}
       <CrispChat />

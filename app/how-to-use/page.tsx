@@ -31,14 +31,14 @@ export default function HowToUsePage() {
   return (
     <>
       <FaqJsonLd />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <main role="main" className="lg:col-span-3 space-y-12">
               {/* Header */}
               <div className="text-center">
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+                <h1 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
                   🐕 How to Use ShareSkippy
                 </h1>
                 <p className="text-xl text-gray-700 max-w-3xl mx-auto">
@@ -84,7 +84,7 @@ export default function HowToUsePage() {
                   <SectionHeading id="getting-started">🚀 Getting Started</SectionHeading>
                   <div className="space-y-6 mt-6">
                     <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                      <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">Create Your Profile</h3>
                         <p className="text-gray-700 mb-2">Start by creating your ShareSkippy profile with basic information about yourself.</p>
@@ -98,7 +98,7 @@ export default function HowToUsePage() {
                     </div>
                     
                     <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                      <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Your Dogs (If You&apos;re a Dog Owner)</h3>
                         <p className="text-gray-700 mb-2">Create detailed profiles for each of your dogs to help others understand their needs.</p>
@@ -113,7 +113,7 @@ export default function HowToUsePage() {
                     </div>
                     
                     <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                      <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">Explore the Community</h3>
                         <p className="text-gray-700 mb-2">Visit the Community page to see what&apos;s available in your area.</p>
@@ -600,13 +600,13 @@ export default function HowToUsePage() {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link
                     href="/community"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
+                    className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium"
                   >
                     Explore Community →
                   </Link>
                   <Link
                     href="/share-availability"
-                    className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 font-medium"
+                    className="bg-linear-to-r from-green-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 font-medium"
                   >
                     Post Availability →
                   </Link>

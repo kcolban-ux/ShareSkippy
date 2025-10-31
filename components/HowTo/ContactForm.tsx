@@ -90,7 +90,7 @@ export default function ContactForm() {
               name="name"
               required
               aria-invalid={errors.name ? 'true' : 'false'}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-black"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-black"
             />
             {errors.name && (
               <p className="text-sm text-red-600 mt-1">{errors.name[0]}</p>
@@ -107,7 +107,7 @@ export default function ContactForm() {
               name="email"
               required
               aria-invalid={errors.email ? 'true' : 'false'}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-black"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-black"
             />
             {errors.email && (
               <p className="text-sm text-red-600 mt-1">{errors.email[0]}</p>
@@ -124,7 +124,7 @@ export default function ContactForm() {
             name="category"
             required
             aria-invalid={errors.category ? 'true' : 'false'}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-black"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-black"
           >
             <option value="general">General Question</option>
             <option value="bug">Bug Report</option>
@@ -148,7 +148,7 @@ export default function ContactForm() {
             name="subject"
             required
             aria-invalid={errors.subject ? 'true' : 'false'}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-black"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-black"
           />
           {errors.subject && (
             <p className="text-sm text-red-600 mt-1">{errors.subject[0]}</p>
@@ -165,7 +165,7 @@ export default function ContactForm() {
             required
             rows={4}
             aria-invalid={errors.message ? 'true' : 'false'}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white text-black"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-purple-500 bg-white text-black"
           />
           {errors.message && (
             <p className="text-sm text-red-600 mt-1">{errors.message[0]}</p>

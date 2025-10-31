@@ -3,11 +3,11 @@ import { LEGAL } from "@/lib/legal";
 
 export default function CommunityGuidelines() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             🏘️ Community Guidelines
           </h1>
           <p className="text-gray-600 text-lg">
@@ -85,7 +85,7 @@ export default function CommunityGuidelines() {
         </div>
         
         {/* Emergency Contacts Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
+        <div className="bg-linear-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <span className="mr-2">🚨</span>
             Emergency Contacts
@@ -108,7 +108,7 @@ export default function CommunityGuidelines() {
         </div>
 
         {/* Legal Disclosure */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
+        <div className="bg-linear-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200 mb-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
             <span className="mr-2">ℹ️</span>
             About ShareSkippy

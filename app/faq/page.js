@@ -170,9 +170,9 @@ export default function FAQPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -213,7 +213,7 @@ export default function FAQPage() {
           {filteredFAQ.map((item, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              className="bg-white rounded-lg shadow-xs border border-gray-200 overflow-hidden"
             >
               <button
                 onClick={() => toggleItem(index)}
@@ -238,7 +238,7 @@ export default function FAQPage() {
         </div>
 
         {/* Still Have Questions */}
-        <div className="mt-16 bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <div className="mt-16 bg-white rounded-lg shadow-xs border border-gray-200 p-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             Still Have Questions?
           </h2>
@@ -265,7 +265,7 @@ export default function FAQPage() {
         <div className="mt-12 grid md:grid-cols-3 gap-6">
           <Link
             href="/dashboard"
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg shadow-xs border border-gray-200 p-6 hover:shadow-md transition-shadow"
           >
             <div className="text-3xl mb-3">🤝</div>
             <h3 className="font-semibold text-gray-900 mb-2">Browse Community</h3>
@@ -275,7 +275,7 @@ export default function FAQPage() {
           </Link>
           <Link
             href="/share-availability"
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg shadow-xs border border-gray-200 p-6 hover:shadow-md transition-shadow"
           >
             <div className="text-3xl mb-3">✨</div>
             <h3 className="font-semibold text-gray-900 mb-2">Share Availability</h3>
@@ -285,7 +285,7 @@ export default function FAQPage() {
           </Link>
           <Link
             href="/profile/edit"
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+            className="bg-white rounded-lg shadow-xs border border-gray-200 p-6 hover:shadow-md transition-shadow"
           >
             <div className="text-3xl mb-3">👤</div>
             <h3 className="font-semibold text-gray-900 mb-2">Update Profile</h3>

@@ -5,6 +5,7 @@
 ### 1. Environment Setup
 
 1. **Copy the environment template:**
+
    ```bash
    cp env.example .env.local
    ```
@@ -18,8 +19,9 @@
 ### 2. Update Configuration
 
 Edit `config.js` to customize your app:
+
 - Change `appName` to your app name
-- Update `appDescription` 
+- Update `appDescription`
 - Change `domainName` to your domain
 - Update email addresses in the `resend` section
 - Customize your pricing plans in the `stripe` section
@@ -32,15 +34,10 @@ npm run dev
 
 Your app will be running at `http://localhost:3000`
 
-## 🔧 Required Services Setup
-
-### Supabase (Database & Auth)
-1. Go to [supabase.com](https://supabase.com)
-2. Create a new project
-3. Get your project URL and anon key from Settings > API
-4. Add them to `.env.local`
+## 🔧 Optional Services Setup
 
 ### Stripe (Payments)
+
 1. Go to [stripe.com](https://stripe.com)
 2. Create an account and get your API keys
 3. Create products/prices for your plans
@@ -48,6 +45,7 @@ Your app will be running at `http://localhost:3000`
 5. Set up webhooks for payment processing
 
 ### Resend (Email)
+
 1. Go to [resend.com](https://resend.com)
 2. Create an account and get your API key
 3. Verify your domain for sending emails

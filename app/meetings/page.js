@@ -1,9 +1,10 @@
-"use client";
-import { useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
-import { useMeetings, useUpdateMeetingStatus } from '@/hooks/useMeetings';
+'use client';
 import { useQueryClient } from '@tanstack/react-query';
+import { Image } from 'next/image';
+import { useState } from 'react';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 import ReviewModal from '@/components/ReviewModal';
+import { useMeetings, useUpdateMeetingStatus } from '@/hooks/useMeetings';
 
 export default function MeetingsPage() {
   const { user, loading: authLoading } = useUser();
@@ -20,7 +21,7 @@ export default function MeetingsPage() {
   const updateMeetingStatus = async (meetingId, status, message) => {
     try {
       setActionLoading(meetingId);
-      
+
       await updateMeetingStatusMutation.mutateAsync({
         meetingId,
         status,
@@ -36,32 +37,31 @@ export default function MeetingsPage() {
 
   const cancelMeeting = async (meetingId) => {
     if (!confirm('Are you sure you want to cancel this meeting?')) return;
-    
+
     // Check if user is authenticated
     if (!user) {
       alert('You must be logged in to cancel meetings. Please refresh the page and try again.');
       return;
     }
-    
+
     try {
       setActionLoading(meetingId);
-      
+
       // Add a timeout to the request
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Request timeout - please try again')), 10000);
       });
-      
+
       const updatePromise = updateMeetingStatusMutation.mutateAsync({
         meetingId,
         status: 'cancelled',
-        message: 'This meeting has been cancelled.'
+        message: 'This meeting has been cancelled.',
       });
-      
+
       await Promise.race([updatePromise, timeoutPromise]);
-      
     } catch (error) {
       console.error('Error cancelling meeting:', error);
-      
+
       // Provide more specific error messages
       let errorMessage = 'Unknown error';
       if (error.message) {
@@ -70,12 +70,13 @@ export default function MeetingsPage() {
         } else if (error.message.includes('fetch')) {
           errorMessage = 'Network error. Please check your internet connection and try again.';
         } else if (error.message.includes('Unauthorized')) {
-          errorMessage = 'You are not authorized to cancel this meeting. Please refresh the page and try again.';
+          errorMessage =
+            'You are not authorized to cancel this meeting. Please refresh the page and try again.';
         } else {
           errorMessage = error.message;
         }
       }
-      
+
       alert(`Failed to cancel meeting: ${errorMessage}`);
     } finally {
       setActionLoading(null);
@@ -84,28 +85,33 @@ export default function MeetingsPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'scheduled': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
-      case 'completed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'scheduled':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800';
+      case 'completed':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
     return {
-      date: date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      date: date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       }),
-      time: date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      time: date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
-      })
+        hour12: true,
+      }),
     };
   };
 
@@ -118,9 +124,11 @@ export default function MeetingsPage() {
   };
 
   const canReview = (meeting) => {
-    return meeting.status === 'completed' && 
-           new Date(meeting.end_datetime) < new Date() &&
-           !meeting.has_reviewed; // We'll need to check this in the API
+    return (
+      meeting.status === 'completed' &&
+      new Date(meeting.end_datetime) < new Date() &&
+      !meeting.has_reviewed
+    ); // We'll need to check this in the API
   };
 
   const handleReviewClick = (meeting) => {
@@ -128,7 +136,7 @@ export default function MeetingsPage() {
     setSelectedReview({
       meeting_id: meeting.id,
       meeting_title: meeting.title,
-      other_participant_name: `${otherPerson.first_name} ${otherPerson.last_name}`
+      other_participant_name: `${otherPerson.first_name} ${otherPerson.last_name}`,
     });
     setIsReviewModalOpen(true);
   };
@@ -172,10 +180,12 @@ export default function MeetingsPage() {
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-4xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             📅 Meetings
           </h1>
-          <p className="text-gray-600">Schedule and manage dog walking meetups with other community members</p>
+          <p className="text-gray-600">
+            Schedule and manage dog walking meetups with other community members
+          </p>
         </div>
 
         {loading ? (
@@ -189,8 +199,8 @@ export default function MeetingsPage() {
             <p className="text-gray-600 mb-4">
               Start a conversation with someone in the community and schedule your first meeting!
             </p>
-            <a 
-              href="/messages" 
+            <a
+              href="/messages"
               className="inline-block px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               Go to Messages
@@ -211,25 +221,26 @@ export default function MeetingsPage() {
                       {/* Meeting Header */}
                       <div className="flex items-center space-x-3 mb-4">
                         {otherPerson.profile_photo_url ? (
-                          <img
+                          <Image
                             src={otherPerson.profile_photo_url}
                             alt={`${otherPerson.first_name} ${otherPerson.last_name}`}
                             className="w-12 h-12 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-lg font-medium text-gray-600">
+                          <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-lg font-medium text-gray-600">
                             {otherPerson.first_name?.[0] || '👤'}
                           </div>
                         )}
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {meeting.title}
-                          </h3>
+                          <h3 className="text-lg font-semibold text-gray-900">{meeting.title}</h3>
                           <p className="text-sm text-gray-500">
-                            {isRequester ? 'Meeting with' : 'Meeting from'} {otherPerson.first_name} {otherPerson.last_name}
+                            {isRequester ? 'Meeting with' : 'Meeting from'} {otherPerson.first_name}{' '}
+                            {otherPerson.last_name}
                           </p>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(meeting.status)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(meeting.status)}`}
+                        >
                           {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
                         </span>
                       </div>
@@ -238,9 +249,7 @@ export default function MeetingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                           <h4 className="font-medium text-gray-900 mb-1">Date & Time</h4>
-                          <p className="text-sm text-gray-600">
-                            {startDateTime.date}
-                          </p>
+                          <p className="text-sm text-gray-600">{startDateTime.date}</p>
                           <p className="text-sm text-gray-600">
                             {startDateTime.time} - {endDateTime.time}
                           </p>
@@ -263,7 +272,13 @@ export default function MeetingsPage() {
                     <div className="flex flex-col space-y-2 ml-4">
                       {canSchedule(meeting) && (
                         <button
-                          onClick={() => updateMeetingStatus(meeting.id, 'scheduled', 'I have accepted your meeting request! Looking forward to seeing you.')}
+                          onClick={() =>
+                            updateMeetingStatus(
+                              meeting.id,
+                              'scheduled',
+                              'I have accepted your meeting request! Looking forward to seeing you.'
+                            )
+                          }
                           disabled={actionLoading === meeting.id}
                           className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
                         >

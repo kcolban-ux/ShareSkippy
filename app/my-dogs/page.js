@@ -1,7 +1,9 @@
-"use client";
-import { useState } from 'react';
+'use client';
+
+import Image from 'next/image';
 import Link from 'next/link';
-import { useUser } from '@/contexts/UserContext';
+import { useState } from 'react';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { useUserDogs } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/libs/supabase';
@@ -10,8 +12,8 @@ export default function MyDogsPage() {
   const { user, loading: authLoading } = useUser();
   const [error, setError] = useState(null);
   const queryClient = useQueryClient();
-  
-  const { data: dogs, isLoading: loading, error: dogsError } = useUserDogs();
+
+  const { data, isLoading: loading } = useUserDogs();
 
   // Data is now fetched via React Query hooks
 
@@ -50,6 +52,8 @@ export default function MyDogsPage() {
     );
   }
 
+  const dogs = data || [];
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -59,8 +63,8 @@ export default function MyDogsPage() {
           <p className="text-gray-600 mb-8">
             Connect with your local pet care community and manage your dogs.
           </p>
-          <Link 
-            href="/signin" 
+          <Link
+            href="/signin"
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block font-medium"
           >
             Sign In
@@ -101,7 +105,8 @@ export default function MyDogsPage() {
             <div className="text-8xl mb-6">🐕</div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">No dogs yet</h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Add your first dog to start finding walkers and connecting with the pet care community in your area!
+              Add your first dog to start finding walkers and connecting with the pet care community
+              in your area!
             </p>
             <Link
               href="/my-dogs/add"
@@ -113,11 +118,14 @@ export default function MyDogsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {dogs.map((dog) => (
-              <div key={dog.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div
+                key={dog.id}
+                className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+              >
                 {/* Dog Photo */}
                 <div className="aspect-square bg-gray-100 relative group">
                   {dog.photo_url ? (
-                    <img
+                    <Image
                       src={dog.photo_url}
                       alt={dog.name}
                       className="w-full h-full object-cover"
@@ -127,7 +135,7 @@ export default function MyDogsPage() {
                       🐕
                     </div>
                   )}
-                  
+
                   {/* Overlay with quick actions */}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
@@ -146,29 +154,28 @@ export default function MyDogsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Dog Info */}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{dog.name}</h3>
-                  
+
                   <div className="space-y-2 text-sm text-gray-600">
-                    {dog.breed && (
-                      <p className="font-medium">{dog.breed}</p>
-                    )}
-                    
+                    {dog.breed && <p className="font-medium">{dog.breed}</p>}
+
                     <p>
-                      {dog.age_years > 0 && `${dog.age_years} year${dog.age_years !== 1 ? 's' : ''} `}
-                      {dog.age_months > 0 && `${dog.age_months} month${dog.age_months !== 1 ? 's' : ''}`}
+                      {dog.age_years > 0 &&
+                        `${dog.age_years} year${dog.age_years !== 1 ? 's' : ''} `}
+                      {dog.age_months > 0 &&
+                        `${dog.age_months} month${dog.age_months !== 1 ? 's' : ''}`}
                     </p>
-                    
+
                     <p className="capitalize">
-                      {dog.size?.includes('-') ? `${dog.size} lbs` : dog.size?.replace('_', ' ')} • {dog.gender}
+                      {dog.size?.includes('-') ? `${dog.size} lbs` : dog.size?.replace('_', ' ')} •{' '}
+                      {dog.gender}
                       {dog.neutered && ' (Neutered)'}
                     </p>
-                    
-                    {dog.energy_level && (
-                      <p className="capitalize">Energy: {dog.energy_level}</p>
-                    )}
+
+                    {dog.energy_level && <p className="capitalize">Energy: {dog.energy_level}</p>}
                   </div>
 
                   {/* Friendliness Icons */}
@@ -215,7 +222,10 @@ export default function MyDogsPage() {
                       <p className="text-xs text-gray-500 mb-1">Loves:</p>
                       <div className="flex flex-wrap gap-1">
                         {dog.activities.slice(0, 3).map((activity, index) => (
-                          <span key={index} className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full">
+                          <span
+                            key={index}
+                            className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full"
+                          >
                             {activity}
                           </span>
                         ))}
@@ -227,7 +237,7 @@ export default function MyDogsPage() {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-6">
                     <Link

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useUser } from '@/contexts/UserContext';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 
 // Fetch meetings
 export const useMeetings = () => {
