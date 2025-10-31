@@ -5,8 +5,8 @@ import AppLayout from '@/components/AppLayout';
 import ClientLayout from '@/components/LayoutClient';
 import { SupabaseUserProvider } from '@/components/providers/SupabaseUserProvider';
 import { QueryProvider } from '@/contexts/QueryProvider';
-import { createClient } from '@/lib/supabase/server/client';
-import { getSEOTags } from '@/lib/seo/getSEOTags';
+import { createClient } from '@/libs/supabase/server';
+import { getSEOTags } from '@/libs/seo';
 import './globals.css';
 
 const font = Inter({ subsets: ['latin'] });
