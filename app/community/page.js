@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { createClient } from '@/libs/supabase/client';
 import MessageModal from '@/components/MessageModal';
 import ProfilesList from '@/components/ProfilesList';
+import LocationFilter from '@/components/LocationFilter';
+import { calculateDistance } from '@/libs/distance';
 
 export default function CommunityPage() {
   const [user, setUser] = useState(null);
@@ -18,6 +20,59 @@ export default function CommunityPage() {
   const [deletingPost, setDeletingPost] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [networkInfo, setNetworkInfo] = useState(null);
+  const [locationFilter, setLocationFilter] = useState(null); // { type, lat, lng, radius } or null
+  const [allDogPosts, setAllDogPosts] = useState([]); // Store unfiltered posts
+  const [allPetpalPosts, setAllPetpalPosts] = useState([]); // Store unfiltered posts
+
+  // Filter posts by location
+  const filterPostsByLocation = (posts, filter) => {
+    if (!filter || !posts || posts.length === 0) {
+      return posts || [];
+    }
+
+    return posts.filter((post) => {
+      // Get post location (either from custom location or profile location)
+      let postLat, postLng;
+
+      if (post.use_profile_location) {
+        // Use profile location if available
+        postLat = post.owner?.display_lat || post.display_lat;
+        postLng = post.owner?.display_lng || post.display_lng;
+      } else {
+        // Use custom location
+        postLat = post.custom_location_lat || post.display_lat;
+        postLng = post.custom_location_lng || post.display_lng;
+      }
+
+      // If post has no location data, exclude it from filtered results
+      if (!postLat || !postLng) {
+        return false;
+      }
+
+      // Calculate distance from filter location to post location
+      const distance = calculateDistance(filter.lat, filter.lng, postLat, postLng);
+
+      // Include post if it's within the filter radius
+      return distance <= filter.radius;
+    });
+  };
+
+  // Apply location filter when filter changes
+  useEffect(() => {
+    if (locationFilter) {
+      // Apply filter to dog posts
+      const filteredDogPosts = filterPostsByLocation(allDogPosts, locationFilter);
+      setDogAvailabilityPosts(filteredDogPosts);
+
+      // Apply filter to petpal posts
+      const filteredPetpalPosts = filterPostsByLocation(allPetpalPosts, locationFilter);
+      setPetpalAvailabilityPosts(filteredPetpalPosts);
+    } else {
+      // No filter - show all posts
+      setDogAvailabilityPosts(allDogPosts);
+      setPetpalAvailabilityPosts(allPetpalPosts);
+    }
+  }, [locationFilter, allDogPosts, allPetpalPosts]);
 
   const formatAvailabilitySchedule = (enabledDays, daySchedules) => {
     if (!enabledDays || !daySchedules) return [];
@@ -211,7 +266,8 @@ export default function CommunityPage() {
         throw dogError;
       }
       console.log('Dog posts fetched:', dogPosts?.length || 0);
-      setDogAvailabilityPosts(dogPosts || []);
+      // Store unfiltered posts - filtering will be applied by useEffect
+      setAllDogPosts(dogPosts || []);
       
 
       // Fetch petpal availability posts (excluding current user's posts if logged in)
@@ -249,7 +305,8 @@ export default function CommunityPage() {
         throw petpalError;
       }
       console.log('Petpal posts fetched:', petpalPosts?.length || 0);
-      setPetpalAvailabilityPosts(petpalPosts || []);
+      // Store unfiltered posts - filtering will be applied by useEffect
+      setAllPetpalPosts(petpalPosts || []);
       
 
               // Fetch user's own availability posts
@@ -498,7 +555,8 @@ export default function CommunityPage() {
           </div>
         </div>
 
-
+        {/* Location Filter */}
+        <LocationFilter onFilterChange={setLocationFilter} />
 
         {/* Tabs */}
         <div className="mb-6 sm:mb-8">
