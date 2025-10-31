@@ -39,26 +39,29 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
 
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<User | null>(initialSession?.user || null);
-  const [saving, setSaving] = useState<boolean>(false); // Renamed 'loading' to 'saving' for sign-out button
+  // Renamed internal 'loading' to 'saving' for clarity (tracks sign-out)
+  const [saving, setSaving] = useState<boolean>(false);
 
   // Set initial auth loading based on whether a session was passed in
+  // If initialSession is null, we are loading; otherwise, we are done.
   const [authLoading, setAuthLoading] = useState<boolean>(!initialSession);
 
   useEffect(() => {
     let _isMounted = true; // Flag to prevent state update on unmounted component
 
-    // Only run getSession if we don't have an initial session
+    // 1. Fetch Session if we didn't receive one from the server (Server is our source of truth)
     if (!initialSession) {
+      // NOTE: We do NOT call setAuthLoading(true) here, as it's initialized that way.
       supabase.auth.getSession().then(({ data: { session: newSession } }) => {
         if (_isMounted) {
           setSession(newSession);
           setUser(newSession?.user || null);
-          setAuthLoading(false);
+          setAuthLoading(false); // Only set to false when session is resolved
         }
       });
     }
 
-    // This sets up the real-time listener for Auth state changes (login, logout, token refresh)
+    // 2. Set up the real-time listener for Auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -77,7 +80,7 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
       _isMounted = false; // Cleanup flag
       subscription?.unsubscribe();
     };
-  }, [supabase, initialSession, authLoading]); // Added initialSession to dependencies
+  }, [supabase, initialSession, authLoading]);
 
   const signOut = async () => {
     setSaving(true);
