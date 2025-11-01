@@ -25,6 +25,7 @@ tasks:
     interactive: true
     cmds:
       - cmd: npm install
+      - cmd: npm run prepare
       - cmd: test -f supabase/config.toml || npx supabase init
 
   setup:env:
