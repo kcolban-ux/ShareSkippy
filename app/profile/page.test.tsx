@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { useUser } from '@/libs/supabase/hooks';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 import ProfilePage from './page';
 
 jest.mock('next/navigation', () => ({
@@ -9,7 +9,7 @@ jest.mock('next/navigation', () => ({
   })),
 }));
 
-jest.mock('@/libs/supabase/hooks', () => ({
+jest.mock('@/components/providers/SupabaseUserProvider', () => ({
   useUser: jest.fn(),
 }));
 
@@ -53,7 +53,7 @@ jest.mock('@/libs/supabase/client', () => ({
   })),
 }));
 
-const mockedUseUser = useUser as jest.Mock;
+const mockedUseUser = useUser;
 
 describe('ProfilePage', () => {
   beforeEach(() => {
