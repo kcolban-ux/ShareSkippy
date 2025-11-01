@@ -7,7 +7,6 @@ import { createClient } from '@/libs/supabase/client';
 import { useUser } from '@/libs/supabase/hooks';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
-import { useProfileDraft } from '@/hooks/useProfileDraft';
 import PhotoUpload from '@/components/ui/PhotoUpload';
 
 const initialProfileState = {
