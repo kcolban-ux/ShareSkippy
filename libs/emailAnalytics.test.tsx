@@ -1,3 +1,6 @@
+jest.mock('./supabase/server');
+
+import { createServiceClient } from './supabase/server';
 import { EmailAnalytics } from './emailAnalytics';
 
 // Mock the external dependency
@@ -12,11 +15,11 @@ const mockSupabaseChain = {
 };
 
 const mockFrom = jest.fn(() => mockSupabaseChain);
-const mockCreateServiceClient = jest.fn(() => ({ from: mockFrom }));
 
-// FIX: Pass the mock function directly instead of calling it in a wrapper
-jest.mock('./supabase/server', () => ({
-  createServiceClient: mockCreateServiceClient,
+const mockedCreateServiceClient = createServiceClient as jest.Mock;
+
+mockedCreateServiceClient.mockImplementation(() => ({
+  from: mockFrom,
 }));
 
 // Test data
@@ -232,12 +235,15 @@ describe('EmailAnalytics', () => {
     });
 
     it('should filter the query when emailType is provided', async () => {
-      mockSupabaseChain.lte.mockResolvedValue({ data: mockData, error: null });
+      mockSupabaseChain.eq.mockResolvedValue({ data: mockData, error: null });
 
       await analytics.getEmailMetrics(startDate, endDate, 'welcome');
 
-      // Verify emailType filter WAS applied
+      // Verify .eq() was called
       expect(mockSupabaseChain.eq).toHaveBeenCalledWith('email_type', 'welcome');
+      // Verify the rest of the chain was also called
+      expect(mockSupabaseChain.gte).toHaveBeenCalled();
+      expect(mockSupabaseChain.lte).toHaveBeenCalled();
     });
 
     it('should return 0 rates when totalSent is 0', async () => {
