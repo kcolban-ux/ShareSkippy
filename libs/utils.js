@@ -81,9 +81,13 @@ export function capitalizeLocation(text) {
 
   // Split by spaces and capitalize each word
   const words = lowerText.split(' ');
-  const capitalizedWords = words.map((word) => {
+  const capitalizedWords = words.map((word, index) => {
     // Handle special cases
-    if (word === 'of' || word === 'the' || word === 'and' || word === 'in' || word === 'at') {
+    // FIX: Only apply lowercase rules if it's NOT the first word (index > 0)
+    if (
+      index > 0 &&
+      (word === 'of' || word === 'the' || word === 'and' || word === 'in' || word === 'at')
+    ) {
       return word; // Keep lowercase for articles and prepositions
     }
 
