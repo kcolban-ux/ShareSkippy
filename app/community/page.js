@@ -35,31 +35,42 @@ export default function CommunityPage() {
       return posts || [];
     }
 
-    return posts.filter((post) => {
-      // Get post location (either from custom location or profile location)
-      let postLat, postLng;
+    console.log('🔍 Filtering posts by location:', {
+      filterType: filter.type,
+      filterLat: filter.lat,
+      filterLng: filter.lng,
+      radius: filter.radius,
+      totalPosts: posts.length,
+    });
 
-      if (post.use_profile_location) {
-        // Use profile location if available
-        postLat = post.owner?.display_lat || post.display_lat;
-        postLng = post.owner?.display_lng || post.display_lng;
-      } else {
-        // Use custom location
-        postLat = post.custom_location_lat || post.display_lat;
-        postLng = post.custom_location_lng || post.display_lng;
-      }
+    const filteredPosts = posts.filter((post) => {
+      // Simplified: Always use display_lat/display_lng from availability table
+      // The availability table always has these populated (either from profile or custom location)
+      const postLat = post.display_lat;
+      const postLng = post.display_lng;
 
       // If post has no location data, exclude it from filtered results
       if (!postLat || !postLng) {
+        console.log(`  ❌ Post ${post.id} excluded: no location data`);
         return false;
       }
 
       // Calculate distance from filter location to post location
       const distance = calculateDistance(filter.lat, filter.lng, postLat, postLng);
 
-      // Include post if it's within the filter radius
-      return distance <= filter.radius;
+      const isWithinRadius = distance <= filter.radius;
+      
+      if (isWithinRadius) {
+        console.log(`  ✅ Post ${post.id} included: ${distance.toFixed(2)} miles away`);
+      } else {
+        console.log(`  ❌ Post ${post.id} excluded: ${distance.toFixed(2)} miles away (outside ${filter.radius} mile radius)`);
+      }
+
+      return isWithinRadius;
     });
+
+    console.log(`📊 Filtering results: ${filteredPosts.length} of ${posts.length} posts within ${filter.radius} miles`);
+    return filteredPosts;
   };
 
   // Apply location filter when filter changes

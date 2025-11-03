@@ -69,7 +69,7 @@ export default function LocationFilter({ onFilterChange }) {
         type: 'zip-city',
         lat: coords.lat,
         lng: coords.lng,
-        radius: 1, // 1 mile for zip/city
+        radius: 2, // 2 miles for zip/city (increased from 1 mile for better accuracy)
         query: zipCityInput.trim(), // Store the query for display
       };
       setActiveFilter(filter);
@@ -104,7 +104,7 @@ export default function LocationFilter({ onFilterChange }) {
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 {activeFilter.type === 'shared-location' 
                   ? `📍 Within ${activeFilter.radius} miles of your location`
-                  : `📍 Within ${activeFilter.radius} mile of ${activeFilter.query || zipCityInput}`}
+                  : `📍 Within ${activeFilter.radius} miles of ${activeFilter.query || zipCityInput}`}
               </span>
             </div>
           )}
