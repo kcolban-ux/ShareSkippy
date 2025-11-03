@@ -42,10 +42,11 @@ const Button = React.memo(
     const baseClasses =
       'btn font-medium transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-offset-2';
 
-    const variants = {
+    const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
       primary: 'btn-primary',
       secondary: 'btn-secondary',
       accent: 'btn-accent',
+      danger: 'btn-error',
       outline: 'btn-outline',
       ghost: 'btn-ghost',
       link: 'btn-link',
@@ -64,14 +65,14 @@ const Button = React.memo(
     };
 
     // Define the variant classes based on the existing test file
-    const variantClasses = {
+    const variantClasses: Partial<Record<NonNullable<ButtonProps['variant']>, string>> = {
       primary: 'bg-blue-500 text-white',
       secondary: 'bg-gray-200 text-gray-800',
       danger: 'bg-red-500 text-white',
       // Add other variants if they exist in your design system
     };
 
-    const sizes = {
+    const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
       sm: 'btn-sm',
       md: '',
       lg: 'btn-lg',
@@ -88,7 +89,11 @@ const Button = React.memo(
 
     if (href) {
       return (
-        <a href={href} className={buttonClasses} {...props}>
+        <a
+          href={href}
+          className={buttonClasses}
+          {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+        >
           {children}
         </a>
       );
