@@ -71,16 +71,30 @@ export default function CommunityPage() {
   // Apply location filter when filter changes
   // Only apply filtering when a filter is active - don't override direct sets when no filter
   useEffect(() => {
+    console.log('🔄 useEffect triggered:', {
+      locationFilter: locationFilter ? locationFilter.type : 'null',
+      allDogPostsLength: allDogPosts.length,
+      allPetpalPostsLength: allPetpalPosts.length,
+    });
+    
     // Only run when locationFilter changes (not when allDogPosts changes)
     // This prevents the useEffect from overwriting direct sets
     if (locationFilter) {
+      console.log('🔄 Filtering posts in useEffect');
       // Apply filter to dog posts
       const filteredDogPosts = filterPostsByLocation(allDogPosts, locationFilter);
+      console.log('🔄 Filtered dog posts:', {
+        originalCount: allDogPosts.length,
+        filteredCount: filteredDogPosts.length,
+        firstPostHasAllDogs: filteredDogPosts[0]?.allDogs ? `Yes (${filteredDogPosts[0].allDogs.length} dogs)` : 'No',
+      });
       setDogAvailabilityPosts(filteredDogPosts);
 
       // Apply filter to petpal posts
       const filteredPetpalPosts = filterPostsByLocation(allPetpalPosts, locationFilter);
       setPetpalAvailabilityPosts(filteredPetpalPosts);
+    } else {
+      console.log('🔄 No filter in useEffect - doing nothing');
     }
     // When filter is cleared, we don't need to do anything here
     // because fetchAvailabilityData will set dogAvailabilityPosts directly
@@ -262,9 +276,13 @@ export default function CommunityPage() {
             
             if (!dogsError && allDogs) {
               post.allDogs = allDogs;
-              console.log('Successfully fetched dogs for post:', post.id, 'dogs:', allDogs);
+              console.log('✅ Successfully fetched dogs for post:', post.id, {
+                dogsCount: allDogs.length,
+                dogs: allDogs.map(d => ({ id: d.id, name: d.name, hasPhoto: !!d.photo_url })),
+                postHasAllDogs: !!post.allDogs,
+              });
             } else {
-              console.error('Error fetching dogs for post:', post.id, dogsError);
+              console.error('❌ Error fetching dogs for post:', post.id, dogsError);
               post.allDogs = [];
             }
           } else {
