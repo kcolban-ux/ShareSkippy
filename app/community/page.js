@@ -69,7 +69,10 @@ export default function CommunityPage() {
   };
 
   // Apply location filter when filter changes
+  // Only apply filtering when a filter is active - don't override direct sets when no filter
   useEffect(() => {
+    // Only run when locationFilter changes (not when allDogPosts changes)
+    // This prevents the useEffect from overwriting direct sets
     if (locationFilter) {
       // Apply filter to dog posts
       const filteredDogPosts = filterPostsByLocation(allDogPosts, locationFilter);
@@ -78,12 +81,10 @@ export default function CommunityPage() {
       // Apply filter to petpal posts
       const filteredPetpalPosts = filterPostsByLocation(allPetpalPosts, locationFilter);
       setPetpalAvailabilityPosts(filteredPetpalPosts);
-    } else {
-      // No filter - show all posts
-      setDogAvailabilityPosts(allDogPosts);
-      setPetpalAvailabilityPosts(allPetpalPosts);
     }
-  }, [locationFilter, allDogPosts, allPetpalPosts]);
+    // When filter is cleared, we don't need to do anything here
+    // because fetchAvailabilityData will set dogAvailabilityPosts directly
+  }, [locationFilter]); // Only depend on locationFilter, not allDogPosts/allPetpalPosts
 
   const formatAvailabilitySchedule = (enabledDays, daySchedules) => {
     if (!enabledDays || !daySchedules) return [];
@@ -279,10 +280,33 @@ export default function CommunityPage() {
       console.log('Dog posts fetched:', dogPosts?.length || 0);
       // Store unfiltered posts with allDogs attached
       const postsWithDogs = dogPosts || [];
+      
+      // Debug: Check if allDogs is attached before setting state
+      console.log('🐕 DEBUG: Before setting state:', {
+        postsCount: postsWithDogs.length,
+        firstPostHasAllDogs: postsWithDogs[0]?.allDogs ? `Yes (${postsWithDogs[0].allDogs.length} dogs)` : 'No',
+        locationFilter: locationFilter ? `Active (${locationFilter.type})` : 'None',
+      });
+      
       setAllDogPosts(postsWithDogs);
-      // Also set dogAvailabilityPosts directly to ensure allDogs property is preserved
-      // The useEffect will handle filtering if a filter is active
-      setDogAvailabilityPosts(postsWithDogs);
+      
+      // Apply filter if active, otherwise set directly
+      if (locationFilter) {
+        const filtered = filterPostsByLocation(postsWithDogs, locationFilter);
+        console.log('🐕 DEBUG: After filtering:', {
+          originalCount: postsWithDogs.length,
+          filteredCount: filtered.length,
+          firstFilteredPostHasAllDogs: filtered[0]?.allDogs ? `Yes (${filtered[0].allDogs.length} dogs)` : 'No',
+        });
+        setDogAvailabilityPosts(filtered);
+      } else {
+        // No filter - set directly to ensure allDogs property is preserved
+        console.log('🐕 DEBUG: Setting posts directly (no filter):', {
+          postsCount: postsWithDogs.length,
+          firstPostHasAllDogs: postsWithDogs[0]?.allDogs ? `Yes (${postsWithDogs[0].allDogs.length} dogs)` : 'No',
+        });
+        setDogAvailabilityPosts(postsWithDogs);
+      }
       
 
       // Fetch petpal availability posts (excluding current user's posts if logged in)
@@ -323,9 +347,15 @@ export default function CommunityPage() {
       // Store unfiltered posts
       const postsWithData = petpalPosts || [];
       setAllPetpalPosts(postsWithData);
-      // Also set petpalAvailabilityPosts directly to ensure data is preserved
-      // The useEffect will handle filtering if a filter is active
-      setPetpalAvailabilityPosts(postsWithData);
+      
+      // Apply filter if active, otherwise set directly
+      if (locationFilter) {
+        const filtered = filterPostsByLocation(postsWithData, locationFilter);
+        setPetpalAvailabilityPosts(filtered);
+      } else {
+        // No filter - set directly to ensure data is preserved
+        setPetpalAvailabilityPosts(postsWithData);
+      }
       
 
               // Fetch user's own availability posts
@@ -625,7 +655,13 @@ export default function CommunityPage() {
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">{post.title}</h3>
                   
                   {/* Dog Information */}
-                  {console.log('Rendering post:', post.id, 'allDogs:', post.allDogs, 'dog_id:', post.dog_id, 'dog_ids:', post.dog_ids)}
+                  {console.log('🐕 RENDERING DEBUG post:', post.id, {
+                    hasAllDogs: !!post.allDogs,
+                    allDogsLength: post.allDogs?.length || 0,
+                    allDogs: post.allDogs,
+                    dog_id: post.dog_id,
+                    dog_ids: post.dog_ids,
+                  })}
                   {post.allDogs && post.allDogs.length > 0 && (
                     <div className="mb-4">
                       {post.allDogs.length === 1 ? (
