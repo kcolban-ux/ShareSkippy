@@ -16,7 +16,7 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
       return;
     }
 
-    if (comment.trim().length < 5) {
+    if (comment.trim().split(/\s+/).filter(Boolean).length < 5) {
       setError('Comment must be at least 5 words');
       return;
     }
@@ -84,7 +84,11 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Leave a Review</h2>
-            <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600"
+              aria-label="Close"
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -175,7 +179,11 @@ export default function ReviewModal({ isOpen, onClose, pendingReview, onReviewSu
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || rating === 0 || comment.trim().length < 5}
+                disabled={
+                  isSubmitting ||
+                  rating === 0 ||
+                  comment.trim().split(/\s+/).filter(Boolean).length < 5
+                }
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Review'}
