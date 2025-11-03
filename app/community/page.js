@@ -289,10 +289,12 @@ export default function CommunityPage() {
         throw dogError;
       }
       console.log('Dog posts fetched:', dogPosts?.length || 0);
-      // Store unfiltered posts - filtering will be applied by useEffect
+      // Store unfiltered posts with allDogs attached
       const postsWithDogs = dogPosts || [];
       setAllDogPosts(postsWithDogs);
-      // The useEffect will handle setting dogAvailabilityPosts based on filter state
+      // Also set dogAvailabilityPosts directly to ensure allDogs property is preserved
+      // The useEffect will handle filtering if a filter is active
+      setDogAvailabilityPosts(postsWithDogs);
 
       // Fetch petpal availability posts (excluding current user's posts if logged in)
       let petpalQuery = supabase
@@ -333,10 +335,12 @@ export default function CommunityPage() {
         throw petpalError;
       }
       console.log('Petpal posts fetched:', petpalPosts?.length || 0);
-      // Store unfiltered posts - filtering will be applied by useEffect
+      // Store unfiltered posts
       const postsWithData = petpalPosts || [];
       setAllPetpalPosts(postsWithData);
-      // The useEffect will handle setting petpalAvailabilityPosts based on filter state
+      // Also set petpalAvailabilityPosts directly to ensure data is preserved
+      // The useEffect will handle filtering if a filter is active
+      setPetpalAvailabilityPosts(postsWithData);
 
       // Fetch user's own availability posts
       if (currentUser) {
