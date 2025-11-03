@@ -3,79 +3,118 @@ import React, { useState, useRef, useCallback } from 'react';
 import { createClient } from '@/libs/supabase/client';
 import OptimizedImage from './OptimizedImage';
 
-const PhotoUpload = React.memo(
-  ({ onPhotoUploaded, initialPhotoUrl, disabled = false, bucketName = 'profile-photos' }) => {
-    const [uploading, setUploading] = useState(false);
-    const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
-    const [error, setError] = useState('');
-    const fileInputRef = useRef(null);
-    const supabase = createClient();
+/**
+ * Compresses an image file to be under 100KB as a JPEG.
+ * @param file The original image file.
+ * @returns A Promise that resolves with the compressed File object.
+ */
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-    // Compress image to 100KB
-    const compressImage = (file) => {
-      return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
+    if (!ctx) {
+      return reject(new Error('Failed to get canvas context'));
+    }
 
-        img.onload = () => {
-          // Calculate new dimensions to maintain aspect ratio
-          const maxSize = 800; // Max width/height
-          let { width, height } = img;
+    const img = new Image();
 
-          if (width > height) {
-            if (width > maxSize) {
-              height = (height * maxSize) / width;
-              width = maxSize;
-            }
-          } else {
-            if (height > maxSize) {
-              width = (width * maxSize) / height;
-              height = maxSize;
-            }
-          }
+    // Make the onload handler async to use await
+    img.onload = async () => {
+      // Calculate new dimensions to maintain aspect ratio
+      const maxSize = 800; // Max width/height
+      let { width, height } = img;
 
-          canvas.width = width;
-          canvas.height = height;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+      }
 
-          // Draw and compress
-          ctx.drawImage(img, 0, 0, width, height);
+      canvas.width = width;
+      canvas.height = height;
 
-          // Start with high quality and reduce until under 100KB
-          let quality = 0.9;
-          let dataUrl;
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
 
-          const compress = () => {
-            dataUrl = canvas.toDataURL('image/jpeg', quality);
-            const base64Size = dataUrl.length * 0.75; // Approximate size in bytes
+      let quality = 0.9;
+      let dataUrl: string;
+      let base64Size = Infinity;
+      const targetSize = 100000; // 100KB
 
-            if (base64Size > 100000 && quality > 0.1) {
-              // 100KB = 100,000 bytes
-              quality -= 0.1;
-              compress();
-            } else {
-              // Convert data URL to blob
-              fetch(dataUrl)
-                .then((res) => res.blob())
-                .then((blob) => {
-                  const compressedFile = new File([blob], file.name, {
-                    type: 'image/jpeg',
-                    lastModified: Date.now(),
-                  });
-                  resolve(compressedFile);
-                });
-            }
-          };
+      // Use a while loop instead of recursion
+      while (base64Size > targetSize && quality > 0.1) {
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // Approximate size in bytes
+        base64Size = dataUrl.length * 0.75;
 
-          compress();
-        };
+        if (base64Size > targetSize) {
+          quality = Math.max(0.1, quality - 0.1);
+        }
+      }
 
-        img.src = URL.createObjectURL(file);
-      });
+      // Flatten the promise chain using async/await
+      try {
+        const res = await fetch(dataUrl!);
+        const blob = await res.blob();
+        const compressedFile = new File([blob], file.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now(),
+        });
+        resolve(compressedFile);
+      } catch (err) {
+        reject(err);
+      }
     };
 
+    img.onerror = (err) => {
+      let errorMessage: string;
+
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err instanceof Event) {
+        // The 'err' in onerror is often a generic Event, not a detailed Error object
+        errorMessage = 'Image load event error';
+      } else {
+        // Fallback for any other type
+        errorMessage = String(err);
+      }
+
+      reject(new Error(`Failed to load image for compression: ${errorMessage}`));
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
+interface PhotoUploadProps {
+  /** Callback function triggered when a photo is successfully uploaded or removed. */
+  onPhotoUploaded: (url: string) => void;
+  /** The initial URL of the photo to display. */
+  initialPhotoUrl: string | null;
+  /** Whether the upload functionality should be disabled. */
+  disabled?: boolean;
+  /** The name of the Supabase storage bucket to use. */
+  bucketName?: string;
+}
+
+const PhotoUpload = React.memo<PhotoUploadProps>(
+  ({ onPhotoUploaded, initialPhotoUrl, disabled = false, bucketName = 'profile-photos' }) => {
+    const [uploading, setUploading] = useState<boolean>(false);
+    const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
+    const [error, setError] = useState<string>('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const supabase = createClient();
+
+    /**
+     * Uploads the given file to Supabase storage.
+     */
     const uploadToStorage = useCallback(
-      async (file) => {
+      async (file: File): Promise<string> => {
         try {
           // Get current user
           const {
@@ -85,6 +124,8 @@ const PhotoUpload = React.memo(
 
           // Generate unique filename
           const fileExt = file.name.split('.').pop();
+          if (!fileExt) throw new Error('File has no extension');
+
           const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
           console.log('Uploading to bucket:', bucketName);
@@ -111,25 +152,39 @@ const PhotoUpload = React.memo(
             data: { publicUrl },
           } = supabase.storage.from(bucketName).getPublicUrl(fileName);
 
+          if (!publicUrl) {
+            throw new Error('Failed to get public URL after upload.');
+          }
+
           console.log('Public URL:', publicUrl);
           return publicUrl;
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error uploading to storage:', error);
-          throw new Error(`Upload failed: ${error.message}`);
+          if (error?.message?.startsWith('Upload failed:')) {
+            throw error;
+          }
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Upload failed: ${message}`);
         }
       },
-      [bucketName, supabase]
+      [supabase, bucketName]
     );
 
+    /**
+     * Handles the file input change event.
+     */
     const handleFileUpload = useCallback(
-      async (event) => {
+      async (event: React.ChangeEvent<HTMLInputElement>) => {
         try {
           setError('');
           setUploading(true);
 
-          const file = event.target.files[0];
-          if (!file) return;
+          if (!event.target.files || event.target.files.length === 0) {
+            setUploading(false);
+            return;
+          }
 
+          const file = event.target.files[0];
           console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
 
           // Validate file type
@@ -160,17 +215,22 @@ const PhotoUpload = React.memo(
           setPhotoUrl(uploadedUrl);
           onPhotoUploaded(uploadedUrl);
           setUploading(false);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error uploading photo:', error);
-          setError(`Upload failed: ${error.message || 'Unknown error'}`);
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          setError(message);
           setUploading(false);
         }
       },
       [onPhotoUploaded, uploadToStorage]
     );
 
+    /**
+     * Removes the currently displayed photo from storage and state.
+     */
     const removePhoto = useCallback(async () => {
-      if (photoUrl && photoUrl.includes('supabase')) {
+      const isSupabaseUrl = photoUrl?.includes('.supabase.co') || photoUrl?.includes('supabase.mock');
+      if (isSupabaseUrl) {
         try {
           // Extract file path from URL
           const urlParts = photoUrl.split('/');
@@ -178,14 +238,24 @@ const PhotoUpload = React.memo(
 
           // Delete from storage
           await supabase.storage.from(bucketName).remove([filePath]);
-        } catch (error) {
-          console.error('Error removing photo:', error);
+        } catch (error: any) {
+          console.error('Error removing photo:', error.message);
+          // Don't block UI update even if delete fails
         }
       }
 
-      setPhotoUrl('');
-      onPhotoUploaded('');
-    }, [onPhotoUploaded, photoUrl, bucketName, supabase]);
+      setPhotoUrl(null);
+      onPhotoUploaded(''); // Notify parent that photo is removed
+    }, [onPhotoUploaded, photoUrl, supabase, bucketName]);
+
+    let buttonText: string;
+    if (uploading) {
+      buttonText = 'Uploading...';
+    } else if (photoUrl) {
+      buttonText = 'Change Photo';
+    } else {
+      buttonText = 'Upload Photo';
+    }
 
     return (
       <div className="space-y-4">
@@ -206,7 +276,7 @@ const PhotoUpload = React.memo(
                   onClick={removePhoto}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600"
                 >
-                  ×
+                  &times;
                 </button>
               )}
             </div>
@@ -233,7 +303,7 @@ const PhotoUpload = React.memo(
                 disabled={uploading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {uploading ? 'Uploading...' : photoUrl ? 'Change Photo' : 'Upload Photo'}
+                {buttonText}
               </button>
             )}
 
