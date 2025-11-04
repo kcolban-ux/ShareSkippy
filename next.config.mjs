@@ -82,6 +82,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com', port: '', pathname: '**' },
       { protocol: 'https', hostname: 'logos-world.net', port: '', pathname: '**' },
       { protocol: 'https', hostname: 'utrvultsbtsywypztfnn.supabase.co', port: '', pathname: '**' }, // Supabase storage domain
+      { protocol: 'http', hostname: '127.0.0.1', port: '54321', pathname: '**' },
+      { protocol: 'http', hostname: 'localhost', port: '54321', pathname: '**' },
     ],
     // Add image optimization settings
     formats: ['image/webp', 'image/avif'],
