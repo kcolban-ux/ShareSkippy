@@ -167,12 +167,6 @@ This project enhances the messaging page (`/messages`) with four key improvement
    - Add UI indicators in conversations list
    - Implement real-time updates
 
-4. **Phase 4: Message Reactions** (Most complex, requires database migration)
-   - Create database migration for reactions table
-   - Create reactions API endpoint
-   - Add reaction UI components
-   - Implement real-time updates for reactions
-
 ## Implementation Log
 
 ### Phase 1: Profile Navigation Links
@@ -226,30 +220,3 @@ This project enhances the messaging page (`/messages`) with four key improvement
 - [ ] **For user:** Verify unread badges update in real-time when new messages arrive
 - [ ] **For user:** Test that unread counts are accurate after marking messages as read
 - [ ] **For user:** Verify unread badge styling is clear and visible but doesn't interfere with conversation list layout
-
-### Phase 4: Message Reactions
-
-**Coding Tasks:**
-- [ ] Create database migration file `supabase/migrations/YYYYMMDDHHMMSS_add_message_reactions.sql` that creates `message_reactions` table with columns: id (UUID), message_id (UUID, foreign key), user_id (UUID, foreign key), reaction_type (TEXT with CHECK constraint for 'thumbs_up', 'thumbs_down', 'heart'), created_at (TIMESTAMP)
-- [ ] Add unique constraint on `(message_id, user_id, reaction_type)` in migration to prevent duplicate reactions
-- [ ] Add index on `message_id` in migration for efficient querying
-- [ ] Enable RLS on `message_reactions` table and create policies: users can view reactions on messages they sent/received, users can insert reactions (where user_id = auth.uid()), users can delete their own reactions
-- [ ] Create API endpoint `/api/messages/reactions/route.js` with POST handler that toggles reactions (if exists, delete; if not exists, insert) and GET handler that fetches reactions for a message or set of messages with counts
-- [ ] Update `fetchMessages` function to also fetch reactions for messages using GET endpoint or direct Supabase query with aggregation
-- [ ] Add `reactions` field to message objects containing reaction counts and current user's reactions
-- [ ] Create reaction button component or inline buttons below each message bubble showing thumbs up, thumbs down, and heart icons
-- [ ] Style reaction buttons to show active state when user has reacted (highlighted/filled) and show reaction counts next to each button
-- [ ] Add click handlers to reaction buttons that call POST endpoint to toggle reactions
-- [ ] Add real-time subscription to `message_reactions` table changes to update reaction counts and states when reactions are added/removed
-- [ ] Update reaction UI in real-time when reactions change via subscription
-- [ ] Handle edge cases: deleted users in reactions (show "Unknown User"), missing reactions data gracefully
-- [ ] Ensure reaction buttons are accessible and work on mobile devices
-
-**QA Tasks:**
-- [ ] **For user:** Test adding reactions (thumbs up, thumbs down, heart) to messages and verify they appear correctly
-- [ ] **For user:** Test removing reactions by clicking again and verify they are removed
-- [ ] **For user:** Verify reaction counts update correctly when multiple users react
-- [ ] **For user:** Check that reactions update in real-time when another user adds/removes reactions
-- [ ] **For user:** Test reactions on mobile devices to ensure buttons are easily clickable
-- [ ] **For user:** Verify reaction UI styling matches existing design patterns and is visually clear
-

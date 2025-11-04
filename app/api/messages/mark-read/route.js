@@ -46,6 +46,21 @@ export async function POST(request) {
       throw updateError;
     }
 
+    // Also mark legacy messages (without conversation_id) as read
+    // Match by participant pairs
+    const { error: legacyUpdateError } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .or(`and(sender_id.eq.${conversation.participant1_id},recipient_id.eq.${conversation.participant2_id}),and(sender_id.eq.${conversation.participant2_id},recipient_id.eq.${conversation.participant1_id})`)
+      .eq('recipient_id', user.id)
+      .eq('is_read', false)
+      .is('conversation_id', null);
+
+    if (legacyUpdateError) {
+      console.error('Error marking legacy messages as read:', legacyUpdateError);
+      // Don't fail if legacy update fails
+    }
+
     return NextResponse.json({ success: true });
 
   } catch (error) {

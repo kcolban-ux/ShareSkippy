@@ -83,7 +83,7 @@ export function useUnreadMessages(userId) {
 
     // Set up real-time subscription for unread messages
     const channel = supabase
-      .channel('unread-messages-count')
+      .channel(`unread-messages-count-${userId}`)
       .on(
         'postgres_changes',
         {
@@ -92,8 +92,9 @@ export function useUnreadMessages(userId) {
           table: 'messages',
           filter: `recipient_id=eq.${userId}`,
         },
-        () => {
-          // Refresh count when messages change
+        (payload) => {
+          // Refresh count when messages change (INSERT, UPDATE, DELETE)
+          // This includes when is_read is updated
           fetchUnreadCount();
         }
       )

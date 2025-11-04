@@ -103,13 +103,20 @@ export default function MessagesPage() {
           
           // Mark messages as read after fetching them
           try {
-            await fetch('/api/messages/mark-read', {
+            const markReadResponse = await fetch('/api/messages/mark-read', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ conversation_id: selectedConversation.id }),
             });
-            // Refresh conversations to update unread counts
-            await fetchConversations();
+            
+            if (markReadResponse.ok) {
+              // Refresh conversations to update unread counts immediately
+              await fetchConversations();
+              // Force a small delay to ensure database update is propagated
+              setTimeout(() => {
+                fetchConversations();
+              }, 100);
+            }
           } catch (markReadError) {
             console.error('Error marking messages as read:', markReadError);
             // Don't fail the message fetch if mark-read fails
@@ -244,16 +251,27 @@ export default function MessagesPage() {
       const processedConversations = data.map((conv) => {
         const otherParticipant =
           conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
+        const unreadCount = unreadCounts[conv.id] || 0;
         return {
           ...conv,
           otherParticipant,
           displayName: `${otherParticipant.first_name} ${otherParticipant.last_name}`,
           profilePhoto: otherParticipant.profile_photo_url,
-          unreadCount: unreadCounts[conv.id] || 0,
+          unreadCount: unreadCount,
         };
       });
 
       setConversations(processedConversations);
+      
+      // Update selected conversation's unread count if it exists
+      if (selectedConversation) {
+        const updatedSelected = processedConversations.find(
+          (c) => c.id === selectedConversation.id
+        );
+        if (updatedSelected) {
+          setSelectedConversation(updatedSelected);
+        }
+      }
 
       // Select the first conversation if none is selected
       if (processedConversations.length > 0 && !selectedConversation) {
@@ -277,7 +295,7 @@ export default function MessagesPage() {
     if (!user) return;
 
     const channel = supabase
-      .channel('unread-messages')
+      .channel(`unread-messages-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -287,7 +305,8 @@ export default function MessagesPage() {
           filter: `recipient_id=eq.${user.id}`,
         },
         (payload) => {
-          // Refresh conversations to update unread counts
+          // Refresh conversations to update unread counts when messages change
+          // This includes when is_read is updated (UPDATE event)
           fetchConversations();
         }
       )
