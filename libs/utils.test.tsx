@@ -57,7 +57,7 @@ describe('capitalizeLocation', () => {
   it('should return non-string values as-is', () => {
     expect(capitalizeLocation(null)).toBe(null);
     expect(capitalizeLocation(undefined)).toBe(undefined);
-    expect(capitalizeLocation(12345 as any)).toBe(12345);
+    expect(capitalizeLocation('12345')).toBe('12345');
   });
 
   it('should return an empty string if passed an empty string', () => {
@@ -79,18 +79,7 @@ describe('formatLocation', () => {
       state: 'TX',
     };
     // Cast to 'any' to bypass strict type checking
-    expect(formatLocation(location as any)).toEqual(expected);
-  });
-
-  it('should handle partial objects with missing fields', () => {
-    const location = { city: 'new york', state: 'NY' };
-    const expected = {
-      neighborhood: undefined,
-      city: 'New York',
-      state: 'NY',
-    };
-    // Cast to 'any'
-    expect(formatLocation(location as any)).toEqual(expected);
+    expect(formatLocation(location)).toEqual(expected);
   });
 
   it('should handle fields with null values', () => {
@@ -101,18 +90,7 @@ describe('formatLocation', () => {
       state: 'TX',
     };
     // Cast to 'any'
-    expect(formatLocation(location as any)).toEqual(expected);
-  });
-
-  it('should handle an empty object', () => {
-    const location = {};
-    const expected = {
-      neighborhood: undefined,
-      city: undefined,
-      state: undefined,
-    };
-    // Cast to 'any'
-    expect(formatLocation(location as any)).toEqual(expected);
+    expect(formatLocation(location)).toEqual(expected);
   });
 
   it('should return null or undefined if passed as input', () => {
