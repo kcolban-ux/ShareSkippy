@@ -6,6 +6,7 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import logo from '@/app/icon.png';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import config from '@/config';
 
 const navigationItems = [
@@ -39,7 +40,8 @@ const LoggedInNav = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { signOut } = useUser();
+  const { signOut, user } = useUser();
+  const { unreadCount } = useUnreadMessages(user?.id);
 
   useEffect(() => {
     setIsOpen(false);
@@ -111,12 +113,17 @@ const LoggedInNav = () => {
             <Link
               href={item.href}
               key={item.href}
-              className={`px-2 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 text-sm whitespace-nowrap ${
+              className={`relative px-2 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 text-sm whitespace-nowrap ${
                 pathname === item.href ? 'bg-white/20 text-white' : ''
               }`}
               title={item.label}
             >
               {item.label}
+              {item.href === '/messages' && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-semibold rounded-full h-5 w-5 min-w-[20px] flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           ))}
         </div>
@@ -184,12 +191,17 @@ const LoggedInNav = () => {
                   <Link
                     href={item.href}
                     key={item.href}
-                    className={`w-full px-3 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 ${
+                    className={`relative w-full px-3 py-2 rounded-lg transition-colors text-white hover:text-indigo-100 ${
                       pathname === item.href ? 'bg-white/20 text-white' : ''
                     }`}
                     title={item.label}
                   >
                     {item.label}
+                    {item.href === '/messages' && unreadCount > 0 && (
+                      <span className="absolute top-1 right-3 bg-red-500 text-white text-xs font-semibold rounded-full h-5 w-5 min-w-[20px] flex items-center justify-center">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>

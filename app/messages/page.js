@@ -200,17 +200,43 @@ export default function MessagesPage() {
       let unreadCounts = {};
       
       if (conversationIds.length > 0) {
-        const { data: unreadMessages, error: unreadError } = await supabase
+        // First, try to get unread messages with conversation_id
+        const { data: unreadMessagesWithConv, error: unreadError1 } = await supabase
           .from('messages')
           .select('conversation_id')
           .in('conversation_id', conversationIds)
           .eq('recipient_id', user.id)
           .eq('is_read', false);
 
-        if (!unreadError && unreadMessages) {
+        if (!unreadError1 && unreadMessagesWithConv) {
           // Count unread messages per conversation
-          unreadMessages.forEach((msg) => {
-            unreadCounts[msg.conversation_id] = (unreadCounts[msg.conversation_id] || 0) + 1;
+          unreadMessagesWithConv.forEach((msg) => {
+            if (msg.conversation_id) {
+              unreadCounts[msg.conversation_id] = (unreadCounts[msg.conversation_id] || 0) + 1;
+            }
+          });
+        }
+
+        // Also check for unread messages without conversation_id (legacy messages)
+        // Query all unread messages for this user without conversation_id
+        const { data: unreadLegacy, error: unreadError2 } = await supabase
+          .from('messages')
+          .select('sender_id, recipient_id')
+          .eq('recipient_id', user.id)
+          .eq('is_read', false)
+          .is('conversation_id', null);
+
+        if (!unreadError2 && unreadLegacy) {
+          // Match legacy messages to conversations by participant pairs
+          unreadLegacy.forEach((msg) => {
+            const matchingConv = data.find(
+              (conv) =>
+                (conv.participant1_id === msg.sender_id && conv.participant2_id === user.id) ||
+                (conv.participant2_id === msg.sender_id && conv.participant1_id === user.id)
+            );
+            if (matchingConv) {
+              unreadCounts[matchingConv.id] = (unreadCounts[matchingConv.id] || 0) + 1;
+            }
           });
         }
       }
