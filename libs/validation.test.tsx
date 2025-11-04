@@ -42,7 +42,7 @@ describe('libs/validation.js - Utility Functions', () => {
       expect(validateEmail('invalid-email')).toBe(false);
       expect(validateEmail('user@domain')).toBe(false);
       expect(validateEmail('user @domain.com')).toBe(false);
-      expect(validateEmail(123 as any)).toBe(false);
+      expect(validateEmail(123)).toBe(false);
     });
   });
 
@@ -84,7 +84,7 @@ describe('libs/validation.js - Utility Functions', () => {
       expect(validateStringLength('abc', 'Code', 3, 5)).toBe(true);
     });
     test('should throw an error if not a string', () => {
-      expect(() => validateStringLength(123 as any, 'Value')).toThrow('Value must be a string');
+      expect(() => validateStringLength(123, 'Value')).toThrow('Value must be a string');
     });
     test('should throw an error if below minLength', () => {
       expect(() => validateStringLength('hi', 'Name', 5)).toThrow(
@@ -159,7 +159,7 @@ describe('libs/validation.js - Utility Functions', () => {
       expect(validateNumber(10, 'Count')).toBe(10);
       expect(validateNumber('10.5', 'Count')).toBe(10.5);
       // Confirmed: Number(null) is 0, so validateNumber returns 0 for null.
-      expect(validateNumber(null as any, 'Count')).toBe(0);
+      expect(validateNumber(null, 'Count')).toBe(0);
     });
     test('should enforce min/max constraints', () => {
       expect(validateNumber(5, 'Rating', 1, 5)).toBe(5);
@@ -168,8 +168,8 @@ describe('libs/validation.js - Utility Functions', () => {
     });
     test('should throw an error for non-numeric input that is NOT null or undefined', () => {
       expect(() => validateNumber('abc', 'Count')).toThrow('Count must be a number');
-      expect(() => validateNumber(NaN, 'Count')).toThrow('Count must be a number');
-      expect(() => validateNumber(undefined as any, 'Count')).toThrow('Count must be a number');
+      expect(() => validateNumber(Number.NaN, 'Count')).toThrow('Count must be a number');
+      expect(() => validateNumber(undefined, 'Count')).toThrow('Count must be a number');
     });
   });
 
