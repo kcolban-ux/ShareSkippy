@@ -15,8 +15,9 @@ jest.mock('@/config', () => ({
 process.env.RESEND_API_KEY = 'mock_api_key';
 
 // These will be assigned in beforeEach after modules are reset
+// Note: We keep the type import here, but the value is loaded dynamically.
 let resendModule: typeof import('./resend');
-let Resend: jest.Mock;
+let Resend: jest.Mocked<typeof import('resend').Resend>; // Use typed mock
 let config: { resend: { fromAdmin: string; supportEmail: string } };
 
 // Mock utilities
@@ -32,7 +33,8 @@ describe('sendEmail', () => {
     html: '<h1>Welcome!</h1>',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // ⬅️ Must be async to use await import()
     // 1. Reset module cache to clear state (like lastEmailTime)
     jest.resetModules();
     jest.useFakeTimers();
@@ -43,11 +45,12 @@ describe('sendEmail', () => {
     consoleWarnSpy.mockClear();
     consoleErrorSpy.mockClear();
 
-    // 3. Re-import the mocked Resend class
-    Resend = require('resend').Resend;
+    // 3. Re-import the mocked Resend class using dynamic import()
+    const resendModuleImport = await import('resend');
+    Resend = resendModuleImport.Resend as jest.Mocked<typeof import('resend').Resend>;
 
     // 4. Re-apply the mock implementation for the class constructor
-    // This must happen *after* resetModules but *before* require('./resend')
+    // This must happen *after* resetModules but *before* the module under test is imported.
     (Resend as jest.Mock).mockImplementation(() => ({
       emails: {
         send: mockResendSend,
@@ -58,9 +61,10 @@ describe('sendEmail', () => {
     mockResendSend.mockResolvedValue({ data: { id: 'email-id-123' }, error: null });
 
     // 6. Now, re-import the module under test and its config.
-    // 'config' will be correctly assigned from the default export.
-    config = require('@/config').default;
-    resendModule = require('./resend');
+    // Use dynamic import() for both, accessing the default export for config.
+    const configModule = await import('@/config');
+    config = configModule.default;
+    resendModule = await import('./resend');
   });
 
   afterAll(() => {
