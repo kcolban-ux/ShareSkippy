@@ -1,3 +1,4 @@
+import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMeetings, useUpdateMeetingStatus } from './useMeetings';
@@ -30,9 +31,14 @@ const createWrapper = () => {
       //
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
+
+  const QueryProvider = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  QueryProvider.displayName = 'QueryProvider';
+
+  return QueryProvider;
 };
 
 describe('useMeetings', () => {
