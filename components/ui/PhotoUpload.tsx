@@ -93,6 +93,7 @@ const compressImage = (file: File): Promise<File> => {
 
 interface PhotoUploadProps {
   /** Callback function triggered when a photo is successfully uploaded or removed. */
+  // eslint-disable-next-line no-unused-vars
   onPhotoUploaded: (url: string) => void;
   /** The initial URL of the photo to display. */
   initialPhotoUrl: string | null;
@@ -158,12 +159,25 @@ const PhotoUpload = React.memo<PhotoUploadProps>(
 
           console.log('Public URL:', publicUrl);
           return publicUrl;
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error uploading to storage:', error);
-          if (error?.message?.startsWith('Upload failed:')) {
-            throw error;
+
+          let message: string;
+
+          if (error instanceof Error) {
+            message = error.message;
+          } else if (typeof error === 'object' && error !== null && 'message' in error) {
+            // Safely extract the message property, coercing it to a string.
+            message = String((error as { message: unknown }).message);
+          } else {
+            // Fallback to converting the entire error value to a string.
+            message = String(error);
           }
-          const message = error instanceof Error ? error.message : String(error);
+
+          if (message.startsWith('Upload failed:')) {
+            throw new Error(message);
+          }
+
           throw new Error(`Upload failed: ${message}`);
         }
       },
@@ -215,9 +229,19 @@ const PhotoUpload = React.memo<PhotoUploadProps>(
           setPhotoUrl(uploadedUrl);
           onPhotoUploaded(uploadedUrl);
           setUploading(false);
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error uploading photo:', error);
-          const message = error instanceof Error ? error.message : 'Unknown error';
+
+          let message: string;
+
+          if (error instanceof Error) {
+            message = error.message;
+          } else if (typeof error === 'string') {
+            message = error;
+          } else {
+            message = 'Unknown file upload error.';
+          }
+
           setError(message);
           setUploading(false);
         }
@@ -229,18 +253,31 @@ const PhotoUpload = React.memo<PhotoUploadProps>(
      * Removes the currently displayed photo from storage and state.
      */
     const removePhoto = useCallback(async () => {
-      const isSupabaseUrl = photoUrl?.includes('.supabase.co') || photoUrl?.includes('supabase.mock');
+      const isSupabaseUrl =
+        photoUrl?.includes('.supabase.co') || photoUrl?.includes('supabase.mock');
+
       if (isSupabaseUrl) {
         try {
+          if (!photoUrl) return; // Should not happen
+
           // Extract file path from URL
           const urlParts = photoUrl.split('/');
           const filePath = urlParts.slice(-2).join('/'); // Get last two parts
 
           // Delete from storage
           await supabase.storage.from(bucketName).remove([filePath]);
-        } catch (error: any) {
-          console.error('Error removing photo:', error.message);
-          // Don't block UI update even if delete fails
+        } catch (error: unknown) {
+          let errorMessage: string;
+
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          } else {
+            errorMessage = 'An unknown error occurred during photo removal.';
+          }
+
+          console.error('Error removing photo:', errorMessage);
         }
       }
 
