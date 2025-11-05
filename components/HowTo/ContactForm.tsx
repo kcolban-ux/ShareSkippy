@@ -83,7 +83,7 @@ export default function ContactForm() {
 
   return (
     <Callout tone="purple" title="📧 Contact Support">
-      <p className="mb-4">Need help or want to report an issue? We're here to help!</p>
+      <p className="mb-4">Need help or want to report an issue? We&apos;re here to help!</p>
 
       {/* Use onSubmit for client-side handlers */}
       <form onSubmit={handleSubmit} className="space-y-4" aria-label="Contact Support">
