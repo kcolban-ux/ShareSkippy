@@ -7,7 +7,6 @@ import {
   type EmailEvent,
   type SendEmailParams,
 } from './sendEmail'; // Adjust path if your test file is elsewhere
-import { createServiceClient } from '@/libs/supabase/server';
 import { sendEmail as resendSendEmail } from '@/libs/resend';
 import { loadEmailTemplate } from './templates';
 
