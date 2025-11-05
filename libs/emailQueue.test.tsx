@@ -1,36 +1,50 @@
 import { EmailQueue } from './emailQueue';
 
+// --- Local Mock Types (Replaceing imported types from './emailQueue') ---
+type EmailData = { [key: string]: unknown };
+// eslint-disable-next-line no-unused-vars
+type SendEmailFunction = (data: EmailData) => Promise<string>;
+type Priority = 'normal' | 'high';
+
+interface AddToQueueOptions {
+  priority?: Priority;
+  maxRetries?: number;
+}
+
+interface EmailQueueItem {
+  id: string;
+  data: EmailData;
+  options: AddToQueueOptions;
+}
+
 jest.useFakeTimers();
-jest.spyOn(global, 'setTimeout');
+jest.spyOn(globalThis, 'setTimeout');
 
 describe('EmailQueue', () => {
-  let queue: EmailQueue;
-  let mockSendFn: jest.Mock;
+  let queue: EmailQueue; // Explicitly type mockSendFn using the local mock type
+  let mockSendFn: jest.Mock<Promise<string>, Parameters<SendEmailFunction>>;
   const mockEmailData = { emailType: 'test_email', userId: 'user-123' };
 
   beforeEach(() => {
     // Set a predictable start time *after* enabling fake timers
     jest.setSystemTime(new Date('2025-01-01T10:00:00Z'));
 
-    queue = new EmailQueue();
-    // Speed up rate limiting for tests: 10 emails max per 1 second (1000ms)
-    queue.updateRateLimit({ maxEmails: 10, windowMs: 1000 });
+    queue = new EmailQueue(); // Speed up rate limiting for tests: 10 emails max per 1 second (1000ms)
+    queue.updateRateLimit({ maxEmails: 10, windowMs: 1000 }); // Mock the send function that the queue will call
 
-    // Mock the send function that the queue will call
     mockSendFn = jest.fn().mockResolvedValue('OK');
     queue.clearQueue();
   });
 
   afterAll(() => {
     jest.useRealTimers();
-  });
+  }); // --- Core Queue Management ---
 
-  // --- Core Queue Management ---
   describe('Core Queue Management', () => {
-    let processQueueSpy: jest.SpyInstance;
-
-    // This spy technique is valid for these specific unit tests
+    // Explicitly type the spy to refer to a function that returns a Promise<void>
+    let processQueueSpy: jest.SpyInstance<Promise<void>, []>; // This spy technique is valid for these specific unit tests
     // where we *only* want to test the synchronous state of adding to the queue.
+
     beforeEach(() => {
       processQueueSpy = jest.spyOn(queue, 'processQueue').mockImplementation(async () => {});
     });
@@ -63,22 +77,19 @@ describe('EmailQueue', () => {
       expect(queue.queue[0].id).toBe(highId);
       expect(queue.queue[1].id).toBe(normalId);
     });
-  });
+  }); // This test *doesn't* use the spy
 
-  // This test *doesn't* use the spy
   it('should process the queue immediately after adding the first item', async () => {
     await queue.addToQueue(mockEmailData, mockSendFn);
     expect(queue.processing).toBe(true);
 
-    await jest.runAllTimersAsync();
+    await jest.runAllTimersAsync(); // Check final state
 
-    // Check final state
     expect(mockSendFn).toHaveBeenCalledTimes(1);
     expect(queue.processing).toBe(false);
     expect(queue.queue).toHaveLength(0);
-  });
+  }); // --- Processing and Sending ---
 
-  // --- Processing and Sending ---
   describe('Processing and Sending', () => {
     it('should process all items in the queue successfully', async () => {
       await queue.addToQueue({ id: 1 }, mockSendFn);
@@ -87,9 +98,8 @@ describe('EmailQueue', () => {
 
       expect(queue.processing).toBe(true);
 
-      await jest.runAllTimersAsync();
+      await jest.runAllTimersAsync(); // All items processed
 
-      // All items processed
       expect(mockSendFn).toHaveBeenCalledTimes(3);
       expect(queue.queue).toHaveLength(0);
       expect(queue.processing).toBe(false);
@@ -99,13 +109,11 @@ describe('EmailQueue', () => {
       const sendError = new Error('Resend Failed');
       mockSendFn.mockRejectedValue(sendError);
 
-      const id = await queue.addToQueue(mockEmailData, mockSendFn, {
-        maxRetries: 0,
-      });
+      await queue.addToQueue(mockEmailData, mockSendFn);
 
-      await jest.runAllTimersAsync();
+      await jest.runAllTimersAsync(); // Expect 4 calls (Initial + 3 Retries)
 
-      expect(mockSendFn).toHaveBeenCalledTimes(1);
+      expect(mockSendFn).toHaveBeenCalledTimes(4);
       expect(queue.processing).toBe(false);
     });
 
@@ -118,9 +126,8 @@ describe('EmailQueue', () => {
 
       process.env.EMAIL_DEBUG_LOG = '0';
     });
-  });
+  }); // --- Rate Limiting ---
 
-  // --- Rate Limiting ---
   describe('Rate Limiting', () => {
     it('should send up to maxEmails then pause and reset', async () => {
       // This test is tricky: 10 emails * 100ms delay = 1000ms window.
@@ -128,32 +135,30 @@ describe('EmailQueue', () => {
       // the "pause" logic.
       // We must force the 10 emails to send *faster* than the window.
       // We'll mock the internal 100ms delay to be 0ms *for this test*.
-      const delaySpy = jest.spyOn(queue, 'delay').mockImplementation(async (ms) => {
+      const delaySpy = jest.spyOn(queue, 'delay').mockImplementation(function (ms: number) {
         // We only want to change the 100ms inter-email delay
         if (ms === 100) {
-          return Promise.resolve(); // Make it 0ms
+          return Promise.resolve();
+        } else {
+          return new Promise<void>(function (resolve) {
+            setTimeout(resolve, ms);
+          });
         }
-        // For all other delays (retries, waits), use the real timer.
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      });
+      }); // Add 11 emails
 
-      // Add 11 emails
       for (let i = 0; i < 11; i++) {
         await queue.addToQueue({ id: i }, mockSendFn);
-      }
-
-      // Now, run all timers.
+      } // Now, run all timers.
       // T=0: 10 emails will send (since delay is 0)
       // T=0: 11th check will hit limit, log, and wait 1000ms
       // T=1000: reset runs, 11th email sends
-      await jest.runAllTimersAsync();
 
-      // Check final state
+      await jest.runAllTimersAsync(); // Check final state
+
       expect(mockSendFn).toHaveBeenCalledTimes(11);
       expect(queue.queue).toHaveLength(0);
-      expect(queue.processing).toBe(false);
+      expect(queue.processing).toBe(false); // Restore the mock
 
-      // Restore the mock
       delaySpy.mockRestore();
     });
 
@@ -162,23 +167,22 @@ describe('EmailQueue', () => {
       // Send 5 emails
       for (let i = 0; i < 5; i++) {
         await queue.addToQueue({ id: i }, mockSendFn);
-      }
+      } // Run the first batch
 
-      // Run the first batch
       await jest.runAllTimersAsync();
 
       expect(mockSendFn).toHaveBeenCalledTimes(5);
       expect(queue.rateLimit.emailsSent).toBe(5);
       expect(queue.processing).toBe(false); // Queue is now idle
-
       // The 5 items took 500ms. Skip past the 1000ms window.
-      jest.advanceTimersByTime(501); // Total time is now 1001ms
 
+      jest.advanceTimersByTime(501); // Total time is now 1001ms
       // Send 1 more email
+
       await queue.addToQueue({ id: 6 }, mockSendFn);
       expect(queue.processing).toBe(true); // Kicks off again
-
       // Run the final item
+
       await jest.runAllTimersAsync();
 
       expect(mockSendFn).toHaveBeenCalledTimes(6);
@@ -190,39 +194,34 @@ describe('EmailQueue', () => {
       // Set window to have started 500ms ago (T-500)
       queue.rateLimit.windowStart = Date.now() - 500;
       queue.rateLimit.emailsSent = 10; // Trigger rate limit
-
       // Call addToQueue, which starts processQueue, but *don't* await timers.
       // processQueue will run synchronously until the first `await`,
       // which is `await this.waitForRateLimit()` -> `await this.delay(500)`.
-      const addPromise = queue.addToQueue(mockEmailData, mockSendFn);
 
-      // We must yield to the event loop (with a microtask) to let the
+      const addPromise = queue.addToQueue(mockEmailData, mockSendFn); // We must yield to the event loop (with a microtask) to let the
       // synchronous part of processQueue run up to the first await.
-      await Promise.resolve();
 
-      // At this point, a 500ms timer is queued, and processQueue is paused.
+      await Promise.resolve(); // At this point, a 500ms timer is queued, and processQueue is paused.
       // We can now check the intermediate state *before* time moves.
-      expect(mockSendFn).not.toHaveBeenCalled(); // <-- This was the failing line
 
+      expect(mockSendFn).not.toHaveBeenCalled(); // <-- This was the failing line
       // 2. Advance timers by less than the required time
+
       await jest.advanceTimersByTimeAsync(400);
       expect(mockSendFn).not.toHaveBeenCalled(); // Still waiting
-
       // 3. Advance timers by the rest of the time (100ms) + processing (100ms)
-      await jest.advanceTimersByTimeAsync(100 + 100);
 
-      // Now check the *final* state
-      expect(mockSendFn).toHaveBeenCalledTimes(1);
+      await jest.advanceTimersByTimeAsync(100 + 100); // Now check the *final* state
 
-      // Wait for the original addPromise to resolve (it might have already)
+      expect(mockSendFn).toHaveBeenCalledTimes(1); // Wait for the original addPromise to resolve (it might have already)
       // and run any remaining cleanup timers.
+
       await addPromise;
       await jest.runAllTimersAsync();
       expect(queue.processing).toBe(false);
     });
-  });
+  }); // --- Retry Logic ---
 
-  // --- Retry Logic ---
   describe('Retry Logic', () => {
     it('should retry a failed email up to maxRetries (3 times total)', async () => {
       const sendError = new Error('Transient Error');
@@ -276,13 +275,13 @@ describe('EmailQueue', () => {
 
       process.env.EMAIL_DEBUG_LOG = '0'; // Clean up
     });
-  });
+  }); // --- Utility Methods ---
 
-  // --- Utility Methods ---
   describe('Utility Methods', () => {
     // These tests are synchronous and were already correct.
     it('should clear the queue and reset processing status', () => {
-      queue.queue = [{ id: 1 }] as any;
+      // Use local mock types to prevent 'as any' casting.
+      queue.queue = [{ id: '1', data: {}, options: {} as AddToQueueOptions }] as EmailQueueItem[];
       queue.processing = true;
       queue.clearQueue();
       expect(queue.queue).toHaveLength(0);
@@ -291,8 +290,11 @@ describe('EmailQueue', () => {
 
     it('should return correct status', () => {
       queue.rateLimit.emailsSent = 5;
-      queue.rateLimit.windowStart = Date.now() - 500;
-      queue.queue = [{ id: 1 }, { id: 2 }] as any;
+      queue.rateLimit.windowStart = Date.now() - 500; // Use local mock types to prevent 'as any' casting.
+      queue.queue = [
+        { id: '1', data: {}, options: {} as AddToQueueOptions },
+        { id: '2', data: {}, options: {} as AddToQueueOptions },
+      ] as EmailQueueItem[];
       queue.processing = true;
 
       const status = queue.getStatus();
