@@ -23,6 +23,34 @@ interface MeetingModalProps {
   conversation: Conversation | null;
   onMeetingCreated: () => void;
 }
+
+interface PostgrestResponse {
+  error: Error | null;
+  data?: unknown;
+}
+
+interface MockUpdateBuilder {
+  // eslint-disable-next-line no-unused-vars
+  eq: (column: string, value: string) => Promise<PostgrestResponse>;
+}
+
+interface MeetingInsertData {
+  requester_id: string;
+  recipient_id: string;
+  title: string;
+  start_datetime: string;
+  end_datetime: string;
+}
+
+interface MessageInsertData {
+  sender_id: string;
+  recipient_id: string;
+  subject: string;
+}
+
+interface ConversationUpdateData {
+  last_message_at: string;
+}
 // #endregion
 
 // #region Mocks
@@ -48,14 +76,14 @@ jest.mock('@/libs/supabase', () => ({
 const mockInsertChain = {
   select: () => mockSelect(),
 };
-const mockUpdateChain = {
-  eq: (column: string, value: any) => mockEq(column, value),
+const mockUpdateChain: MockUpdateBuilder = {
+  eq: (column: string, value: string) => mockEq(column, value),
 };
 
 mockFrom.mockImplementation((tableName: string) => {
   if (tableName === 'meetings') {
     return {
-      insert: (data: any) => {
+      insert: (data: MeetingInsertData) => {
         mockInsert(data); // Log the call
         return mockInsertChain; // Return the chain: .select()
       },
@@ -63,7 +91,7 @@ mockFrom.mockImplementation((tableName: string) => {
   }
   if (tableName === 'messages') {
     return {
-      insert: (data: any) => {
+      insert: (data: MessageInsertData) => {
         mockInsert(data); // Log the call
         return Promise.resolve({ error: null });
       },
@@ -71,7 +99,7 @@ mockFrom.mockImplementation((tableName: string) => {
   }
   if (tableName === 'conversations') {
     return {
-      update: (data: any) => {
+      update: (data: ConversationUpdateData) => {
         mockUpdate(data); // Log the call
         return mockUpdateChain; // Return the chain: .eq()
       },
@@ -92,6 +120,7 @@ mockEq.mockImplementation(() => Promise.resolve({ error: null }));
 jest.mock('@/components/ui/DatePicker', () => ({
   __esModule: true,
   default: (props: {
+    // eslint-disable-next-line no-unused-vars
     onDateSelect: (date: string) => void;
     placeholder: string;
     selectedDate: string;
