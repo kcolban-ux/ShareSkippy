@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image, { ImageProps } from 'next/image';
+import Image from 'next/image';
 
 // 1. Define the props interface
 interface OptimizedImageProps {
@@ -17,10 +17,10 @@ interface OptimizedImageProps {
   sizes?: string;
   fill?: boolean;
   // Allow other valid ImageProps to be passed through
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-const VALID_PLACEHOLDERS = ['blur', 'empty'];
+const VALID_PLACEHOLDERS = new Set(['blur', 'empty']);
 
 // 2. Apply the interface to React.memo
 const OptimizedImage = React.memo<OptimizedImageProps>(
@@ -41,7 +41,7 @@ const OptimizedImage = React.memo<OptimizedImageProps>(
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 
-    const finalPlaceholder = VALID_PLACEHOLDERS.includes(placeholder as string)
+    const finalPlaceholder = VALID_PLACEHOLDERS.has(placeholder as string)
       ? (placeholder as 'blur' | 'empty')
       : 'blur';
 
@@ -96,7 +96,7 @@ const OptimizedImage = React.memo<OptimizedImageProps>(
           // 6. Apply className to the Image itself
           className={`transition-opacity duration-300 ${
             isLoading ? 'opacity-0' : 'opacity-100'
-          } ${className}`} // <-- FIX IS HERE
+          } ${className}`}
           priority={priority}
           placeholder={finalPlaceholder}
           blurDataURL={defaultBlurDataURL}
