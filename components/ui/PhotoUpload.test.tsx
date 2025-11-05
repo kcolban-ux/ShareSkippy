@@ -19,7 +19,7 @@ jest.mock('@/libs/supabase/client', () => ({
       getUser: mockGetUser,
     },
     storage: {
-      from: jest.fn((bucketName) => ({
+      from: jest.fn(() => ({
         upload: mockUpload,
         getPublicUrl: mockGetPublicUrl,
         remove: mockRemove,
@@ -41,18 +41,16 @@ let consoleLogSpy: jest.SpyInstance;
 // Mock Browser APIs used in compressImage
 beforeAll(() => {
   consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-  consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+  consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); // Mock window.URL.createObjectURL
 
-  // Mock window.URL.createObjectURL
   globalThis.URL.createObjectURL = jest.fn(() => 'mock-object-url');
-  globalThis.URL.revokeObjectURL = jest.fn();
+  globalThis.URL.revokeObjectURL = jest.fn(); // Mock global.Image
 
-  // Mock global.Image
   Object.defineProperty(globalThis, 'Image', {
     writable: true,
     value: class MockImage {
       src: string = '';
-      onload: Function = () => {};
+      onload: (() => void) | null = null;
       width: number = 800;
       height: number = 600;
 
@@ -67,15 +65,14 @@ beforeAll(() => {
     },
   });
 
-  // Mock canvas APIs
-  globalThis.HTMLCanvasElement.prototype.getContext = () =>
-    ({
+  globalThis.HTMLCanvasElement.prototype.getContext = function () {
+    return {
       drawImage: jest.fn(),
-    }) as any;
+    } as unknown as CanvasRenderingContext2D;
+  } as unknown as typeof globalThis.HTMLCanvasElement.prototype.getContext;
 
-  globalThis.HTMLCanvasElement.prototype.toDataURL = () => 'data:image/jpeg;base64,mocked-data';
+  globalThis.HTMLCanvasElement.prototype.toDataURL = () => 'data:image/jpeg;base64,mocked-data'; // Mock fetch for data URL -> blob conversion
 
-  // Mock fetch for data URL -> blob conversion
   globalThis.fetch = jest.fn(() =>
     Promise.resolve({
       blob: () => Promise.resolve(new Blob(['mock-image-data'], { type: 'image/jpeg' })),
@@ -93,13 +90,11 @@ afterAll(() => {
 // --- Test Suite ---
 
 describe('PhotoUpload', () => {
-  const mockOnPhotoUploaded = jest.fn();
+  const mockOnPhotoUploaded = jest.fn(); // Reset mocks before each test
 
-  // Reset mocks before each test
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // Default successful mock implementations
 
-    // Default successful mock implementations
     mockGetUser.mockResolvedValue({ data: { user: { id: 'test-user-id' } } });
     mockUpload.mockResolvedValue({ error: null, data: { path: 'test-user-id/12345.jpg' } });
     mockGetPublicUrl.mockReturnValue({
@@ -148,12 +143,10 @@ describe('PhotoUpload', () => {
         disabled={true}
         bucketName="test-bucket"
       />
-    );
+    ); // Image is still visible
 
-    // Image is still visible
-    expect(screen.getByAltText('Profile')).toBeInTheDocument();
+    expect(screen.getByAltText('Profile')).toBeInTheDocument(); // Buttons are hidden
 
-    // Buttons are hidden
     expect(screen.queryByRole('button', { name: 'Change Photo' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '×' })).not.toBeInTheDocument();
   });
@@ -170,29 +163,23 @@ describe('PhotoUpload', () => {
     const fileInput = container.querySelector('input[type="file"]');
     expect(fileInput).not.toBeNull();
 
-    const mockFile = new File(['mock-image-data'], 'test.png', { type: 'image/png' });
+    const mockFile = new File(['mock-image-data'], 'test.png', { type: 'image/png' }); // Simulate file selection
 
-    // Simulate file selection
     await act(async () => {
       fireEvent.change(fileInput!, { target: { files: [mockFile] } });
-    });
+    }); // Check uploading state
 
-    // Check uploading state
-    expect(screen.getByRole('button', { name: 'Uploading...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Uploading...' })).toBeDisabled(); // Wait for all async operations to complete
 
-    // Wait for all async operations to complete
-    expect(await screen.findByRole('button', { name: 'Change Photo' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Change Photo' })).toBeInTheDocument(); // Verify mocks were called
 
-    // Verify mocks were called
     expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(mockUpload).toHaveBeenCalledTimes(1);
-    expect(mockGetPublicUrl).toHaveBeenCalledTimes(1);
+    expect(mockGetPublicUrl).toHaveBeenCalledTimes(1); // Verify callback
 
-    // Verify callback
     const newUrl = 'https://supabase.mock/public/test-user-id/12345.jpg';
-    expect(mockOnPhotoUploaded).toHaveBeenCalledWith(newUrl);
+    expect(mockOnPhotoUploaded).toHaveBeenCalledWith(newUrl); // Verify UI update
 
-    // Verify UI update
     const img = screen.getByAltText('Profile');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', newUrl);
@@ -212,15 +199,12 @@ describe('PhotoUpload', () => {
 
     await act(async () => {
       fireEvent.click(removeButton);
-    });
+    }); // Verify Supabase remove was called with correct path
 
-    // Verify Supabase remove was called with correct path
-    expect(mockRemove).toHaveBeenCalledWith(['test-user-id/12345.jpg']);
+    expect(mockRemove).toHaveBeenCalledWith(['test-user-id/12345.jpg']); // Verify callback
 
-    // Verify callback
-    expect(mockOnPhotoUploaded).toHaveBeenCalledWith('');
+    expect(mockOnPhotoUploaded).toHaveBeenCalledWith(''); // Verify UI update
 
-    // Verify UI update
     expect(screen.getByText('No photo')).toBeInTheDocument();
     expect(screen.queryByAltText('Profile')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Upload Photo' })).toBeInTheDocument();
@@ -240,12 +224,10 @@ describe('PhotoUpload', () => {
 
     await act(async () => {
       fireEvent.click(removeButton);
-    });
+    }); // Should NOT call Supabase remove
 
-    // Should NOT call Supabase remove
-    expect(mockRemove).not.toHaveBeenCalled();
+    expect(mockRemove).not.toHaveBeenCalled(); // Should still clear state and call callback
 
-    // Should still clear state and call callback
     expect(mockOnPhotoUploaded).toHaveBeenCalledWith('');
     expect(screen.getByText('No photo')).toBeInTheDocument();
   });
@@ -278,9 +260,8 @@ describe('PhotoUpload', () => {
         initialPhotoUrl={null}
       />
     );
-    const fileInput = container.querySelector('input[type="file"]');
+    const fileInput = container.querySelector('input[type="file"]'); // Create a file larger than 10MB
 
-    // Create a file larger than 10MB
     const largeFile = new File(['a'.repeat(10 * 1024 * 1024 + 1)], 'large.png', {
       type: 'image/png',
     });
@@ -314,11 +295,8 @@ describe('PhotoUpload', () => {
       fireEvent.change(fileInput!, { target: { files: [mockFile] } });
     });
 
-    expect(
-      await screen.findByText('Upload failed: Upload permission denied')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Upload failed: Upload permission denied')).toBeInTheDocument(); // Button should reset
 
-    // Button should reset
     expect(screen.getByRole('button', { name: 'Upload Photo' })).toBeInTheDocument();
     expect(mockOnPhotoUploaded).not.toHaveBeenCalled();
   });
