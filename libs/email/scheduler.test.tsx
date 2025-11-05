@@ -10,7 +10,6 @@ import {
   ScheduledEmail,
 } from './scheduler';
 import { sendEmail } from './sendEmail';
-import { createServiceClient } from '@/libs/supabase/server';
 
 jest.mock('./sendEmail', () => ({
   sendEmail: jest.fn(),
@@ -18,17 +17,17 @@ jest.mock('./sendEmail', () => ({
 
 // We chain 'this' (as 'any') to allow for .from().select().eq()...
 const mockSupabase = {
-  from: jest.fn(() => mockSupabase as any),
-  select: jest.fn(() => mockSupabase as any),
-  insert: jest.fn(() => mockSupabase as any),
-  update: jest.fn(() => mockSupabase as any),
-  delete: jest.fn(() => mockSupabase as any),
-  eq: jest.fn(() => mockSupabase as any),
-  lte: jest.fn(() => mockSupabase as any),
-  is: jest.fn(() => mockSupabase as any),
-  limit: jest.fn(() => mockSupabase as any),
-  order: jest.fn(() => mockSupabase as any),
-  single: jest.fn(() => mockSupabase as any),
+  from: jest.fn(() => mockSupabase),
+  select: jest.fn(() => mockSupabase),
+  insert: jest.fn(() => mockSupabase),
+  update: jest.fn(() => mockSupabase),
+  delete: jest.fn(() => mockSupabase),
+  eq: jest.fn(() => mockSupabase),
+  lte: jest.fn(() => mockSupabase),
+  is: jest.fn(() => mockSupabase),
+  limit: jest.fn(() => mockSupabase),
+  order: jest.fn(() => mockSupabase),
+  single: jest.fn(() => mockSupabase),
 };
 
 jest.mock('@/libs/supabase/server', () => ({
@@ -36,7 +35,6 @@ jest.mock('@/libs/supabase/server', () => ({
 }));
 
 const mockedSendEmail = sendEmail as jest.Mock;
-const mockedCreateServiceClient = createServiceClient as jest.Mock;
 
 const MOCK_DATE = '2025-11-01T10:00:00.000Z';
 
@@ -54,17 +52,17 @@ describe('Scheduled Email Functions', () => {
     jest.clearAllMocks();
 
     // Reset all mock implementations to return 'this' for chaining
-    mockSupabase.from.mockImplementation(() => mockSupabase as any);
-    mockSupabase.select.mockImplementation(() => mockSupabase as any);
-    mockSupabase.insert.mockImplementation(() => mockSupabase as any);
-    mockSupabase.update.mockImplementation(() => mockSupabase as any);
-    mockSupabase.delete.mockImplementation(() => mockSupabase as any);
-    mockSupabase.eq.mockImplementation(() => mockSupabase as any);
-    mockSupabase.lte.mockImplementation(() => mockSupabase as any);
-    mockSupabase.is.mockImplementation(() => mockSupabase as any);
-    mockSupabase.limit.mockImplementation(() => mockSupabase as any);
-    mockSupabase.order.mockImplementation(() => mockSupabase as any);
-    mockSupabase.single.mockImplementation(() => mockSupabase as any);
+    mockSupabase.from.mockImplementation(() => mockSupabase);
+    mockSupabase.select.mockImplementation(() => mockSupabase);
+    mockSupabase.insert.mockImplementation(() => mockSupabase);
+    mockSupabase.update.mockImplementation(() => mockSupabase);
+    mockSupabase.delete.mockImplementation(() => mockSupabase);
+    mockSupabase.eq.mockImplementation(() => mockSupabase);
+    mockSupabase.lte.mockImplementation(() => mockSupabase);
+    mockSupabase.is.mockImplementation(() => mockSupabase);
+    mockSupabase.limit.mockImplementation(() => mockSupabase);
+    mockSupabase.order.mockImplementation(() => mockSupabase);
+    mockSupabase.single.mockImplementation(() => mockSupabase);
 
     mockedSendEmail.mockResolvedValue(undefined);
   });
@@ -324,7 +322,7 @@ describe('Scheduled Email Functions', () => {
     });
 
     it('should cancel emails of a specific type for a user', async () => {
-      mockSupabase.eq.mockImplementationOnce(() => mockSupabase as any);
+      mockSupabase.eq.mockImplementationOnce(() => mockSupabase);
       mockSupabase.eq.mockResolvedValueOnce({ error: null });
 
       await cancelUserScheduledEmails('user-123', 'meeting_reminder');
