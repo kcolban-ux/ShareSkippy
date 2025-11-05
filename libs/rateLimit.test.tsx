@@ -1,26 +1,73 @@
-// These imports must be dynamic (using require) inside beforeEach
-// due to jest.resetModules()
-let rateLimit: (options?: any) => (request: any) => any;
-let authRateLimit: (request: any) => any;
-let apiRateLimit: (request: any) => any;
+// --- 1. Type Definitions ---
+
+type RequestTypeMock = {
+  headers: {
+    map: Map<string, string | undefined>;
+    // eslint-disable-next-line no-unused-vars
+    get(key: string): string | undefined;
+  };
+};
+
+type ResponseTypeMock = {
+  success: boolean;
+  error?: {
+    message: string;
+    retryAfter?: number;
+  };
+};
+
+type RateLimitOptionsMock = {
+  max: number;
+  windowMs?: number;
+  // eslint-disable-next-line no-unused-vars
+  keyGenerator?: (request: RequestTypeMock) => string;
+};
+
+// The core function type that processes the request and returns a response/result.
+// eslint-disable-next-line no-unused-vars
+type RequestHandler = (request: RequestTypeMock) => ResponseTypeMock;
+
+// The type for the main rateLimit factory function
+// eslint-disable-next-line no-unused-vars
+type RateLimitFactory = (options?: RateLimitOptionsMock) => RequestHandler;
+
+// The type for the entire module's exports
+type RateLimitModule = {
+  rateLimit: RateLimitFactory;
+  authRateLimit: RequestHandler;
+  apiRateLimit: RequestHandler;
+};
+
+// --- 2. Variable Declarations (Explicitly Typed) ---
+
+// These variables will be assigned during beforeEach
+let rateLimit: RateLimitFactory;
+let authRateLimit: RequestHandler;
+let apiRateLimit: RequestHandler;
+
+// --- 3. Mock Request Helper ---
 
 // Helper to create a mock request object with a simple headers.get()
-const mockRequest = (ip: string, headers: Record<string, string> = {}) => ({
-  headers: {
-    // Use a Map for case-insensitive header lookup (like the real Headers obj)
-    map: new Map(
-      Object.entries({
-        // Set default IP headers, allowing them to be overridden by the headers param
-        'x-forwarded-for': headers['x-forwarded-for'],
-        'x-real-ip': headers['x-real-ip'] || ip,
-        ...headers,
-      }).map(([key, value]) => [key.toLowerCase(), value])
-    ),
-    get(key: string) {
-      return this.map.get(key.toLowerCase());
+const mockRequest = (ip: string, headers: Record<string, string> = {}): RequestTypeMock => {
+  const combinedHeaders = {
+    ...headers,
+    'x-real-ip': headers['x-real-ip'] || ip,
+    'x-forwarded-for': headers['x-forwarded-for'],
+  };
+
+  return {
+    headers: {
+      map: new Map(
+        Object.entries(combinedHeaders).map(([key, value]) => [key.toLowerCase(), value])
+      ),
+      get(key: string) {
+        return this.map.get(key.toLowerCase());
+      },
     },
-  },
-});
+  };
+};
+
+// --- 4. Test Suite ---
 
 describe('rateLimit', () => {
   beforeEach(() => {
@@ -29,8 +76,9 @@ describe('rateLimit', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2025-01-01T10:00:00.000Z'));
 
-    // Re-import the module after resetting
-    const mod = require('./rateLimit');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('./rateLimit') as RateLimitModule;
+
     rateLimit = mod.rateLimit;
     authRateLimit = mod.authRateLimit;
     apiRateLimit = mod.apiRateLimit;
@@ -59,7 +107,7 @@ describe('rateLimit', () => {
       limiter(req); // 2
       const result = limiter(req); // 3 (blocked)
       expect(result.success).toBe(false);
-      expect(result.error.message).toContain('Too many requests');
+      expect(result.error!.message).toContain('Too many requests');
     });
 
     it('should reset the limit after the window expires', () => {
@@ -105,7 +153,7 @@ describe('rateLimit', () => {
       // We are at T=15s.
       // (0 + 60000 - 15000) / 1000 = 45s.
       expect(result.success).toBe(false);
-      expect(result.error.retryAfter).toBe(45);
+      expect(result.error!.retryAfter).toBe(45);
     });
   });
 
@@ -152,7 +200,8 @@ describe('rateLimit', () => {
     it('should use a custom keyGenerator', () => {
       const limiter = rateLimit({
         max: 1,
-        keyGenerator: (req: any) => req.headers.get('authorization'),
+        // The req parameter is now correctly typed as RequestTypeMock
+        keyGenerator: (req: RequestTypeMock) => req.headers.get('authorization')!,
       });
 
       const req1 = mockRequest('1.1.1.1', { authorization: 'token-A' });
@@ -176,7 +225,7 @@ describe('rateLimit', () => {
       expect(authRateLimit(req).success).toBe(true); // 5
       const result = authRateLimit(req); // 6
       expect(result.success).toBe(false);
-      expect(result.error.message).toContain('authentication attempts');
+      expect(result.error!.message).toContain('authentication attempts');
     });
 
     it('apiRateLimit should have max 100', () => {
@@ -187,7 +236,7 @@ describe('rateLimit', () => {
       }
       const result = limiter(req);
       expect(result.success).toBe(false);
-      expect(result.error.message).toContain('API requests');
+      expect(result.error!.message).toContain('API requests');
     });
   });
 });
