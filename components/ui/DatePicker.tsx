@@ -12,20 +12,6 @@ const parseDateString = (dateString: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-// --- Props Interface ---
-interface DatePickerProps {
-  /** The currently selected date in 'YYYY-MM-DD' format */
-  selectedDate: string | null | undefined;
-  /** Callback function when a date is selected, returns 'YYYY-MM-DD' string */
-  onDateSelect: (date: string) => void;
-  /** The minimum selectable date in 'YYYY-MM-DD' format. Defaults to today. */
-  minDate?: string;
-  /** The maximum selectable date in 'YYYY-MM-DD' format. */
-  maxDate?: string;
-  /** Placeholder text when no date is selected */
-  placeholder?: string;
-}
-
 // --- Component ---
 export default function DatePicker({
   selectedDate,
@@ -35,6 +21,7 @@ export default function DatePicker({
   maxDate,
 }: Readonly<{
   selectedDate: string;
+  // eslint-disable-next-line no-unused-vars
   onDateSelect: (date: string) => void;
   minDate?: string;
   placeholder?: string;
@@ -66,11 +53,22 @@ export default function DatePicker({
 
   // Update selected day when selectedDate prop changes from parent
   useEffect(() => {
-    if (selectedDate) {
-      setSelectedDay(parseDateString(selectedDate));
-    } else {
-      setSelectedDay(null);
-    }
+    const newSelectedDay = selectedDate ? parseDateString(selectedDate) : null;
+
+    // Helper function defined inside the effect scope (or globally)
+    const isSameDate = (day1: Date | null, day2: Date | null) => {
+      if (day1 === null && day2 === null) return true;
+      if (day1 === null || day2 === null) return false;
+      return day1.toDateString() === day2.toDateString();
+    };
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedDay((currentSelectedDay) => {
+      if (isSameDate(currentSelectedDay, newSelectedDay)) {
+        return currentSelectedDay;
+      }
+      return newSelectedDay;
+    });
   }, [selectedDate]);
 
   /** Formats a Date object for display */
