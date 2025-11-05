@@ -28,28 +28,35 @@ jest.mock('@/libs/supabase/server', () => ({
   createServiceClient: jest.fn(() => mockSupabaseClient),
 }));
 
-const inactiveUser1 = {
-  id: 'user1',
+const inactiveUser1: MockData = {
+  id: 2,
   email: 'user1@test.com',
   first_name: 'Alice',
   user_activity: [{ at: '2025-10-20T00:00:00.000Z' }],
 };
-const inactiveUser2 = {
-  id: 'user2',
-  email: 'user2@test.com',
-  first_name: null,
-  user_activity: [{ at: '2025-10-25T00:00:00.000Z' }],
-};
-const activeUser = {
-  id: 'user3',
+const activeUser: MockData = {
+  id: 3,
   email: 'user3@test.com',
   first_name: 'Charlie',
   user_activity: [{ at: new Date().toISOString() }],
 };
 
-const mockSuccess = (data: any) => ({ data, error: null });
-const mockError = (message: string) => ({ data: null, error: { message } });
+type MockData = {
+  id: number;
+  email?: string;
+  first_name?: string;
+  user_activity?: { at: string }[];
+};
+
+type MockResult = {
+  data: MockData[];
+  error: { message: string };
+};
+
+const mockSuccess = (data: MockData[]) => ({ data, error: null }) as MockResult;
+const mockError = (message: string) => ({ data: null, error: { message } }) as MockResult;
 const shouldSendReengageEmail = __testExports.shouldSendReengageEmail as (
+  // eslint-disable-next-line no-unused-vars
   userId: string
 ) => Promise<boolean>;
 
@@ -71,7 +78,7 @@ afterAll(() => {
 
 // Helper to enforce correct return values for complex chains:
 // This is necessary because the original code uses .not().not(), which breaks simple mockReturnThis() chains.
-const setupComplexNotChain = (result: any) => {
+const setupComplexNotChain = (result: MockResult) => {
   // Mock the *first* .not call to return a mock object where the SECOND .not call resolves the promise.
   mockChain.not.mockImplementationOnce(() => ({
     not: jest.fn().mockResolvedValue(result),
@@ -82,7 +89,7 @@ const setupComplexNotChain = (result: any) => {
 };
 
 // Helper for the getReengageCandidates chain which ends in .order() after double .not()
-const setupGetCandidatesChain = (result: any) => {
+const setupGetCandidatesChain = (result: MockResult) => {
   // We mock the *first* .not call to return a mock object where the final .order() resolves the promise.
   mockChain.not.mockImplementationOnce(() => ({
     not: jest.fn().mockReturnThis(), // Second .not() returns a chainable object
@@ -99,7 +106,7 @@ describe('shouldSendReengageEmail', () => {
   });
 
   it('should return false if a recent email was sent', async () => {
-    mockChain.single.mockResolvedValue(mockSuccess({ id: 1 }));
+    mockChain.single.mockResolvedValue(mockSuccess([{ id: 1 }]));
     const result = await shouldSendReengageEmail('user-recent');
     expect(result).toBe(false);
   });
@@ -107,7 +114,7 @@ describe('shouldSendReengageEmail', () => {
 
 describe('processReengageEmails', () => {
   it('should successfully send emails to eligible users (Happy Path)', async () => {
-    mockChain.limit.mockResolvedValue(mockSuccess({ id: 1 }));
+    mockChain.limit.mockResolvedValue(mockSuccess([{ id: 1 }]));
     setupComplexNotChain(mockSuccess([inactiveUser1]));
     mockChain.single.mockResolvedValue(mockSuccess(null));
     (sendEmail as jest.Mock).mockResolvedValue(undefined);
@@ -129,7 +136,7 @@ describe('processReengageEmails', () => {
   });
 
   it('should track an error if sending an email fails', async () => {
-    mockChain.limit.mockResolvedValue(mockSuccess({ id: 1 }));
+    mockChain.limit.mockResolvedValue(mockSuccess([{ id: 1 }]));
     setupComplexNotChain(mockSuccess([inactiveUser1]));
     mockChain.single.mockResolvedValue(mockSuccess(null));
     (sendEmail as jest.Mock).mockRejectedValue(new Error('SMTP Failure'));
@@ -149,7 +156,7 @@ describe('getReengageCandidates', () => {
     const result = await getReengageCandidates();
 
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('user1');
+    expect(result[0].id).toBe(2); // Only inactiveUser1 should be returned
   });
 
   it('should throw an error if data fetching fails', async () => {
