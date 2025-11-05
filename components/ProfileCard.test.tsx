@@ -1,11 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfileCard from './ProfileCard';
 
-// Mock next/link
+export type ProfileData = {
+  id: string;
+  first_name: string;
+  photo_url: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  role: string;
+  bio_excerpt: string | null;
+  last_online_at: string;
+};
+
 jest.mock('next/link', () => {
-  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
+  const MockLink = ({ children, href }: React.PropsWithChildren<{ href: string }>) => (
     <a href={href}>{children}</a>
   );
 
@@ -18,7 +28,7 @@ describe('ProfileCard', () => {
   const mockOnMessage = jest.fn();
   const user = userEvent.setup();
 
-  const baseProfile = {
+  const baseProfile: ProfileData = {
     id: '123-abc',
     first_name: 'John',
     photo_url: 'https://example.com/photo.jpg',
@@ -30,10 +40,12 @@ describe('ProfileCard', () => {
   };
 
   beforeEach(() => {
-    // Clear mocks before each test
     mockOnMessage.mockClear();
-    // Suppress console errors for the image loading test
     jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('renders a complete profile correctly', () => {
@@ -56,7 +68,7 @@ describe('ProfileCard', () => {
     ).toBeInTheDocument();
 
     // Check bio
-    expect(screen.getByText(baseProfile.bio_excerpt)).toBeInTheDocument();
+    expect(screen.getByText(baseProfile.bio_excerpt as string)).toBeInTheDocument();
 
     // Check action buttons
     const viewDetailsLink = screen.getByRole('link', { name: 'View Details' });
@@ -67,7 +79,7 @@ describe('ProfileCard', () => {
   });
 
   it('renders a minimal profile without a photo, location, or bio', () => {
-    const minimalProfile = {
+    const minimalProfile: ProfileData = {
       id: '456-def',
       first_name: 'Jane',
       role: 'petpal',
@@ -90,25 +102,25 @@ describe('ProfileCard', () => {
 
     // Check that optional sections are not rendered
     expect(screen.queryByText(/📍/)).not.toBeInTheDocument();
-    expect(screen.queryByText(baseProfile.bio_excerpt)).not.toBeInTheDocument();
+    expect(screen.queryByText(baseProfile.bio_excerpt as string)).not.toBeInTheDocument();
   });
 
   it.each([
     { role: 'dog_owner', icon: '🐕', text: 'Dog owner' },
     { role: 'petpal', icon: '🤝', text: 'Petpal' },
     { role: 'both', icon: '🐕‍🦺', text: 'Both' },
-    { role: 'unknown', icon: '👤', text: 'Unknown' },
+    { role: 'unknown_role', icon: '👤', text: 'Unknown role' },
   ])('displays the correct icon and text for role "$role"', ({ role, icon, text }) => {
-    const profileWithRole = { ...baseProfile, role, photo_url: null }; // Use null photo to see fallback icon
+    const profileWithRole: ProfileData = { ...baseProfile, role, photo_url: null };
     render(<ProfileCard profile={profileWithRole} onMessage={mockOnMessage} />);
 
     // Role icon is shown in two places: header fallback and role line item
     expect(screen.getAllByText(icon).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(new RegExp(text, 'i'))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(text.replace(' ', ' '), 'i'))).toBeInTheDocument();
   });
 
   it('formats location correctly with only a city', () => {
-    const profileWithCity = { ...baseProfile, neighborhood: null };
+    const profileWithCity: ProfileData = { ...baseProfile, neighborhood: null };
     render(<ProfileCard profile={profileWithCity} onMessage={mockOnMessage} />);
     expect(screen.getByText(`📍 ${baseProfile.city}`)).toBeInTheDocument();
   });
@@ -126,7 +138,7 @@ describe('ProfileCard', () => {
     // Simulate image loading error
     fireEvent.error(profileImage);
 
-    // After error, the image should have display: none and the fallback should have display: flex
+    // Assert that the component's onError logic ran and manipulated the styles
     expect(profileImage).toHaveStyle('display: none');
     expect(fallbackIconContainer).toHaveStyle('display: flex');
   });
@@ -142,7 +154,7 @@ describe('ProfileCard', () => {
   });
 
   it('does not render location or bio sections if data is empty strings', () => {
-    const profileWithEmptyStrings = {
+    const profileWithEmptyStrings: ProfileData = {
       ...baseProfile,
       city: '',
       neighborhood: '',
@@ -150,10 +162,9 @@ describe('ProfileCard', () => {
     };
     render(<ProfileCard profile={profileWithEmptyStrings} onMessage={mockOnMessage} />);
 
+    // Assert the location section is not present
     expect(screen.queryByText(/📍/)).not.toBeInTheDocument();
-    // The bio p tag will exist but be empty, so we check its parent div.
-    // A more robust check might be to add a data-testid to the bio container.
-    const bioParagraph = screen.queryByText(baseProfile.bio_excerpt);
-    expect(bioParagraph).not.toBeInTheDocument();
+    // Assert the bio content is not present
+    expect(screen.queryByText(baseProfile.bio_excerpt as string)).not.toBeInTheDocument();
   });
 });
