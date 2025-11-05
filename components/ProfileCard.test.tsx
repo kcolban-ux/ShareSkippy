@@ -4,9 +4,15 @@ import userEvent from '@testing-library/user-event';
 import ProfileCard from './ProfileCard';
 
 // Mock next/link
-jest.mock('next/link', () => ({ children, href }: { children: React.ReactNode; href: string }) => (
-  <a href={href}>{children}</a>
-));
+jest.mock('next/link', () => {
+  const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
+    <a href={href}>{children}</a>
+  );
+
+  MockLink.displayName = 'Link';
+
+  return MockLink;
+});
 
 describe('ProfileCard', () => {
   const mockOnMessage = jest.fn();
