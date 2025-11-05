@@ -1,6 +1,6 @@
 // Mock global Response and Headers for the Node.js/Jest environment
-// @ts-ignore
-global.Headers = class {
+// @ts-expect-error globalThis.Headers is not a standard type in Node.js environments
+globalThis.Headers = class {
   map = new Map();
   constructor(init?: Record<string, string>) {
     if (init) {
@@ -14,8 +14,8 @@ global.Headers = class {
   }
 };
 
-// @ts-ignore
-global.Response = class {
+// @ts-expect-error globalThis.Response is not a standard type in Node.js environments
+globalThis.Response = class {
   body: string;
   status: number;
   headers: Headers;
@@ -28,7 +28,7 @@ global.Response = class {
     if (!headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }
-    this.headers = new global.Headers(headers);
+    this.headers = new globalThis.Headers(headers);
   }
 
   async json() {
