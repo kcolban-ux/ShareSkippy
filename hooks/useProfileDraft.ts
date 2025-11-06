@@ -125,6 +125,7 @@ export const useProfileDraft = <TProfile extends object>(
         setHasDraft(true);
 
         // Strip metadata before returning the profile data
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
         const { timestamp: _ts, version: _v, ...profileData } = parsed;
         return profileData as TProfile;
       }
@@ -168,6 +169,7 @@ export const useProfileDraft = <TProfile extends object>(
           const newDraft = JSON.parse(e.newValue) as StoredDraft<TProfile>;
 
           // Strip metadata before setting state
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
           const { timestamp: _ts, version: _v, ...profileData } = newDraft;
 
           setProfile(profileData as TProfile);
@@ -195,6 +197,7 @@ export const useProfileDraft = <TProfile extends object>(
     (updater: ProfileUpdater<TProfile>) => {
       setProfile((prev) => {
         const updated = typeof updater === "function"
+          // eslint-disable-next-line no-unused-vars
           ? (updater as (prev: TProfile) => TProfile)(prev)
           : updater;
 
