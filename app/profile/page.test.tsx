@@ -55,7 +55,7 @@ jest.mock('@/libs/supabase/client', () => ({
   })),
 }));
 
-const mockedUseUser = useUser;
+const mockedUseUser = useUser as jest.Mock;
 
 describe('ProfilePage', () => {
   beforeEach(() => {
