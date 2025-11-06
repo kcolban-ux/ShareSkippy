@@ -170,7 +170,7 @@ export default function CommunityPage() {
       }
 
       // First, let's test if we can fetch any availability posts at all
-      const { data: allPosts, error: allPostsError } = await supabase
+      const { error: allPostsError } = await supabase
         .from('availability')
         .select('id, title, post_type, status, owner_id')
         .limit(5);

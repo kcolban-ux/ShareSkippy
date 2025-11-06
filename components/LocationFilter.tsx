@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { geocodeLocation } from '@/libs/geocoding';
 
-interface LocationFilter {
+interface LocationFilterConfig {
   type: 'shared-location' | 'zip-city';
   lat: number;
   lng: number;
@@ -12,7 +12,7 @@ interface LocationFilter {
 }
 
 interface LocationFilterProps {
-  onFilterChange: (filter: LocationFilter | null) => void;
+  onFilterChange: (LocationFilterConfig | null) => void;
 }
 
 type FilterType = 'none' | 'shared-location' | 'zip-city';
@@ -22,7 +22,7 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
   const [zipCityInput, setZipCityInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<LocationFilter | null>(null);
+  const [activeFilter, setActiveFilter] = useState<LocationFilterConfig | null>(null);
 
   const handleShareLocation = () => {
     if (!navigator.geolocation) {
@@ -36,7 +36,7 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const filter: LocationFilter = {
+        const filter: LocationFilterConfig = {
           type: 'shared-location',
           lat: latitude,
           lng: longitude,
@@ -79,7 +79,7 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
         return;
       }
 
-      const filter: LocationFilter = {
+      const filter: LocationFilterConfig = {
         type: 'zip-city',
         lat: coords.lat,
         lng: coords.lng,
@@ -193,4 +193,3 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
     </div>
   );
 }
-
