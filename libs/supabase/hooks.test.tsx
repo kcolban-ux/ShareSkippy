@@ -44,6 +44,7 @@ jest.mock('./index', () => ({
   supabase: {
     auth: {
       getUser: () => mockGetUser(),
+      // eslint-disable-next-line no-unused-vars
       onAuthStateChange: (callback: (event: string, session: Session | null) => void) =>
         mockOnAuthStateChange(callback),
       signOut: () => mockSignOut(),
@@ -54,7 +55,16 @@ jest.mock('./index', () => ({
 /**
  * Type alias for the auth state change callback.
  */
+// eslint-disable-next-line no-unused-vars
 type AuthChangeCallback = (event: string, session: Session | null) => void;
+
+/**
+ * Extend the globalThis type to include our mock callback for tests.
+ * This removes the need for `as any`.
+ */
+declare global {
+  var authCallback: AuthChangeCallback | undefined;
+}
 
 // --- Test Hooks ---
 
@@ -66,7 +76,7 @@ beforeEach(() => {
   mockGetUser.mockResolvedValue({ data: { user: mockUser }, error: null });
   mockOnAuthStateChange.mockImplementation((callback: AuthChangeCallback) => {
     // Store the callback to trigger it manually
-    (globalThis as any).authCallback = callback;
+    globalThis.authCallback = callback;
     return {
       data: {
         subscription: { unsubscribe: mockUnsubscribe },
@@ -120,7 +130,8 @@ describe('useUser', () => {
 
     // 1. Simulate SIGNED_IN event
     act(() => {
-      (globalThis as any).authCallback('SIGNED_IN', newSession);
+      // Use optional chaining as globalThis.authCallback is typed as potentially undefined
+      globalThis.authCallback?.('SIGNED_IN', newSession);
     });
 
     expect(result.current.loading).toBe(false); // Stays false
@@ -128,7 +139,7 @@ describe('useUser', () => {
 
     // 2. Simulate SIGNED_OUT event
     act(() => {
-      (globalThis as any).authCallback('SIGNED_OUT', null);
+      globalThis.authCallback?.('SIGNED_OUT', null);
     });
 
     expect(result.current.loading).toBe(false);
@@ -192,7 +203,7 @@ describe('useSupabaseAuth', () => {
 
     // Simulate SIGNED_OUT event
     act(() => {
-      (globalThis as any).authCallback('SIGNED_OUT', null);
+      globalThis.authCallback?.('SIGNED_OUT', null);
     });
 
     expect(result.current.loading).toBe(false);
