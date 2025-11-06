@@ -21,7 +21,7 @@ export async function POST(req) {
   let event;
 
   // Create a private supabase client using the service role key
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // verify Stripe event is legit
   try {

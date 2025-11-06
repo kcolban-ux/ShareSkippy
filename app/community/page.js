@@ -156,7 +156,7 @@ export default function CommunityPage() {
 
   const fetchAvailabilityData = async (currentUser) => {
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       // Add cache-busting parameter to prevent stale data
       const cacheBuster = Date.now();
@@ -462,7 +462,7 @@ export default function CommunityPage() {
 
     try {
       setDeletingPost(postId);
-      const supabase = createClient();
+      const supabase = await createClient();
       const { error } = await supabase
         .from('availability')
         .update({ status: 'inactive' })
@@ -508,7 +508,7 @@ export default function CommunityPage() {
         }
       }
 
-      const supabase = createClient();
+      const supabase = await createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();

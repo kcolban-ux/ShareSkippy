@@ -9,7 +9,7 @@ export async function GET(request) {
     const cursor = searchParams.get('cursor');
     const limit = Math.min(parseInt(searchParams.get('limit') || '24'), 60);
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     console.log('Profiles API called with params:', { cursor, limit });
 

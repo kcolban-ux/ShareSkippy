@@ -21,7 +21,7 @@ export const viewport = {
 export const metadata = getSEOTags();
 
 export default async function RootLayout({ children }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();

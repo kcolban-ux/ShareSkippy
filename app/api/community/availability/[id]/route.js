@@ -2,7 +2,7 @@ import { createClient } from '@/libs/supabase/server';
 
 export async function GET(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('availability')

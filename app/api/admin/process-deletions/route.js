@@ -4,7 +4,7 @@ import { createClient } from '@/libs/supabase/server';
 // POST /api/admin/process-deletions - Process deletion requests that are ready
 export async function POST() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -152,7 +152,7 @@ export async function POST() {
 // GET /api/admin/process-deletions - Get pending deletion requests
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {

@@ -34,7 +34,7 @@ export async function GET(req) {
   }
 
   if (code) {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     try {
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -124,9 +124,9 @@ export async function GET(req) {
         updatedProfile?.phone_number && updatedProfile.phone_number.trim().length > 0;
 
       console.log('📊 Profile completeness check:');
-      console.log('   ✓ Bio:', hasCompleteBio ? '✅ Complete' : '❌ Missing');
-      console.log('   ✓ Role:', hasRole ? '✅ Complete' : '❌ Missing');
-      console.log('   ✓ Phone:', hasPhone ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Bio:', hasCompleteBio ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Role:', hasRole ? '✅ Complete' : '❌ Missing');
+      console.log('   ✓ Phone:', hasPhone ? '✅ Complete' : '❌ Missing');
 
       if (isNewUser) {
         console.log('🆕 NEW USER → Redirecting to /profile/edit');

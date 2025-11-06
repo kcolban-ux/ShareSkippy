@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/reviews - Get reviews for a specific user or all reviews
 export async function GET(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -54,7 +54,7 @@ export async function GET(request) {
 // POST /api/reviews - Create a new review
 export async function POST(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {

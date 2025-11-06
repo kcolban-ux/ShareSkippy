@@ -71,7 +71,7 @@ export default function WelcomePage() {
     setSending((prev) => ({ ...prev, [matchUserId]: true }));
 
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       // Get current user's first name
       const firstName = currentProfile?.first_name || 'Someone';

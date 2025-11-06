@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/libs/supabase/server';
 import config from '@/config';
 
-export default async function MeetingsLayout({ children }) {
+export default async function CommunityLayout({ children }) {
   const supabase = await createClient();
 
   const {

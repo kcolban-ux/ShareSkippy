@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user
     const {
@@ -106,7 +106,7 @@ export async function POST(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user
     const {

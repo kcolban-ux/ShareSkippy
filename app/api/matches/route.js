@@ -9,7 +9,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '4');
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user
     const {

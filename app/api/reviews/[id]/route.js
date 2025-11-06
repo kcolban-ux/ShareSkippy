@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/reviews/[id] - Get a specific review
 export async function GET(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -44,7 +44,7 @@ export async function GET(request, { params }) {
 // PATCH /api/reviews/[id] - Update a review
 export async function PATCH(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -113,7 +113,7 @@ export async function PATCH(request, { params }) {
 // DELETE /api/reviews/[id] - Delete a review
 export async function DELETE(request, { params }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {

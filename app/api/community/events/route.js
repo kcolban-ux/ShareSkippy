@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user
     const {
@@ -86,7 +86,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get current user
     const {

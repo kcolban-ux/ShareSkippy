@@ -3,7 +3,7 @@ import { createClient } from '@/libs/supabase/server';
 import config from '@/config';
 
 export default async function MessagesLayout({ children }) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },

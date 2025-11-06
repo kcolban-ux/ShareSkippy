@@ -4,7 +4,7 @@ import { createClient } from '@/libs/supabase/server';
 // POST /api/account/deletion-request - Request account deletion
 export async function POST(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -79,7 +79,7 @@ export async function POST(request) {
 // GET /api/account/deletion-request - Get user's deletion request status
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -147,7 +147,7 @@ export async function DELETE() {
   try {
     console.log('Starting deletion cancellation request...');
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication with timeout
     const authPromise = supabase.auth.getUser();
