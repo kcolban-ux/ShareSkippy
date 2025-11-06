@@ -34,6 +34,8 @@ jest.mock('@/libs/supabase/server', () => ({
   createServiceClient: jest.fn(() => mockSupabase),
 }));
 
+jest.spyOn(console, 'error').mockImplementation(() => {});
+
 const mockedSendEmail = sendEmail as jest.Mock;
 
 const MOCK_DATE = '2025-11-01T10:00:00.000Z';

@@ -19,6 +19,7 @@ interface EmailQueueItem {
 
 jest.useFakeTimers();
 jest.spyOn(globalThis, 'setTimeout');
+jest.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('EmailQueue', () => {
   let queue: EmailQueue; // Explicitly type mockSendFn using the local mock type

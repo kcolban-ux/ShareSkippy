@@ -30,6 +30,8 @@ jest.mock('@/libs/resend', () => ({
   sendEmail: mockSendEmail,
 }));
 
+jest.spyOn(console, 'error').mockImplementation(() => {});
+
 // --- Helper Functions ---
 
 const createMockFormData = (data: Record<string, string>): FormData => {
