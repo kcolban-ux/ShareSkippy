@@ -12,7 +12,7 @@ interface LocationFilterConfig {
 }
 
 interface LocationFilterProps {
-  onFilterChange: (LocationFilterConfig | null) => void;
+  onFilterChange: (_filter: LocationFilterConfig | null) => void;
 }
 
 type FilterType = 'none' | 'shared-location' | 'zip-city';
