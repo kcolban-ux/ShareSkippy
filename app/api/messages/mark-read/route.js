@@ -54,11 +54,6 @@ export async function POST(request) {
 
     console.log(`Marked ${updatedMessages?.length || 0} messages as read for conversation ${conversation_id}`);
 
-    if (legacyUpdateError) {
-      console.error('Error marking legacy messages as read:', legacyUpdateError);
-      // Don't fail if legacy update fails
-    }
-
     return NextResponse.json({ 
       success: true,
       messagesUpdated: updatedMessages?.length || 0
