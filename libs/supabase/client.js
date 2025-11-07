@@ -12,7 +12,7 @@ export const createClient = () => {
   }
 
   return createBrowserClient(supabaseUrl, supabasePublishableKey, {
-    cookieOptions: getCookieOptions,
+    cookieOptions: getCookieOptions(),
     global: {
       headers: {
         Connection: 'keep-alive',
