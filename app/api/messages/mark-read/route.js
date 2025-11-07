@@ -58,30 +58,39 @@ export async function POST(request) {
     }
 
     // Also update legacy messages (without conversation_id) by participant pair
+    // Only update messages where the current user is the recipient
     // Use separate queries for each direction to avoid OR query issues
-    const { data: updatedLegacy1, error: error2 } = await supabase
-      .from('messages')
-      .update(updateData)
-      .eq('sender_id', conversation.participant1_id)
-      .eq('recipient_id', conversation.participant2_id)
-      .eq('recipient_id', user.id)
-      .eq('is_read', false)
-      .is('conversation_id', null)
-      .select('id');
+    if (user.id === conversation.participant2_id) {
+      // User is participant2, so update messages where participant1 sent to participant2
+      const { data: updatedLegacy1, error: error2 } = await supabase
+        .from('messages')
+        .update(updateData)
+        .eq('sender_id', conversation.participant1_id)
+        .eq('recipient_id', conversation.participant2_id)
+        .eq('is_read', false)
+        .is('conversation_id', null)
+        .select('id');
 
-    if (!error2 && updatedLegacy1) {
-      updatedMessages = [...updatedMessages, ...updatedLegacy1];
+      if (!error2 && updatedLegacy1) {
+        updatedMessages = [...updatedMessages, ...updatedLegacy1];
+      }
     }
 
-    const { data: updatedLegacy2, error: error3 } = await supabase
-      .from('messages')
-      .update(updateData)
-      .eq('sender_id', conversation.participant2_id)
-      .eq('recipient_id', conversation.participant1_id)
-      .eq('recipient_id', user.id)
-      .eq('is_read', false)
-      .is('conversation_id', null)
-      .select('id');
+    if (user.id === conversation.participant1_id) {
+      // User is participant1, so update messages where participant2 sent to participant1
+      const { data: updatedLegacy2, error: error3 } = await supabase
+        .from('messages')
+        .update(updateData)
+        .eq('sender_id', conversation.participant2_id)
+        .eq('recipient_id', conversation.participant1_id)
+        .eq('is_read', false)
+        .is('conversation_id', null)
+        .select('id');
+
+      if (!error3 && updatedLegacy2) {
+        updatedMessages = [...updatedMessages, ...updatedLegacy2];
+      }
+    }
 
     if (!error3 && updatedLegacy2) {
       updatedMessages = [...updatedMessages, ...updatedLegacy2];
