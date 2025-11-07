@@ -72,66 +72,29 @@ export default function MessagesPage() {
       try {
         const { participant1_id, participant2_id } = selectedConversation;
 
-        // Try to fetch by conversation_id first (if it exists)
-        let data = null;
-        let error = null;
-        
-        // Check if conversation_id exists on messages for this conversation
-        const { data: checkConv } = await supabase
+        // Always use participant-based query (works with or without conversation_id)
+        // This is more reliable and works for both new and legacy messages
+        const { data, error } = await supabase
           .from('messages')
-          .select('conversation_id')
-          .eq('conversation_id', conversationId)
-          .limit(1)
-          .single();
-
-        if (checkConv) {
-          // Use conversation_id query
-          const result = await supabase
-            .from('messages')
-            .select(
-              `
-              *,
-              sender:profiles!messages_sender_id_fkey (
-                id,
-                first_name,
-                last_name,
-                profile_photo_url
-              )
-              `
+          .select(
+            `
+            *,
+            sender:profiles!messages_sender_id_fkey (
+              id,
+              first_name,
+              last_name,
+              profile_photo_url
             )
-            .eq('conversation_id', conversationId)
-            .order('created_at', { ascending: true });
-          
-          data = result.data;
-          error = result.error;
-        }
+            `
+          )
+          .or(
+            `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
+          )
+          .order('created_at', { ascending: true });
 
-        // If no data with conversation_id, use participant-based query (works for all cases)
-        if (!data || data.length === 0 || error) {
-          const result = await supabase
-            .from('messages')
-            .select(
-              `
-              *,
-              sender:profiles!messages_sender_id_fkey (
-                id,
-                first_name,
-                last_name,
-                profile_photo_url
-              )
-              `
-            )
-            .or(
-              `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
-            )
-            .order('created_at', { ascending: true });
-
-          if (result.error) {
-            console.error('[fetchMessages] error', result.error);
-            return [];
-          }
-
-          return result.data || [];
+        if (error) {
+          console.error('[fetchMessages] supabase error', error);
+          throw error;
         }
 
         return data || [];

@@ -35,13 +35,14 @@ export async function POST(request) {
 
     // Mark all unread messages in this conversation as read for the current user
     // Only mark messages where the current user is the recipient
-    // Update object - only include read_at if column exists (graceful degradation)
+    // Use participant-based matching (works with or without conversation_id)
     const updateData = { is_read: true };
     
+    // Mark messages by participant pair (works for all messages)
     const { data: updatedMessages, error: updateError } = await supabase
       .from('messages')
       .update(updateData)
-      .eq('conversation_id', conversation_id)
+      .or(`and(sender_id.eq.${conversation.participant1_id},recipient_id.eq.${conversation.participant2_id}),and(sender_id.eq.${conversation.participant2_id},recipient_id.eq.${conversation.participant1_id})`)
       .eq('recipient_id', user.id)
       .eq('is_read', false)
       .select('id');
@@ -52,16 +53,6 @@ export async function POST(request) {
     }
 
     console.log(`Marked ${updatedMessages?.length || 0} messages as read for conversation ${conversation_id}`);
-
-    // Also mark legacy messages (without conversation_id) as read
-    // Match by participant pairs
-    const { error: legacyUpdateError } = await supabase
-      .from('messages')
-      .update(updateData)
-      .or(`and(sender_id.eq.${conversation.participant1_id},recipient_id.eq.${conversation.participant2_id}),and(sender_id.eq.${conversation.participant2_id},recipient_id.eq.${conversation.participant1_id})`)
-      .eq('recipient_id', user.id)
-      .eq('is_read', false)
-      .is('conversation_id', null);
 
     if (legacyUpdateError) {
       console.error('Error marking legacy messages as read:', legacyUpdateError);
