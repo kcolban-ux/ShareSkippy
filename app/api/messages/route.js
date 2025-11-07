@@ -19,37 +19,54 @@ export async function POST(request) {
 
     // availability_id is now optional - we'll ignore it for new messages
 
-    // Check if a conversation already exists between these two users (ignore availability_id)
+    // Normalize participant order (canonical: p1 < p2)
+    const p1_id = user.id < recipient_id ? user.id : recipient_id;
+    const p2_id = user.id < recipient_id ? recipient_id : user.id;
+
+    // Check if a conversation already exists between these two users (canonical order)
     const { data: existingConversation } = await supabase
       .from('conversations')
       .select('*')
-      .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${recipient_id}),and(participant1_id.eq.${recipient_id},participant2_id.eq.${user.id})`)
+      .eq('participant1_id', p1_id)
+      .eq('participant2_id', p2_id)
+      .is('availability_id', null)
       .single();
 
     let conversationId;
 
     if (existingConversation) {
       conversationId = existingConversation.id;
-      
-      // Update the last_message_at timestamp
-      await supabase
-        .from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
-        .eq('id', conversationId);
     } else {
-      // Create a new conversation (profile-based only)
+      // Create a new conversation (profile-based only, canonical order)
       const { data: newConversation, error: newConvError } = await supabase
         .from('conversations')
         .insert({
-          participant1_id: user.id,
-          participant2_id: recipient_id,
-          availability_id: null // Always null for new conversations
+          participant1_id: p1_id,
+          participant2_id: p2_id,
+          availability_id: null, // Always null for profile-based conversations
+          last_message_at: new Date().toISOString()
         })
         .select()
         .single();
 
-      if (newConvError) throw newConvError;
-      conversationId = newConversation.id;
+      if (newConvError) {
+        // If conflict (race condition), fetch the existing one
+        const { data: conflictConv } = await supabase
+          .from('conversations')
+          .select('*')
+          .eq('participant1_id', p1_id)
+          .eq('participant2_id', p2_id)
+          .is('availability_id', null)
+          .single();
+        
+        if (conflictConv) {
+          conversationId = conflictConv.id;
+        } else {
+          throw newConvError;
+        }
+      } else {
+        conversationId = newConversation.id;
+      }
     }
 
     // Send the message (profile-based only)
@@ -67,6 +84,12 @@ export async function POST(request) {
       .single();
 
     if (messageError) throw messageError;
+
+    // Update conversation's last_message_at timestamp
+    await supabase
+      .from('conversations')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', conversationId);
 
     // Send email notification to recipient using centralized email system
     try {
@@ -110,13 +133,30 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const conversationId = searchParams.get('conversation_id');
+    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const before = searchParams.get('before'); // ISO timestamp for pagination
 
     if (!conversationId) {
       return NextResponse.json({ error: 'Conversation ID required' }, { status: 400 });
     }
 
-    // Fetch messages for the conversation
-    const { data: messages, error } = await supabase
+    // Verify user is a participant in this conversation
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('participant1_id, participant2_id')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError || !conversation) {
+      return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+    }
+
+    if (conversation.participant1_id !== user.id && conversation.participant2_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Build query for messages
+    let query = supabase
       .from('messages')
       .select(`
         *,
@@ -127,12 +167,35 @@ export async function GET(request) {
           profile_photo_url
         )
       `)
-      .eq('availability_id', conversationId)
-      .order('created_at', { ascending: true });
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: false }) // Newest first for pagination
+      .limit(limit + 1); // Fetch one extra to determine if there are more
+
+    // Add pagination cursor if provided
+    if (before) {
+      query = query.lt('created_at', before);
+    }
+
+    const { data: messages, error } = await query;
 
     if (error) throw error;
 
-    return NextResponse.json({ messages });
+    // Check if there are more messages
+    const hasMore = messages.length > limit;
+    const messagesToReturn = hasMore ? messages.slice(0, limit) : messages;
+    
+    // Reverse to return oldest→newest for UI
+    messagesToReturn.reverse();
+    
+    // Get the oldest message timestamp for nextBefore cursor
+    const nextBefore = hasMore && messagesToReturn.length > 0 
+      ? messagesToReturn[0].created_at 
+      : null;
+
+    return NextResponse.json({ 
+      messages: messagesToReturn,
+      nextBefore 
+    });
 
   } catch (error) {
     console.error('Error fetching messages:', error);

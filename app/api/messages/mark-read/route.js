@@ -33,11 +33,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    const now = new Date().toISOString();
+
     // Mark all unread messages in this conversation as read for the current user
     // Only mark messages where the current user is the recipient
     const { error: updateError } = await supabase
       .from('messages')
-      .update({ is_read: true })
+      .update({ 
+        is_read: true,
+        read_at: now
+      })
       .eq('conversation_id', conversation_id)
       .eq('recipient_id', user.id)
       .eq('is_read', false);
@@ -50,7 +55,10 @@ export async function POST(request) {
     // Match by participant pairs
     const { error: legacyUpdateError } = await supabase
       .from('messages')
-      .update({ is_read: true })
+      .update({ 
+        is_read: true,
+        read_at: now
+      })
       .or(`and(sender_id.eq.${conversation.participant1_id},recipient_id.eq.${conversation.participant2_id}),and(sender_id.eq.${conversation.participant2_id},recipient_id.eq.${conversation.participant1_id})`)
       .eq('recipient_id', user.id)
       .eq('is_read', false)

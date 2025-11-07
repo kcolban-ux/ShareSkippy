@@ -1,13 +1,18 @@
 'use client';
 import { useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useSupabaseAuth } from '@/libs/supabase/hooks';
 import { supabase } from '@/libs/supabase';
 import MessageModal from '@/components/MessageModal';
 import MeetingModal from '@/components/MeetingModal';
+import MessagesProfileCard from '@/components/messages/ProfileCard';
+import AvailabilityCard from '@/components/messages/AvailabilityCard';
 
 export default function MessagesPage() {
   const { user, loading: authLoading } = useSupabaseAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -27,6 +32,13 @@ export default function MessagesPage() {
   });
   const [showConversations, setShowConversations] = useState(false);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState(() => {
+    // Load filter from localStorage, default to 'all'
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('messages-filter') || 'all';
+    }
+    return 'all';
+  });
   const abortControllerRef = useRef(null);
 
   const selectedConversationKey = useMemo(() => {
@@ -37,6 +49,21 @@ export default function MessagesPage() {
     );
   }, [selectedConversation]);
 
+  // Filter conversations based on selected filter
+  const filteredConversations = useMemo(() => {
+    if (filter === 'unread') {
+      return conversations.filter(conv => conv.unreadCount > 0);
+    }
+    return conversations;
+  }, [conversations, filter]);
+
+  // Update localStorage when filter changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('messages-filter', filter);
+    }
+  }, [filter]);
+
   const fetchMessages = useCallback(
     async (conversationId) => {
       if (!conversationId || !selectedConversation) return;
@@ -44,11 +71,13 @@ export default function MessagesPage() {
       try {
         const { participant1_id, participant2_id } = selectedConversation;
 
-        const { data, error } = await supabase
+        // First try to fetch by conversation_id (new approach)
+        let query = supabase
           .from('messages')
           .select(
             `
             *,
+            read_at,
             sender:profiles!messages_sender_id_fkey (
               id,
               first_name,
@@ -57,15 +86,44 @@ export default function MessagesPage() {
             )
             `
           )
-          .or(
-            // Filter for messages between p1 and p2 in either direction
-            `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
-          )
+          .eq('conversation_id', conversationId)
           .order('created_at', { ascending: true });
+
+        const { data, error } = await query;
 
         if (error) {
           console.error('[fetchMessages] supabase error', error);
           throw error;
+        }
+
+        // If no messages found with conversation_id, fallback to participant-based query (legacy)
+        if (!data || data.length === 0) {
+          const { data: legacyData, error: legacyError } = await supabase
+            .from('messages')
+            .select(
+              `
+              *,
+              read_at,
+              sender:profiles!messages_sender_id_fkey (
+                id,
+                first_name,
+                last_name,
+                profile_photo_url
+              )
+              `
+            )
+            .or(
+              `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
+            )
+            .is('conversation_id', null)
+            .order('created_at', { ascending: true });
+
+          if (legacyError) {
+            console.error('[fetchMessages] legacy query error', legacyError);
+            return [];
+          }
+
+          return legacyData || [];
         }
 
         return data || [];
@@ -181,13 +239,15 @@ export default function MessagesPage() {
             id,
             first_name,
             last_name,
-            profile_photo_url
+            profile_photo_url,
+            role
           ),
           participant2:profiles!conversations_participant2_id_fkey (
             id,
             first_name,
             last_name,
-            profile_photo_url
+            profile_photo_url,
+            role
           ),
           availability:availability!conversations_availability_id_fkey (
             id,
@@ -247,16 +307,38 @@ export default function MessagesPage() {
         }
       }
 
+      // Fetch last message preview for each conversation
+      const lastMessages = {};
+      if (conversationIds.length > 0) {
+        const { data: lastMessagesData } = await supabase
+          .from('messages')
+          .select('conversation_id, content, created_at')
+          .in('conversation_id', conversationIds)
+          .order('created_at', { ascending: false });
+        
+        if (lastMessagesData) {
+          lastMessagesData.forEach((msg) => {
+            if (!lastMessages[msg.conversation_id]) {
+              lastMessages[msg.conversation_id] = msg;
+            }
+          });
+        }
+      }
+
       const processedConversations = data.map((conv) => {
         const otherParticipant =
           conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
         const unreadCount = unreadCounts[conv.id] || 0;
+        const lastMessage = lastMessages[conv.id];
         return {
           ...conv,
           otherParticipant,
           displayName: `${otherParticipant.first_name} ${otherParticipant.last_name}`,
           profilePhoto: otherParticipant.profile_photo_url,
+          role: otherParticipant.role,
           unreadCount: unreadCount,
+          lastMessagePreview: lastMessage?.content || null,
+          lastMessageTime: lastMessage?.created_at || conv.last_message_at,
         };
       });
 
@@ -273,8 +355,19 @@ export default function MessagesPage() {
         }
       }
 
-      // Select the first conversation if none is selected
-      if (processedConversations.length > 0 && !selectedConversation) {
+      // Handle URL parameter for deep linking
+      const conversationIdFromUrl = searchParams.get('c');
+      if (conversationIdFromUrl) {
+        const urlConversation = processedConversations.find(c => c.id === conversationIdFromUrl);
+        if (urlConversation) {
+          setSelectedConversation(urlConversation);
+        } else if (processedConversations.length > 0) {
+          // URL conversation not found, but we have conversations - clear URL param
+          router.replace('/messages', { scroll: false });
+          setSelectedConversation(processedConversations[0]);
+        }
+      } else if (processedConversations.length > 0 && !selectedConversation) {
+        // Select the first conversation if none is selected and no URL param
         setSelectedConversation(processedConversations[0]);
       }
     } catch (error) {
@@ -283,7 +376,7 @@ export default function MessagesPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, searchParams, router, selectedConversation]);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -326,6 +419,38 @@ export default function MessagesPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
 
+    const messageContent = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Create optimistic message
+    const optimisticMessage = {
+      id: tempId,
+      sender_id: user.id,
+      recipient_id: selectedConversation.otherParticipant.id,
+      conversation_id: selectedConversation.id,
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      is_read: false,
+      read_at: null,
+      sender: {
+        id: user.id,
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        profile_photo_url: user.user_metadata?.profile_photo_url || null,
+      },
+    };
+
+    // Add optimistic message immediately
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setNewMessage('');
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 100);
+
     try {
       setSending(true);
 
@@ -335,7 +460,7 @@ export default function MessagesPage() {
         body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
-          content: newMessage.trim(),
+          content: messageContent,
         }),
       });
 
@@ -344,11 +469,30 @@ export default function MessagesPage() {
         throw new Error(errorData.error || 'Failed to send message');
       }
 
-      // Refresh conversations to update the 'last_message_at' for the sidebar.
-      setNewMessage('');
+      const { message: serverMessage } = await response.json();
+
+      // Replace optimistic message with server message
+      setMessages((prev) => 
+        prev.map((msg) => 
+          msg.id === tempId ? serverMessage : msg
+        )
+      );
+
+      // Refresh conversations to update the 'last_message_at' for the sidebar
       await fetchConversations();
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+      
+      // Restore message content for retry
+      setNewMessage(messageContent);
+      
+      // Show error toast
+      if (typeof window !== 'undefined' && window.toast) {
+        window.toast.error('Failed to send message. Please try again.');
+      }
     } finally {
       setSending(false);
     }
@@ -441,6 +585,33 @@ export default function MessagesPage() {
     return `${datePart}, ${timePart}`;
   };
 
+  const formatRole = (role) => {
+    if (!role) return null;
+    // Normalize role values
+    const normalized = role.toLowerCase();
+    if (normalized === 'owner' || normalized === 'dog_owner') return 'Owner';
+    if (normalized === 'petpal' || normalized === 'dog_sitter') return 'PetPal';
+    if (normalized === 'both') return 'Owner · PetPal';
+    return null;
+  };
+
+  const formatInboxTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   const scrollRef = useRef(null);
   useEffect(() => {
     if (scrollRef.current) {
@@ -494,14 +665,44 @@ export default function MessagesPage() {
         <aside
           className={`w-full lg:w-80 border-r border-gray-200 bg-gray-50 flex flex-col min-h-0 ${showConversations ? 'flex' : 'hidden lg:flex'}`}
         >
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-            <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
-            <button
-              onClick={() => setShowConversations(false)}
-              className="lg:hidden text-gray-500 hover:text-gray-700"
-            >
-              ✕
-            </button>
+          <div className="p-4 border-b border-gray-200 shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+              <button
+                onClick={() => setShowConversations(false)}
+                className="lg:hidden text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            {/* Filter Pills */}
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  filter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilter('unread')}
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors relative ${
+                  filter === 'unread'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Unread
+                {conversations.filter(c => c.unreadCount > 0).length > 0 && (
+                  <span className="ml-1.5 bg-red-500 text-white text-xs font-semibold rounded-full h-4 w-4 min-w-[16px] inline-flex items-center justify-center">
+                    {conversations.filter(c => c.unreadCount > 0).length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto ios-scroll">
@@ -509,18 +710,24 @@ export default function MessagesPage() {
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
               </div>
-            ) : conversations.length === 0 ? (
+            ) : filteredConversations.length === 0 ? (
               <div className="p-6 text-center text-gray-500">
-                <p>No conversations yet</p>
-                <p className="text-sm mt-2">Start messaging someone from the community!</p>
+                <p>{filter === 'unread' ? 'No unread conversations' : 'No conversations yet'}</p>
+                <p className="text-sm mt-2">
+                  {filter === 'unread' 
+                    ? 'All caught up!' 
+                    : 'Start messaging someone from the community!'}
+                </p>
               </div>
             ) : (
-              conversations.map((conversation) => (
+              filteredConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   onClick={() => {
                     setSelectedConversation(conversation);
                     setShowConversations(false); // Hide sidebar on mobile after selection
+                    // Update URL with shallow routing
+                    router.replace(`/messages?c=${conversation.id}`, { scroll: false });
                   }}
                   className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors ${
                     selectedConversation?.id === conversation.id ? 'bg-blue-50 border-blue-200' : ''
@@ -545,13 +752,17 @@ export default function MessagesPage() {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 mb-1">
                         <Link
                           href={`/profile/${conversation.otherParticipant.id}`}
                           onClick={(e) => e.stopPropagation()}
                           className="block flex-1 min-w-0"
                         >
-                          <h3 className="font-semibold text-gray-900 truncate hover:text-blue-600 transition-colors">
+                          <h3 className={`truncate hover:text-blue-600 transition-colors ${
+                            conversation.unreadCount > 0 
+                              ? 'font-bold text-gray-900' 
+                              : 'font-semibold text-gray-900'
+                          }`}>
                             {conversation.displayName}
                           </h3>
                         </Link>
@@ -561,11 +772,24 @@ export default function MessagesPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 truncate mt-1">
-                        {conversation.availability?.title || 'Availability Post'}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {formatDate(conversation.last_message_at)}
+                      <div className="flex items-center space-x-2 mb-1">
+                        {formatRole(conversation.role) && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {formatRole(conversation.role)}
+                          </span>
+                        )}
+                        <p className={`text-sm truncate flex-1 ${
+                          conversation.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-500'
+                        }`}>
+                          {conversation.lastMessagePreview 
+                            ? (conversation.lastMessagePreview.length > 50 
+                                ? conversation.lastMessagePreview.substring(0, 50) + '...' 
+                                : conversation.lastMessagePreview)
+                            : 'No messages yet'}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {formatInboxTime(conversation.lastMessageTime)}
                       </p>
                     </div>
                   </div>
@@ -576,7 +800,9 @@ export default function MessagesPage() {
         </aside>
 
         {/* Thread */}
-        <section className="flex-1 min-h-0 flex flex-col">
+        <section className="flex-1 min-h-0 flex flex-col lg:flex-row">
+          {/* Main Thread Content */}
+          <div className="flex-1 min-h-0 flex flex-col">
           {selectedConversation ? (
             <>
               {/* Conversation Header */}
@@ -657,23 +883,38 @@ export default function MessagesPage() {
                     key={message.id}
                     className={`flex ${message.sender_id === user.id ? 'justify-end' : 'justify-start'} message-container`}
                   >
-                    <div
-                      className={`message-bubble px-4 py-3 rounded-2xl wrap-break-word shadow-xs max-w-full ${
-                        message.sender_id === user.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-900 border border-gray-200'
-                      }`}
-                    >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
-                      <p
-                        className={`text-xs mt-2 ${
-                          message.sender_id === user.id ? 'text-blue-100' : 'text-gray-500'
+                    <div className={`flex flex-col ${message.sender_id === user.id ? 'items-end' : 'items-start'}`}>
+                      <div
+                        className={`message-bubble px-4 py-3 rounded-2xl wrap-break-word shadow-xs max-w-full ${
+                          message.sender_id === user.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-900 border border-gray-200'
                         }`}
                       >
-                        {formatTimestamp(message.created_at)}
-                      </p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                        <div className={`flex items-center space-x-2 mt-2 ${message.sender_id === user.id ? 'justify-end' : 'justify-start'}`}>
+                          <p
+                            className={`text-xs ${
+                              message.sender_id === user.id ? 'text-blue-100' : 'text-gray-500'
+                            }`}
+                          >
+                            {formatTimestamp(message.created_at)}
+                          </p>
+                          {message.sender_id === user.id && message.read_at && (
+                            <span className="text-xs text-blue-100">
+                              ✓✓
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Read Receipt */}
+                      {message.sender_id === user.id && message.read_at && (
+                        <p className="text-xs text-gray-400 mt-1 px-1">
+                          Seen at {formatTimestamp(message.read_at)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -755,6 +996,23 @@ export default function MessagesPage() {
                 </button>
               </div>
             </div>
+          )}
+          </div>
+
+          {/* Right Sidebar - Profile & Availability Cards (Desktop) */}
+          {selectedConversation && (
+            <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:border-l lg:border-gray-200 lg:bg-gray-50 lg:p-4 lg:space-y-4 lg:overflow-y-auto">
+              <MessagesProfileCard 
+                profile={selectedConversation.otherParticipant} 
+                userId={user?.id}
+              />
+              {selectedConversation.availability_id && (
+                <AvailabilityCard 
+                  availabilityId={selectedConversation.availability_id}
+                  userId={user?.id}
+                />
+              )}
+            </aside>
           )}
         </section>
       </div>

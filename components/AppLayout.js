@@ -8,6 +8,7 @@ import Header from './Header';
 import LoggedInNav from './LoggedInNav';
 import ReviewBanner from './ReviewBanner';
 import ReviewModal from './ReviewModal';
+import LoginToast from './LoginToast';
 
 const AppLayout = ({ children }) => {
   const { user, loading } = useUser();
@@ -68,6 +69,9 @@ const AppLayout = ({ children }) => {
         pendingReview={selectedReview}
         onReviewSubmitted={handleReviewSubmitted}
       />
+
+      {/* Login Toast for unread messages */}
+      <LoginToast />
     </div>
   );
 };
