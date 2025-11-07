@@ -13,6 +13,7 @@ extract_key_value() {
 
 ANON_KEY_VALUE=$(extract_key_value "ANON_KEY")
 SERVICE_KEY_VALUE=$(extract_key_value "SERVICE_ROLE_KEY")
+PUBLISHABLE_KEY_VALUE=$(extract_key_value "PUBLISHABLE_KEY")
 
 if [ -z "$ANON_KEY_VALUE" ] || [ -z "$SERVICE_KEY_VALUE" ]; then
   echo "Error: Could not retrieve dynamic Supabase keys."
@@ -23,5 +24,7 @@ fi
 sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_ANON_KEY=).*$/\1$ANON_KEY_VALUE/" "$ENV_FILE"
 
 sed -i -E "s/^(SUPABASE_SERVICE_ROLE_KEY=).*$/\1$SERVICE_KEY_VALUE/" "$ENV_FILE"
+
+sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=).*$/\1$PUBLISHABLE_KEY_VALUE/" "$ENV_FILE"
 
 echo "✅ Supabase ANONYMOUS_KEY and SERVICE_ROLE_KEY successfully updated in $ENV_FILE."
