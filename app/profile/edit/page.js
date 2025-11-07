@@ -51,6 +51,9 @@ export default function ProfileEditPage() {
   const { profile, setProfile, loadDraft, clearDraft, hasDraft, draftSource } =
     useProfileDraft(initialProfileState); // Use the consistent initial state
 
+  // Per-field inline errors
+  const [fieldErrors, setFieldErrors] = useState({});
+
   // --- DATA LOADING LOGIC ---
 
   const loadProfile = useCallback(async () => {
@@ -136,6 +139,31 @@ export default function ProfileEditPage() {
     }
   }, [user, userLoading, router, loadDraft, setProfile, loadProfile]);
 
+  // Validate required fields and return { fieldName: message }
+  const validateProfile = (p) => {
+    const errors = {};
+
+    if (!p.first_name || !String(p.first_name).trim()) {
+      errors.first_name = 'Please enter your first name';
+    }
+    if (!p.last_name || !String(p.last_name).trim()) {
+      errors.last_name = 'Please enter your last name';
+    }
+    if (!p.phone_number || !String(p.phone_number).trim()) {
+      errors.phone_number = 'Please enter a phone number';
+    } else {
+      const digits = String(p.phone_number).replace(/\D/g, '');
+      if (digits.length < 10) {
+        errors.phone_number = 'Please enter a valid phone number';
+      }
+    }
+    if (!p.role || !String(p.role).trim()) {
+      errors.role = 'Please select a role';
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Authentication verification: Prevent form submission if user or ID is missing
@@ -146,18 +174,20 @@ export default function ProfileEditPage() {
     setSaving(true);
 
     try {
-      const supabase = createClient();
+      // Run client-side validation and show inline errors if any
+      const errors = validateProfile(profile);
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
 
-      // --- Validation Check (Safely using String() for trim on state values) ---
-      if (
-        !String(profile.first_name).trim() ||
-        !String(profile.last_name).trim() ||
-        !String(profile.phone_number).trim() ||
-        !String(profile.role).trim()
-      ) {
-        toast.error(
-          'Please fill in all required fields (First Name, Last Name, Phone Number, and Role)'
-        );
+        const prettyNames = {
+          first_name: 'First Name',
+          last_name: 'Last Name',
+          phone_number: 'Phone Number',
+          role: 'Role',
+        };
+        const missing = Object.keys(errors).map((k) => prettyNames[k] || k);
+        toast.error(`Please fix: ${missing.join(', ')}`);
+
         setSaving(false);
         return;
       }
@@ -167,6 +197,8 @@ export default function ProfileEditPage() {
         setSaving(false);
         return;
       }
+
+      const supabase = createClient();
 
       // --- Prepare Profile Data (Safely handling potential nulls) ---
       const profileData = {
@@ -215,6 +247,13 @@ export default function ProfileEditPage() {
 
       if (dbError) {
         console.error('Supabase error details:', dbError);
+        // Example mapping: map phone conflict to field error
+        if (dbError.message && /phone/i.test(dbError.message)) {
+          setFieldErrors({ phone_number: 'That phone number is already in use' });
+          toast.error('Phone number already in use');
+          setSaving(false);
+          return;
+        }
         throw new Error(`Database error: ${dbError.message} (Code: ${dbError.code})`);
       }
 
@@ -228,11 +267,11 @@ export default function ProfileEditPage() {
       console.error('Error saving profile:', err);
 
       let errorMessage = 'Failed to save profile';
-      if (err.message.includes('Database error:')) {
+      if (err.message && err.message.includes('Database error:')) {
         errorMessage = err.message;
-      } else if (err.message.includes('JWT')) {
+      } else if (err.message && err.message.includes('JWT')) {
         errorMessage = 'Authentication error. Please try logging in again.';
-      } else if (err.message.includes('network')) {
+      } else if (err.message && err.message.includes('network')) {
         errorMessage = 'Network error. Please check your connection and try again.';
       }
 
@@ -249,6 +288,12 @@ export default function ProfileEditPage() {
         ...prev,
         [name]: value === '' ? null : value,
       }));
+      // clear field error for lat/lng if present
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
       return;
     }
 
@@ -256,6 +301,14 @@ export default function ProfileEditPage() {
       ...prev,
       [name]: value,
     }));
+
+    // Clear inline error for this field as user types
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      const copy = { ...prev };
+      delete copy[name];
+      return copy;
+    });
   };
 
   const handlePhotoUpload = (photoUrl) => {
@@ -263,6 +316,11 @@ export default function ProfileEditPage() {
       ...prev,
       profile_photo_url: photoUrl,
     }));
+    setFieldErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.profile_photo_url;
+      return copy;
+    });
   };
 
   const verifyAddress = async () => {
@@ -402,6 +460,9 @@ export default function ProfileEditPage() {
                 onPhotoUploaded={handlePhotoUpload}
                 initialPhotoUrl={profile.profile_photo_url}
               />
+              {fieldErrors.profile_photo_url && (
+                <p className="mt-1 text-sm text-red-600" role="alert">{fieldErrors.profile_photo_url}</p>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -419,8 +480,15 @@ export default function ProfileEditPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="First Name"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className={`w-full p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black border ${fieldErrors.first_name ? 'border-red-500' : 'border-gray-300'}`}
+                  aria-invalid={fieldErrors.first_name ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.first_name ? 'first_name_error' : undefined}
                 />
+                {fieldErrors.first_name && (
+                  <p id="first_name_error" className="mt-1 text-sm text-red-600" role="alert">
+                    {fieldErrors.first_name}
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -434,8 +502,15 @@ export default function ProfileEditPage() {
                   onChange={handleInputChange}
                   required
                   placeholder="Last Name"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  className={`w-full p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black border ${fieldErrors.last_name ? 'border-red-500' : 'border-gray-300'}`}
+                  aria-invalid={fieldErrors.last_name ? 'true' : 'false'}
+                  aria-describedby={fieldErrors.last_name ? 'last_name_error' : undefined}
                 />
+                {fieldErrors.last_name && (
+                  <p id="last_name_error" className="mt-1 text-sm text-red-600" role="alert">
+                    {fieldErrors.last_name}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -468,8 +543,15 @@ export default function ProfileEditPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="Phone Number"
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full p-3 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent border ${fieldErrors.phone_number ? 'border-red-500' : 'border-gray-300'}`}
+                aria-invalid={fieldErrors.phone_number ? 'true' : 'false'}
+                aria-describedby={fieldErrors.phone_number ? 'phone_number_error' : undefined}
               />
+              {fieldErrors.phone_number && (
+                <p id="phone_number_error" className="mt-1 text-sm text-red-600" role="alert">
+                  {fieldErrors.phone_number}
+                </p>
+              )}
             </div>
 
             <div>
@@ -482,13 +564,20 @@ export default function ProfileEditPage() {
                 value={profile.role}
                 onChange={handleInputChange}
                 required
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full p-3 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${fieldErrors.role ? 'border-red-500' : 'border-gray-300'}`}
+                aria-invalid={fieldErrors.role ? 'true' : 'false'}
+                aria-describedby={fieldErrors.role ? 'role_error' : undefined}
               >
                 <option value="">Select your role</option>
                 <option value="dog_owner">Dog Owner</option>
                 <option value="petpal">PetPal</option>
                 <option value="both">Both</option>
               </select>
+              {fieldErrors.role && (
+                <p id="role_error" className="mt-1 text-sm text-red-600" role="alert">
+                  {fieldErrors.role}
+                </p>
+              )}
             </div>
 
             <div>
