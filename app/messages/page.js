@@ -273,53 +273,39 @@ export default function MessagesPage() {
       if (error) throw error;
 
       // Fetch unread counts for all conversations
-      const conversationIds = data.map((conv) => conv.id);
+      // Use participant-based matching (works with or without conversation_id)
+      // This matches how mark-read works, ensuring consistency
       let unreadCounts = {};
       
-      if (conversationIds.length > 0) {
-        // First, try to get unread messages with conversation_id
-        const { data: unreadMessagesWithConv, error: unreadError1 } = await supabase
+      if (data.length > 0) {
+        // Build OR conditions for all participant pairs
+        // Query all unread messages for this user that match any conversation
+        const participantPairs = data.map((conv) => 
+          `and(sender_id.eq.${conv.participant1_id},recipient_id.eq.${conv.participant2_id}),and(sender_id.eq.${conv.participant2_id},recipient_id.eq.${conv.participant1_id})`
+        ).join(',');
+        
+        const { data: allUnreadMessages, error: unreadError } = await supabase
           .from('messages')
-          .select('conversation_id')
-          .in('conversation_id', conversationIds)
+          .select('sender_id, recipient_id')
+          .or(participantPairs)
           .eq('recipient_id', user.id)
           .eq('is_read', false);
 
-        if (!unreadError1 && unreadMessagesWithConv) {
-          // Count unread messages per conversation
-          unreadMessagesWithConv.forEach((msg) => {
-            if (msg.conversation_id) {
-              unreadCounts[msg.conversation_id] = (unreadCounts[msg.conversation_id] || 0) + 1;
-            }
-          });
-        }
-
-        // Also check for unread messages without conversation_id (legacy messages)
-        // Query all unread messages for this user without conversation_id
-        const { data: unreadLegacy, error: unreadError2 } = await supabase
-          .from('messages')
-          .select('sender_id, recipient_id')
-          .eq('recipient_id', user.id)
-          .eq('is_read', false)
-          .is('conversation_id', null);
-
-        if (!unreadError2 && unreadLegacy) {
-          // Match legacy messages to conversations by participant pairs
-          unreadLegacy.forEach((msg) => {
-            const matchingConv = data.find(
-              (conv) =>
-                (conv.participant1_id === msg.sender_id && conv.participant2_id === user.id) ||
-                (conv.participant2_id === msg.sender_id && conv.participant1_id === user.id)
-            );
-            if (matchingConv) {
-              unreadCounts[matchingConv.id] = (unreadCounts[matchingConv.id] || 0) + 1;
-            }
+        if (!unreadError && allUnreadMessages) {
+          // Count unread messages per conversation by matching participant pairs
+          data.forEach((conv) => {
+            const count = allUnreadMessages.filter((msg) =>
+              (msg.sender_id === conv.participant1_id && msg.recipient_id === conv.participant2_id) ||
+              (msg.sender_id === conv.participant2_id && msg.recipient_id === conv.participant1_id)
+            ).length;
+            unreadCounts[conv.id] = count;
           });
         }
       }
 
       // Fetch last message preview for each conversation
       const lastMessages = {};
+      const conversationIds = data.map((conv) => conv.id);
       if (conversationIds.length > 0) {
         const { data: lastMessagesData } = await supabase
           .from('messages')
