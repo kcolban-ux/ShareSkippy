@@ -272,72 +272,121 @@ export default function MessagesPage() {
 
       if (error) throw error;
 
+      // Handle case where data might be null
+      if (!data) {
+        console.warn('No conversations data returned');
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
       // Fetch unread counts for all conversations
       // Use participant-based matching (works with or without conversation_id)
       // This matches how mark-read works, ensuring consistency
       let unreadCounts = {};
       
-      if (data.length > 0) {
-        // Build OR conditions for all participant pairs
-        // Query all unread messages for this user that match any conversation
-        const participantPairs = data.map((conv) => 
-          `and(sender_id.eq.${conv.participant1_id},recipient_id.eq.${conv.participant2_id}),and(sender_id.eq.${conv.participant2_id},recipient_id.eq.${conv.participant1_id})`
-        ).join(',');
-        
-        const { data: allUnreadMessages, error: unreadError } = await supabase
-          .from('messages')
-          .select('sender_id, recipient_id')
-          .or(participantPairs)
-          .eq('recipient_id', user.id)
-          .eq('is_read', false);
+      if (data && data.length > 0) {
+        try {
+          // Build OR conditions for all participant pairs
+          // Query all unread messages for this user that match any conversation
+          const participantPairs = data.map((conv) => 
+            `and(sender_id.eq.${conv.participant1_id},recipient_id.eq.${conv.participant2_id}),and(sender_id.eq.${conv.participant2_id},recipient_id.eq.${conv.participant1_id})`
+          ).join(',');
+          
+          // Only query if we have participant pairs
+          if (participantPairs) {
+            const { data: allUnreadMessages, error: unreadError } = await supabase
+              .from('messages')
+              .select('sender_id, recipient_id')
+              .or(participantPairs)
+              .eq('recipient_id', user.id)
+              .eq('is_read', false);
 
-        if (!unreadError && allUnreadMessages) {
-          // Count unread messages per conversation by matching participant pairs
-          data.forEach((conv) => {
-            const count = allUnreadMessages.filter((msg) =>
-              (msg.sender_id === conv.participant1_id && msg.recipient_id === conv.participant2_id) ||
-              (msg.sender_id === conv.participant2_id && msg.recipient_id === conv.participant1_id)
-            ).length;
-            unreadCounts[conv.id] = count;
-          });
+            if (unreadError) {
+              console.error('Error fetching unread counts:', unreadError);
+              // Continue without unread counts rather than failing
+            } else if (allUnreadMessages) {
+              // Count unread messages per conversation by matching participant pairs
+              data.forEach((conv) => {
+                const count = allUnreadMessages.filter((msg) =>
+                  (msg.sender_id === conv.participant1_id && msg.recipient_id === conv.participant2_id) ||
+                  (msg.sender_id === conv.participant2_id && msg.recipient_id === conv.participant1_id)
+                ).length;
+                unreadCounts[conv.id] = count;
+              });
+            }
+          }
+        } catch (unreadCountError) {
+          console.error('Error calculating unread counts:', unreadCountError);
+          // Continue without unread counts rather than failing
         }
       }
 
       // Fetch last message preview for each conversation
       const lastMessages = {};
-      const conversationIds = data.map((conv) => conv.id);
-      if (conversationIds.length > 0) {
-        const { data: lastMessagesData } = await supabase
-          .from('messages')
-          .select('conversation_id, content, created_at')
-          .in('conversation_id', conversationIds)
-          .order('created_at', { ascending: false });
-        
-        if (lastMessagesData) {
-          lastMessagesData.forEach((msg) => {
-            if (!lastMessages[msg.conversation_id]) {
-              lastMessages[msg.conversation_id] = msg;
+      if (data && data.length > 0) {
+        try {
+          const conversationIds = data.map((conv) => conv.id).filter(Boolean);
+          if (conversationIds.length > 0) {
+            const { data: lastMessagesData, error: lastMsgError } = await supabase
+              .from('messages')
+              .select('conversation_id, content, created_at')
+              .in('conversation_id', conversationIds)
+              .order('created_at', { ascending: false });
+            
+            if (lastMsgError) {
+              console.error('Error fetching last messages:', lastMsgError);
+              // Continue without last message previews
+            } else if (lastMessagesData) {
+              lastMessagesData.forEach((msg) => {
+                if (msg.conversation_id && !lastMessages[msg.conversation_id]) {
+                  lastMessages[msg.conversation_id] = msg;
+                }
+              });
             }
-          });
+          }
+        } catch (lastMsgError) {
+          console.error('Error processing last messages:', lastMsgError);
+          // Continue without last message previews
         }
       }
 
-      const processedConversations = data.map((conv) => {
-        const otherParticipant =
-          conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
-        const unreadCount = unreadCounts[conv.id] || 0;
-        const lastMessage = lastMessages[conv.id];
-        return {
+      // Process conversations - ensure we always set conversations even if processing fails
+      let processedConversations = [];
+      try {
+        processedConversations = (data || []).map((conv) => {
+          const otherParticipant =
+            conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
+          
+          // Handle case where participant might be null
+          if (!otherParticipant) {
+            console.warn('Missing participant for conversation:', conv.id);
+            return null;
+          }
+          
+          const unreadCount = unreadCounts[conv.id] || 0;
+          const lastMessage = lastMessages[conv.id];
+          return {
+            ...conv,
+            otherParticipant,
+            displayName: `${otherParticipant.first_name || ''} ${otherParticipant.last_name || ''}`.trim() || 'Unknown',
+            profilePhoto: otherParticipant.profile_photo_url,
+            role: otherParticipant.role,
+            unreadCount: unreadCount,
+            lastMessagePreview: lastMessage?.content || null,
+            lastMessageTime: lastMessage?.created_at || conv.last_message_at,
+          };
+        }).filter(Boolean); // Remove any null entries
+      } catch (processError) {
+        console.error('Error processing conversations:', processError);
+        // Fallback: create basic conversation objects
+        processedConversations = (data || []).map((conv) => ({
           ...conv,
-          otherParticipant,
-          displayName: `${otherParticipant.first_name} ${otherParticipant.last_name}`,
-          profilePhoto: otherParticipant.profile_photo_url,
-          role: otherParticipant.role,
-          unreadCount: unreadCount,
-          lastMessagePreview: lastMessage?.content || null,
-          lastMessageTime: lastMessage?.created_at || conv.last_message_at,
-        };
-      });
+          otherParticipant: conv.participant1_id === user.id ? conv.participant2 : conv.participant1,
+          displayName: 'Unknown',
+          unreadCount: 0,
+        })).filter(conv => conv.otherParticipant);
+      }
 
       setConversations(processedConversations);
       
