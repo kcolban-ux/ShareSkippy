@@ -1,6 +1,7 @@
 'use client';
 
 import { createBrowserClient } from '@supabase/ssr';
+import { getCookieOptions } from '@/libs/cookieOptions';
 
 export const createClient = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,7 +12,7 @@ export const createClient = () => {
   }
 
   return createBrowserClient(supabaseUrl, supabasePublishableKey, {
-    // Add performance optimizations
+    cookieOptions: getCookieOptions,
     global: {
       headers: {
         Connection: 'keep-alive',

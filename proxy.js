@@ -1,7 +1,6 @@
-// In /proxy.js (or /proxy.ts) at the root of your project
-
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { getCookieOptions } from '@/libs/cookieOptions';
 
 export async function proxy(request) {
   let response = NextResponse.next({
@@ -12,6 +11,7 @@ export async function proxy(request) {
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
+      cookieOptions: getCookieOptions,
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -32,13 +32,11 @@ export async function proxy(request) {
     }
   );
 
-  // This is the critical line that refreshes the session and handles cookies
   await supabase.auth.getSession();
 
   return response;
 }
 
-// Your config
 export const config = {
   unstable_allowDynamic: [
     './node_modules/@supabase/supabase-js/dist/module/index.js',
