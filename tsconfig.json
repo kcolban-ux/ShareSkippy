@@ -46,7 +46,11 @@
     "pages/**/*.tsx",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "app/share-availability/page.js",
+    "app/profile/page.js"
   ],
   "exclude": [
     "node_modules"
