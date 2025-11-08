@@ -1,7 +1,8 @@
 // #region Imports
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React from 'react';
+import { useCallback, useEffect, useState, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { createClient } from '@/libs/supabase/client';
@@ -9,14 +10,31 @@ import { useUser } from '@/libs/supabase/hooks';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
 import PhotoUpload from '@/components/ui/PhotoUpload';
+import { User } from '@supabase/supabase-js';
 // #endregion Imports
 
 // #region Types
+/**
+ * @function isErrorWithMessage
+ * @description Type guard to check if an unknown object has a string 'message' property.
+ * @param {unknown} error - The object caught in the catch block.
+ * @returns {error is { message: string }}
+ */
+function isErrorWithMessage(error: unknown): error is { message: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message: unknown }).message === 'string'
+  );
+}
+
 /**
  * @typedef {object} ProfileState
  * @description Defines the comprehensive shape of the profile data used in state and the database.
  */
 interface ProfileState {
+  [key: string]: unknown;
   first_name: string;
   last_name: string;
   phone_number: string;
@@ -37,12 +55,11 @@ interface ProfileState {
   profile_photo_url: string;
   display_lat: number | null;
   display_lng: number | null;
-  neighborhood: string;
-  city: string;
+  neighborhood: string | null;
+  city: string | null;
   street_address: string;
-  state: string;
+  state: string | null;
   zip_code: string;
-  // NOTE: Assuming all fields must be present and match the initial state structure.
 }
 
 /**
@@ -100,69 +117,77 @@ export default function ProfileEditPage() {
   /**
    * @function loadProfile
    * @description Fetches existing profile data from Supabase and merges it with Google auth metadata.
+   * @param {User | null} currentUser - The current Supabase User object.
+   * @param {Dispatch<SetStateAction<ProfileState>>} setProfileState - The state setter for the profile.
+   * @param {Dispatch<SetStateAction<boolean>>} setAddressVerifiedState - The state setter for address verified.
    * @returns {Promise<boolean>} - Resolves true on successful load/merge, false otherwise.
    */
-  const loadProfile = useCallback(async (): Promise<boolean> => {
-    // Authentication verification (ensures user object is available)
-    if (!user || !user.id) {
-      return false;
-    }
+  const loadProfile = useCallback(
+    async (
+      currentUser: User, // Guaranteed non-null by the caller (useEffect)
+      setProfileState: Dispatch<SetStateAction<ProfileState>>,
+      setAddressVerifiedState: Dispatch<SetStateAction<boolean>>
+    ): Promise<boolean> => {
+      try {
+        const supabase = createClient();
 
-    try {
-      const supabase = createClient();
+        // Fetch profile data.
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
 
-      // Fetch profile data. Type casting the expected data shape.
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+        // Safely extract Google auth metadata for pre-filling
+        const userMetadata = currentUser.user_metadata || {};
+        const googleGivenName = userMetadata?.given_name as string | undefined;
+        const googleFamilyName = userMetadata?.family_name as string | undefined;
+        const googlePicture = userMetadata?.picture as string | undefined;
 
-      // Safely extract Google auth metadata for pre-filling
-      const userMetadata = user?.user_metadata || {};
-      const googleGivenName = userMetadata?.given_name as string | undefined;
-      const googleFamilyName = userMetadata?.family_name as string | undefined;
-      const googlePicture = userMetadata?.picture as string | undefined;
+        let loadedProfileData: ProfileState = { ...initialProfileState };
 
-      let loadedProfileData: ProfileState = { ...initialProfileState };
+        if (data) {
+          const dbData = data as ProfileState;
+          loadedProfileData = {
+            ...initialProfileState,
+            ...dbData,
+            first_name: dbData.first_name || googleGivenName || '',
+            last_name: dbData.last_name || googleFamilyName || '',
+            profile_photo_url: dbData.profile_photo_url || googlePicture || '',
+          };
+        } else if (error?.code === 'PGRST116') {
+          // Profile not found, use Google data for initial fields
+          loadedProfileData = {
+            ...initialProfileState,
+            first_name: googleGivenName || '',
+            last_name: googleFamilyName || '',
+            profile_photo_url: googlePicture || '',
+          };
+        } else if (error) {
+          throw error;
+        }
 
-      if (data) {
-        // Merge existing data (safely typed as ProfileState) with pre-fill overrides
-        const dbData = data as ProfileState;
-        loadedProfileData = {
-          ...initialProfileState,
-          ...dbData,
-          first_name: dbData.first_name || googleGivenName || '',
-          last_name: dbData.last_name || googleFamilyName || '',
-          profile_photo_url: dbData.profile_photo_url || googlePicture || '',
-        };
-      } else if (error && error.code === 'PGRST116') {
-        // Profile not found, use Google data for initial fields
-        loadedProfileData = {
-          ...initialProfileState,
-          first_name: googleGivenName || '',
-          last_name: googleFamilyName || '',
-          profile_photo_url: googlePicture || '',
-        };
-      } else if (error) {
-        throw error;
+        setProfileState(loadedProfileData);
+
+        // Set addressVerified if location data exists (using null checks)
+        if (loadedProfileData.display_lat !== null && loadedProfileData.display_lng !== null) {
+          setAddressVerifiedState(true);
+        } else {
+          setAddressVerifiedState(false);
+        }
+        return true;
+      } catch (err: unknown) {
+        let message = 'Failed to load profile';
+        if (isErrorWithMessage(err)) {
+          message = err.message;
+        }
+        console.error('Error loading profile:', err);
+        toast.error(message);
+        return false;
       }
-
-      setProfile(loadedProfileData);
-
-      // Set addressVerified if location data exists (using null checks)
-      if (loadedProfileData.display_lat !== null && loadedProfileData.display_lng !== null) {
-        setAddressVerified(true);
-      } else {
-        setAddressVerified(false);
-      }
-      return true;
-    } catch (err: any) {
-      console.error('Error loading profile:', err);
-      toast.error(`Failed to load profile: ${err.message}`);
-      return false;
-    }
-  }, [user, setProfile]);
+    },
+    []
+  );
 
   /**
    * @effect
@@ -170,53 +195,47 @@ export default function ProfileEditPage() {
    */
   useEffect(() => {
     // #region Region: Auth & Loading Flow
-    /**
-     * @async
-     * @function initializeProfile
-     * @description Orchestrates the loading sequence: Auth check -> Draft load -> DB load.
-     */
     const initializeProfile = async () => {
-      if (userLoading) return; // Wait for the auth hook to resolve
+      if (userLoading) return;
 
-      // 1. Authentication Verification: Redirect unauthenticated users
       if (!user) {
         router.push('/signin');
-        setLoading(false); // Auth is resolved, page doesn't need to load, redirecting instead
+        setLoading(false);
         return;
       }
 
       // 2. Try to load draft first
-      const draft = loadDraft();
-      if (draft) {
+      const draft = loadDraft() as Partial<ProfileState>;
+      if (draft && Object.keys(draft).length > 0) {
         console.log('📂 Restoring profile draft from sessionStorage');
-        // Restore draft, merging with initial state defaults
-        setProfile((prev) => ({
+
+        setProfile((prev: ProfileState) => ({
           ...initialProfileState,
           ...prev,
-          ...(draft as ProfileState), // Explicitly cast draft content
+          ...(draft as ProfileState),
         }));
 
-        // Check if the restored draft has verified address fields.
-        if (draft.display_lat !== null && draft.display_lng !== null) {
+        if (
+          draft.display_lat !== null &&
+          draft.display_lng !== null &&
+          draft.display_lat !== undefined &&
+          draft.display_lng !== undefined
+        ) {
           setAddressVerified(true);
         } else {
           setAddressVerified(false);
         }
-        setLoading(false); // Draft loaded, done loading
+        setLoading(false);
         return;
       }
 
       // 3. Database Load
-      // Only proceed to database load if no draft was found.
-      await loadProfile();
+      await loadProfile(user, setProfile, setAddressVerified);
 
-      // 4. Final Loading State Resolution
-      // Note: loadProfile now handles its own internal setProfile and setAddressVerified.
       setLoading(false);
     };
 
     initializeProfile();
-    // #endregion Region: Auth & Loading Flow
   }, [user, userLoading, router, loadDraft, setProfile, loadProfile]);
   // #endregion Data Loading Logic
 
@@ -228,9 +247,8 @@ export default function ProfileEditPage() {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Type safety on event parameter
 
-    if (!user || !user.id) {
+    if (!user) {
       toast.error('Authentication required to save profile.');
       return;
     }
@@ -239,8 +257,7 @@ export default function ProfileEditPage() {
     try {
       const supabase = createClient();
 
-      // --- Validation Check (Safely using String() for trim on state values) ---
-      // Type safety ensures profile fields are checked.
+      // --- Validation Check ---
       if (
         !String(profile.first_name).trim() ||
         !String(profile.last_name).trim() ||
@@ -261,16 +278,13 @@ export default function ProfileEditPage() {
       }
 
       // --- Prepare Profile Data (Explicitly typed payload) ---
-      const profileData: Record<string, any> = {
-        // Using Record for upsert payload
+      const profileData: Record<string, unknown> = {
         id: user.id,
-        // Basic Fields
         first_name: String(profile.first_name).trim(),
         last_name: String(profile.last_name).trim(),
         phone_number: String(profile.phone_number).trim(),
         role: String(profile.role).trim(),
 
-        // Location data (verified)
         neighborhood: String(profile.neighborhood || '').trim() || null,
         city: String(profile.city || '').trim() || null,
         state: String(profile.state || '').trim() || null,
@@ -279,7 +293,6 @@ export default function ProfileEditPage() {
         display_lat: profile.display_lat,
         display_lng: profile.display_lng,
 
-        // Optional/Meta data
         bio: String(profile.bio || '').trim() || null,
         profile_photo_url: String(profile.profile_photo_url || '').trim() || null,
         community_support_badge: String(profile.community_support_badge || '').trim() || null,
@@ -287,14 +300,12 @@ export default function ProfileEditPage() {
         support_story: String(profile.support_story || '').trim() || null,
         other_support_description: String(profile.other_support_description || '').trim() || null,
 
-        // Social Links
         facebook_url: String(profile.facebook_url || '').trim() || null,
         instagram_url: String(profile.instagram_url || '').trim() || null,
         linkedin_url: String(profile.linkedin_url || '').trim() || null,
         airbnb_url: String(profile.airbnb_url || '').trim() || null,
         other_social_url: String(profile.other_social_url || '').trim() || null,
 
-        // Emergency Contact
         emergency_contact_name: String(profile.emergency_contact_name || '').trim() || null,
         emergency_contact_number: String(profile.emergency_contact_number || '').trim() || null,
         emergency_contact_email: String(profile.emergency_contact_email || '').trim() || null,
@@ -308,22 +319,27 @@ export default function ProfileEditPage() {
 
       if (dbError) {
         console.error('Supabase error details:', dbError);
-        throw new Error(`Database error: ${dbError.message} (Code: ${dbError.code})`);
+        throw dbError;
       }
 
       clearDraft();
       toast.success('Profile saved successfully!');
       router.push('/onboarding/welcome');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving profile:', err);
 
       let errorMessage = 'Failed to save profile';
-      if (err.message?.includes('Database error:')) {
-        errorMessage = err.message;
-      } else if (err.message?.includes('JWT')) {
-        errorMessage = 'Authentication error. Please try logging in again.';
-      } else if (err.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+
+      if (isErrorWithMessage(err)) {
+        if (err.message.includes('Database error:')) {
+          errorMessage = err.message;
+        } else if (err.message.includes('JWT')) {
+          errorMessage = 'Authentication error. Please try logging in again.';
+        } else if (err.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = `Failed to save profile: ${err.message}`;
+        }
       }
 
       toast.error(errorMessage);
@@ -338,26 +354,30 @@ export default function ProfileEditPage() {
    * @param {React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>} e - The change event.
    * @returns {void}
    */
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+      const { name, value } = target;
 
-    // Type safety: Explicitly handle number inputs that can be null
-    if (name === 'display_lat' || name === 'display_lng') {
-      setProfile((prev) => ({
-        ...prev,
-        [name]: value === '' ? null : parseFloat(value),
-      }));
-      return;
-    }
+      if (name === 'display_lat' || name === 'display_lng') {
+        if (name in profile) {
+          setProfile((prev: ProfileState) => ({
+            ...prev,
+            [name]: value === '' ? null : Number.parseFloat(value),
+          }));
+        }
+        return;
+      }
 
-    // Type safety: Standard string/select inputs
-    setProfile((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+      if (name in profile) {
+        setProfile((prev: ProfileState) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+    },
+    [setProfile, profile] // Include profile in dependencies for the 'name in profile' check safety
+  );
 
   /**
    * @function handlePhotoUpload
@@ -365,12 +385,15 @@ export default function ProfileEditPage() {
    * @param {string} photoUrl - The URL of the uploaded photo.
    * @returns {void}
    */
-  const handlePhotoUpload = (photoUrl: string) => {
-    setProfile((prev) => ({
-      ...prev,
-      profile_photo_url: photoUrl,
-    }));
-  };
+  const handlePhotoUpload = useCallback(
+    (photoUrl: string) => {
+      setProfile((prev: ProfileState) => ({
+        ...prev,
+        profile_photo_url: photoUrl,
+      }));
+    },
+    [setProfile]
+  );
 
   /**
    * @function verifyAddress
@@ -396,51 +419,52 @@ export default function ProfileEditPage() {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1&addressdetails=1`
       );
-      // Ensure data is parsed and checked
-      const data: any[] = await response.json(); // Type casting for response
+
+      interface NominatimResult {
+        lat: string;
+        lon: string;
+        address?: Record<string, string>;
+      }
+      const data: NominatimResult[] = await response.json();
 
       if (data && data.length > 0) {
         const result = data[0];
-        const lat = parseFloat(result.lat);
-        const lng = parseFloat(result.lon);
+        const lat = Number.parseFloat(result.lat);
+        const lng = Number.parseFloat(result.lon);
 
-        // Type safety: Use optional chaining on result.address properties
+        const address = result.address;
         const area =
-          result.address?.suburb ||
-          result.address?.city_district ||
-          result.address?.borough ||
-          result.address?.quarter ||
-          result.address?.ward ||
-          result.address?.district ||
-          result.address?.neighborhood ||
-          result.address?.neighbourhood ||
-          result.address?.locality ||
-          result.address?.residential ||
+          address?.suburb ||
+          address?.city_district ||
+          address?.borough ||
+          address?.quarter ||
+          address?.ward ||
+          address?.district ||
+          address?.neighborhood ||
+          address?.neighbourhood ||
+          address?.locality ||
+          address?.residential ||
           '';
 
         const city =
-          result.address?.city ||
-          result.address?.town ||
-          result.address?.village ||
-          result.address?.municipality ||
-          result.address?.hamlet ||
+          address?.city ||
+          address?.town ||
+          address?.village ||
+          address?.municipality ||
+          address?.hamlet ||
           '';
 
-        const state = result.address?.state || '';
+        const state = address?.state || '';
 
-        const formatted = formatLocation({
-          neighborhood: area || '',
-          city,
-          state,
-        });
+        const formatted = formatLocation({ neighborhood: area || '', city, state });
 
-        setProfile((prev) => ({
+        setProfile((prev: ProfileState) => ({
           ...prev,
           display_lat: lat,
           display_lng: lng,
-          neighborhood: formatted.neighborhood,
-          city: formatted.city,
-          state: formatted.state,
+          neighborhood: formatted?.neighborhood ?? null,
+          city: formatted?.city ?? null,
+          state: formatted?.state ?? null,
         }));
 
         setAddressVerified(true);
@@ -449,9 +473,13 @@ export default function ProfileEditPage() {
         toast.error('Address not found. Please check your address details.');
         setAddressVerified(false);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      let message = 'Failed to verify address. Please try again.';
+      if (isErrorWithMessage(error)) {
+        message = `Failed to verify address: ${error.message}`;
+      }
       console.error('Error verifying address:', error);
-      toast.error('Failed to verify address. Please try again.');
+      toast.error(message);
       setAddressVerified(false);
     } finally {
       setVerifyingAddress(false);
@@ -466,6 +494,12 @@ export default function ProfileEditPage() {
         <p>Loading profile data and authentication...</p>
       </div>
     );
+  }
+
+  // Final check: user must be defined if we reached here
+  if (!user) {
+    router.push('/signin');
+    return null;
   }
 
   return (
@@ -508,6 +542,7 @@ export default function ProfileEditPage() {
                 Profile Photo
               </label>
               <PhotoUpload
+                id="photo_upload"
                 onPhotoUploaded={handlePhotoUpload}
                 initialPhotoUrl={profile.profile_photo_url}
               />
@@ -556,7 +591,7 @@ export default function ProfileEditPage() {
                 type="email"
                 name="email"
                 id="email"
-                value={profile.email || ''}
+                value={user.email || ''}
                 disabled
                 className="w-full p-3 border border-gray-300 rounded-md bg-gray-50 text-gray-900"
               />
@@ -751,7 +786,7 @@ export default function ProfileEditPage() {
                   type="text"
                   name="city"
                   id="city"
-                  value={profile.city}
+                  value={profile.city ?? ''}
                   onChange={handleInputChange}
                   placeholder="Berkeley"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
@@ -766,7 +801,7 @@ export default function ProfileEditPage() {
                   type="text"
                   name="state"
                   id="state"
-                  value={profile.state}
+                  value={profile.state ?? ''}
                   onChange={handleInputChange}
                   placeholder="CA"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
