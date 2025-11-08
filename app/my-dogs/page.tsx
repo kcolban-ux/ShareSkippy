@@ -75,7 +75,7 @@ export default function MyDogsPage(): ReactElement {
 
       // Invalidate and refetch dogs data
       queryClient.invalidateQueries({ queryKey: ['userDogs', user?.id] });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Client error deleting dog:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
