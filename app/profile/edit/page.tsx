@@ -1,12 +1,11 @@
 // #region Imports
 'use client';
 
-import React from 'react';
-import { useCallback, useEffect, useState, Dispatch, SetStateAction } from 'react';
+import React, { useCallback, useEffect, useState, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { createClient } from '@/libs/supabase/client';
-import { useUser } from '@/libs/supabase/hooks';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
 import PhotoUpload from '@/components/ui/PhotoUpload';
@@ -103,7 +102,7 @@ const initialProfileState: Readonly<ProfileState> = {
  */
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, loading: userLoading } = useUser();
+  const { user, isLoading: isAuthLoading } = useProtectedRoute();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [verifyingAddress, setVerifyingAddress] = useState(false);
@@ -191,16 +190,12 @@ export default function ProfileEditPage() {
 
   /**
    * @effect
-   * @description Handles authentication redirect and initial data loading/draft restoring flow.
+   * @description Handles initial data loading/draft restoring flow *after* auth is confirmed.
    */
   useEffect(() => {
     // #region Region: Auth & Loading Flow
     const initializeProfile = async () => {
-      if (userLoading) return;
-
-      if (!user) {
-        router.push('/signin');
-        setLoading(false);
+      if (isAuthLoading || !user) {
         return;
       }
 
@@ -236,7 +231,7 @@ export default function ProfileEditPage() {
     };
 
     initializeProfile();
-  }, [user, userLoading, router, loadDraft, setProfile, loadProfile]);
+  }, [isAuthLoading, router, loadDraft, setProfile, loadProfile]);
   // #endregion Data Loading Logic
 
   /**
@@ -487,7 +482,7 @@ export default function ProfileEditPage() {
   };
 
   // #region Rendering
-  if (loading || userLoading) {
+  if (isAuthLoading || loading) {
     return (
       <div className="min-h-screen w-full bg-white max-w-md mx-auto p-6 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -498,7 +493,6 @@ export default function ProfileEditPage() {
 
   // Final check: user must be defined if we reached here
   if (!user) {
-    router.push('/signin');
     return null;
   }
 

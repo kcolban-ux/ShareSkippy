@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
+import { cookies } from 'next/headers';
 import Script from 'next/script';
 import AppLayout from '@/components/AppLayout';
 import ClientLayout from '@/components/LayoutClient';
@@ -21,10 +22,17 @@ export const viewport = {
 export const metadata = getSEOTags();
 
 export default async function RootLayout({ children }) {
-  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
   const {
     data: { session },
   } = await supabase.auth.getSession();
+
+  if (session) {
+    console.debug(`[Root Layout] Server found a session. User: ${session.user.id}`);
+  } else {
+    console.warn('[Root Layout] Server found NO session. Passing null to provider.');
+  }
 
   return (
     <html lang="en" data-theme={viewport.themeColor} className={font.className}>

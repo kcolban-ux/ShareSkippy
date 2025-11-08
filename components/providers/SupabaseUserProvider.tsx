@@ -1,7 +1,16 @@
 'use client';
 
 import { Session, User } from '@supabase/supabase-js';
-import { createContext, useContext, useState, useEffect, ReactNode, FC } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  FC,
+  useMemo,
+  useCallback,
+} from 'react';
 import { createClient } from '@/libs/supabase/client';
 
 // 1. Define the Context Value Type
@@ -39,7 +48,6 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
 
   const [session, setSession] = useState<Session | null>(initialSession);
   const [user, setUser] = useState<User | null>(initialSession?.user || null);
-  // Renamed internal 'loading' to 'saving' for clarity (tracks sign-out)
   const [saving, setSaving] = useState<boolean>(false);
 
   // Set initial auth loading based on whether a session was passed in
@@ -49,40 +57,49 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
   useEffect(() => {
     let _isMounted = true; // Flag to prevent state update on unmounted component
 
-    // 1. Fetch Session if we didn't receive one from the server (Server is our source of truth)
-    if (!initialSession) {
-      // NOTE: We do NOT call setAuthLoading(true) here, as it's initialized that way.
-      supabase.auth.getSession().then(({ data: { session: newSession } }) => {
-        if (_isMounted) {
-          setSession(newSession);
-          setUser(newSession?.user || null);
-          setAuthLoading(false); // Only set to false when session is resolved
-        }
-      });
-    }
-
-    // 2. Set up the real-time listener for Auth state changes
+    // 1. Set up the real-time listener for *subsequent* auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      // This handles sign-outs, token refreshes, etc.
       if (_isMounted) {
         setSession(newSession);
         setUser(newSession?.user || null);
-
-        // Ensure authLoading is false after the first state change listener fires
-        if (authLoading) {
-          setAuthLoading(false);
-        }
       }
     });
+
+    // 2. Handle the *initial* client-side session load
+    const getInitialClientSession = async () => {
+      // We only run this if authLoading is true (meaning initialSession was null)
+      if (_isMounted) {
+        // getSession() will parse the URL hash from the auth redirect
+        const {
+          data: { session: newSession },
+        } = await supabase.auth.getSession();
+
+        // Only update state if the component is still mounted
+        if (_isMounted) {
+          setSession(newSession);
+          setUser(newSession?.user || null);
+          setAuthLoading(false); // Initial load is now complete.
+        }
+      }
+    };
+
+    // Run the initial load function only if the server didn't provide the session.
+    if (authLoading) {
+      getInitialClientSession();
+    }
 
     return () => {
       _isMounted = false; // Cleanup flag
       subscription?.unsubscribe();
     };
-  }, [supabase, initialSession, authLoading]);
 
-  const signOut = async () => {
+    // This effect MUST only run once on mount.
+  }, [supabase]);
+
+  const signOut = useCallback(async () => {
     setSaving(true);
     const { error } = await supabase.auth.signOut();
     if (!error) {
@@ -91,14 +108,17 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
     }
     setSaving(false);
     return { error };
-  };
+  }, [supabase]); // Supabase client is stable, state setters are stable
 
-  const value: UserContextType = {
-    user,
-    session,
-    signOut,
-    loading: authLoading || saving, // FIX: Combined authLoading with new 'saving' state
-  };
+  const value: UserContextType = useMemo(
+    () => ({
+      user,
+      session,
+      signOut,
+      loading: authLoading || saving,
+    }),
+    [user, session, signOut, authLoading, saving]
+  );
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
