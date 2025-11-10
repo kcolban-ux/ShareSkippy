@@ -29,11 +29,12 @@ export default function ProfileCard({ profile, onMessage }) {
             onError={(e) => {
               console.error('Profile image failed to load:', photo_url);
               e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
+              e.target.nextElementSibling.style.display = 'flex';
             }}
           />
         ) : null}
         <div
+          data-testid="fallback-icon-container"
           className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
         >
           <span className="text-xl">{getRoleIcon(role)}</span>

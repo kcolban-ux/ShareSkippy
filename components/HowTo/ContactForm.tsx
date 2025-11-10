@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, FormEvent } from 'react';
 import { sendContact } from '@/app/actions/sendContact';
 import Callout from './Callout';
 
@@ -18,7 +18,8 @@ export default function ContactForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (formData: FormData) => {
+  // This function contains the core logic
+  const handleFormAction = async (formData: FormData) => {
     setErrors({});
 
     startTransition(async () => {
@@ -48,6 +49,18 @@ export default function ContactForm() {
     });
   };
 
+  // This new wrapper function handles the client-side 'submit' event
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    // Prevent the default browser page reload
+    e.preventDefault();
+
+    // Create FormData from the form element
+    const formData = new FormData(e.currentTarget);
+
+    // Call the original logic function
+    handleFormAction(formData);
+  };
+
   if (isSubmitted) {
     return (
       <Callout tone="green" title="✅ Message Sent Successfully!">
@@ -72,7 +85,8 @@ export default function ContactForm() {
     <Callout tone="purple" title="📧 Contact Support">
       <p className="mb-4">Need help or want to report an issue? We&apos;re here to help!</p>
 
-      <form action={handleSubmit} className="space-y-4">
+      {/* Use onSubmit for client-side handlers */}
+      <form onSubmit={handleSubmit} className="space-y-4" aria-label="Contact Support">
         {/* Honeypot field - hidden from users */}
         <input type="text" name="hp" style={{ display: 'none' }} tabIndex={-1} autoComplete="off" />
 

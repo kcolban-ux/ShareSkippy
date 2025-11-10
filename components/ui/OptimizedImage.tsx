@@ -3,9 +3,27 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
-const VALID_PLACEHOLDERS = ['blur', 'empty'];
+// 1. Define the props interface
+interface OptimizedImageProps {
+  src: string;
+  alt: string;
+  width?: number; // Optional because of 'fill'
+  height?: number; // Optional because of 'fill'
+  className?: string;
+  priority?: boolean;
+  placeholder?: 'blur' | 'empty' | 'blur-sm'; // Be more specific
+  blurDataURL?: string;
+  quality?: number;
+  sizes?: string;
+  fill?: boolean;
+  // Allow other valid ImageProps to be passed through
+  [key: string]: unknown;
+}
 
-const OptimizedImage = React.memo(
+const VALID_PLACEHOLDERS = new Set(['blur', 'empty']);
+
+// 2. Apply the interface to React.memo
+const OptimizedImage = React.memo<OptimizedImageProps>(
   ({
     src,
     alt,
@@ -23,7 +41,9 @@ const OptimizedImage = React.memo(
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 
-    const finalPlaceholder = VALID_PLACEHOLDERS.includes(placeholder) ? placeholder : 'blur';
+    const finalPlaceholder = VALID_PLACEHOLDERS.has(placeholder as string)
+      ? (placeholder as 'blur' | 'empty')
+      : 'blur';
 
     // Generate a simple blur placeholder if none provided
     const defaultBlurDataURL =
@@ -42,6 +62,7 @@ const OptimizedImage = React.memo(
     if (hasError) {
       return (
         <div
+          // 3. Apply className to fallback for correct sizing
           className={`bg-gray-200 flex items-center justify-center ${className}`}
           style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
         >
@@ -51,11 +72,16 @@ const OptimizedImage = React.memo(
     }
 
     return (
-      <div className={`relative ${className}`}>
+      <div
+        // 4. This wrapper just handles sizing and position
+        className="relative"
+        style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+      >
         {isLoading && (
           <div
-            className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center"
-            style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+            // 5. Apply className to loading skeleton
+            className={`absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center ${className}`}
+            style={{ width: '100%', height: '100%' }}
           >
             <div className="text-gray-400 text-sm">Loading...</div>
           </div>
@@ -67,7 +93,10 @@ const OptimizedImage = React.memo(
           width={fill ? undefined : width}
           height={fill ? undefined : height}
           fill={fill}
-          className={`transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+          // 6. Apply className to the Image itself
+          className={`transition-opacity duration-300 ${
+            isLoading ? 'opacity-0' : 'opacity-100'
+          } ${className}`}
           priority={priority}
           placeholder={finalPlaceholder}
           blurDataURL={defaultBlurDataURL}

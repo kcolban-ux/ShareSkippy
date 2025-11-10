@@ -40,6 +40,7 @@ const Modal = ({ isModalOpen, setIsModalOpen }) => {
                   <button
                     className="btn btn-square btn-ghost btn-sm"
                     onClick={() => setIsModalOpen(false)}
+                    aria-label="Close"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

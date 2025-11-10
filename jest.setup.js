@@ -11,4 +11,14 @@ jest.mock('next/image', () => ({
   },
 }));
 
-window.sscrollTo = jest.fn();
+globalThis.sscrollTo = jest.fn();
+
+process.env.RESEND_API_KEY = 'DUMMY_RESEND_KEY';
+process.env.SUPABASE_URL = 'DUMMY_SUPABASE_URL';
+process.env.SUPABASE_SERVICE_KEY = 'DUMMY_SERVICE_KEY';
+
+globalThis.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));

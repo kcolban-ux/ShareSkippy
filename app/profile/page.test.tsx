@@ -43,6 +43,8 @@ jest.mock(
     }
 );
 
+jest.spyOn(console, 'error').mockImplementation(() => {});
+
 const mockSingle = jest.fn();
 const mockEq = jest.fn(() => ({ single: mockSingle }));
 const mockSelect = jest.fn(() => ({ eq: mockEq }));
@@ -53,7 +55,7 @@ jest.mock('@/libs/supabase/client', () => ({
   })),
 }));
 
-const mockedUseUser = useUser;
+const mockedUseUser = useUser as jest.Mock;
 
 describe('ProfilePage', () => {
   beforeEach(() => {

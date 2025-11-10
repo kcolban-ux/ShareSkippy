@@ -1,27 +1,48 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
-const parseDateString = (dateString) => {
-  if (!dateString) return null;
+// --- Helper Function ---
+/**
+ * Safely parses a YYYY-MM-DD string into a local Date object.
+ * This avoids timezone issues associated with new Date('YYYY-MM-DD').
+ */
+const parseDateString = (dateString: string): Date => {
   const [year, month, day] = dateString.split('-').map(Number);
+  // Months are 0-indexed in JavaScript Date
   return new Date(year, month - 1, day);
 };
 
+// --- Component ---
 export default function DatePicker({
   selectedDate,
   onDateSelect,
   minDate,
   placeholder = 'Select date',
   maxDate,
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState(() => parseDateString(selectedDate));
-  const dropdownRef = useRef(null);
+}: Readonly<{
+  selectedDate: string;
+  // eslint-disable-next-line no-unused-vars
+  onDateSelect: (date: string) => void;
+  minDate?: string;
+  placeholder?: string;
+  maxDate?: string;
+}>) {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+  // Initialize state from the selectedDate prop
+  const [selectedDay, setSelectedDay] = useState<Date | null>(() => {
+    if (selectedDate) {
+      return parseDateString(selectedDate);
+    }
+    return null;
+  });
+
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -30,48 +51,53 @@ export default function DatePicker({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Update selected day when selectedDate prop changes from parent
   useEffect(() => {
-    const newDay = parseDateString(selectedDate);
+    const newSelectedDay = selectedDate ? parseDateString(selectedDate) : null;
+
+    // Helper function defined inside the effect scope (or globally)
+    const isSameDate = (day1: Date | null, day2: Date | null) => {
+      if (day1 === null && day2 === null) return true;
+      if (day1 === null || day2 === null) return false;
+      return day1.toDateString() === day2.toDateString();
+    };
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedDay((currentSelectedDay) => {
-      if (!newDay && currentSelectedDay) {
-        return null;
+      if (isSameDate(currentSelectedDay, newSelectedDay)) {
+        return currentSelectedDay;
       }
-
-      if (
-        newDay &&
-        (!currentSelectedDay || newDay.toDateString() !== currentSelectedDay.toDateString())
-      ) {
-        return newDay;
-      }
-
-      return currentSelectedDay;
+      return newSelectedDay;
     });
   }, [selectedDate]);
 
-  const formatDate = useCallback((date) => {
+  /** Formats a Date object for display */
+  const formatDate = (date: Date | null): string => {
     if (!date) return '';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
-  }, []);
+  };
 
-  const getDaysInMonth = (date) => {
+  /** Generates an array of days (Date objects or null) for the current month grid */
+  const getDaysInMonth = (date: Date): (Date | null)[] => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
+    const startingDayOfWeek = firstDay.getDay(); // 0 (Sun) - 6 (Sat)
 
-    const days = [];
+    const days: (Date | null)[] = [];
 
+    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
 
+    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
@@ -79,74 +105,68 @@ export default function DatePicker({
     return days;
   };
 
-  const handleDateSelect = useCallback(
-    (date) => {
-      if (!date) return;
+  /** Checks if a given date is disabled based on min/maxDate props */
+  const isDisabled = (date: Date | null): boolean => {
+    if (!date) return false;
 
-      const minDateObj = minDate ? parseDateString(minDate) : new Date();
-      minDateObj.setHours(0, 0, 0, 0);
+    // Check against minDate (defaults to today)
+    let minDateObj: Date;
+    if (minDate) {
+      minDateObj = parseDateString(minDate);
+    } else {
+      minDateObj = new Date(); // Default to today
+    }
+    minDateObj.setHours(0, 0, 0, 0); // Set to start of the day
 
-      if (date < minDateObj) return;
+    if (date < minDateObj) return true;
 
-      setSelectedDay(date);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      onDateSelect(`${year}-${month}-${day}`);
-      setIsOpen(false);
-    },
-    [minDate, onDateSelect]
-  );
+    // Check against maxDate
+    if (maxDate) {
+      const maxDateObj = parseDateString(maxDate);
+      maxDateObj.setHours(23, 59, 59, 999); // Set to end of the day
+      return date > maxDateObj;
+    }
 
-  const goToPreviousMonth = () => {
+    return false;
+  };
+
+  /** Handles selecting a date from the calendar */
+  const handleDateSelect = (date: Date | null): void => {
+    // Do not select if null or disabled
+    if (!date || isDisabled(date)) return;
+
+    setSelectedDay(date);
+
+    // Format to YYYY-MM-DD string for the parent
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    onDateSelect(`${year}-${month}-${day}`);
+    setIsOpen(false);
+  };
+
+  const goToPreviousMonth = (): void => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
 
-  const goToNextMonth = () => {
+  const goToNextMonth = (): void => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
-  const isToday = useCallback((date) => {
+  const isToday = (date: Date | null): boolean => {
     if (!date) return false;
     const today = new Date();
     return date.toDateString() === today.toDateString();
-  }, []);
+  };
 
-  const isSelected = useCallback(
-    (date) => {
-      if (!date || !selectedDay) return false;
-      return date.toDateString() === selectedDay.toDateString();
-    },
-    [selectedDay]
-  );
-
-  const isDisabled = useCallback(
-    (date) => {
-      if (!date) return false;
-
-      let minDateObj;
-      if (minDate) {
-        minDateObj = parseDateString(minDate);
-      } else {
-        minDateObj = new Date();
-      }
-      minDateObj.setHours(0, 0, 0, 0);
-
-      if (date < minDateObj) return true;
-
-      if (maxDate) {
-        const maxDateObj = parseDateString(maxDate);
-        maxDateObj.setHours(23, 59, 59, 999);
-        return date > maxDateObj;
-      }
-
-      return false;
-    },
-    [minDate, maxDate]
-  );
+  const isSelected = (date: Date | null): boolean => {
+    if (!date || !selectedDay) return false;
+    return date.toDateString() === selectedDay.toDateString();
+  };
 
   const days = getDaysInMonth(currentMonth);
-  const monthNames = [
+  const monthNames: string[] = [
     'January',
     'February',
     'March',
@@ -160,7 +180,7 @@ export default function DatePicker({
     'November',
     'December',
   ];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -169,8 +189,8 @@ export default function DatePicker({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white text-left flex items-center justify-between"
       >
-        <span className={selectedDate ? 'text-gray-900' : 'text-gray-500'}>
-          {selectedDate ? formatDate(parseDateString(selectedDate)) : placeholder}
+        <span className={selectedDay ? 'text-gray-900' : 'text-gray-500'}>
+          {selectedDay ? formatDate(selectedDay) : placeholder}
         </span>
         <svg
           className="w-5 h-5 text-gray-400"
@@ -236,19 +256,23 @@ export default function DatePicker({
           <div className="grid grid-cols-7 gap-1">
             {days.map((date, index) => (
               <button
-                key={index}
+                key={date ? date.toISOString() : `empty-${index}`}
                 type="button"
                 onClick={() => handleDateSelect(date)}
                 disabled={isDisabled(date)}
                 className={`
                   w-8 h-8 text-sm rounded-md transition-colors
-                  ${!date ? 'cursor-default' : ''}
+                  ${date ? '' : 'cursor-default'}
                   ${
                     isDisabled(date)
                       ? 'text-gray-300 cursor-not-allowed'
                       : 'hover:bg-blue-100 cursor-pointer'
                   }
-                  ${isToday(date) ? 'bg-blue-200 text-blue-800 font-semibold' : 'text-gray-700'}
+                  ${
+                    isToday(date) && !isSelected(date)
+                      ? 'bg-blue-200 text-blue-800 font-semibold'
+                      : 'text-gray-700'
+                  }
                   ${
                     isSelected(date) ? 'bg-blue-600 text-white font-semibold hover:bg-blue-700' : ''
                   }
