@@ -18,15 +18,23 @@
     "typecheck": "echo 'Typecheck configured in Task 2'",
     "test": "jest",
     "analyze": "ANALYZE=true next build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "format": "prettier",
+    "format:write": "prettier --write"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "eslint --fix",
-      "prettier --write",
+      "prettier --write"
+    ],
+    "*.{test,spec}.{js,jsx,ts,tsx}": [
       "jest --bail --findRelatedTests"
     ],
-    "*.{json,css,md}": [
+    "*.css": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
       "prettier --write"
     ]
   },
