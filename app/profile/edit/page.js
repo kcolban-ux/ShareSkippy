@@ -624,7 +624,7 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
-                <AddressAutofill accessToken="pk.eyJ1Ijoic2hhcmVza2lwcHkiLCJhIjoiY21odGQ3NnhmMXZ6MTJtcGo1YTh5ejQwbiJ9.a6f3DtB3aYtVlz3Rmp6mFA">
+                <AddressAutofill accessToken="pk.eyJ1Ijoic2hhcmVza2lwcHkiLCJhIjoiY21odGUzM2JyMXFqMjJqcHhqbm5sNjc5eiJ9.8RrmjH8TkKQ92Ja48zKHYg">
                   <input
                     type="text"
                     name="street_address"
@@ -633,6 +633,7 @@ export default function ProfileEditPage() {
                     onChange={handleInputChange}
                     placeholder="123 Main Street"
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    autoComplete="address-line1"
                   />
                 </AddressAutofill>
               </div>
