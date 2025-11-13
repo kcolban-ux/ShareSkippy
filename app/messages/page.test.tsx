@@ -1,11 +1,13 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { supabase } from '@/libs/supabase';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
+// Import the hook so we can cast the mock
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import MessagesPage from './page';
 
-jest.mock('@/libs/supabase/hooks', () => ({
-  useSupabaseAuth: jest.fn(),
+// Mocks
+jest.mock('@/hooks/useProtectedRoute', () => ({
+  useProtectedRoute: jest.fn(),
 }));
 
 jest.mock(
@@ -31,7 +33,7 @@ jest.mock('@/libs/supabase', () => ({
         or: jest.fn(() => ({
           order: jest.fn(),
         })),
-        limit: jest.fn(),
+        limit: jest.fn(), // Keep for old test compatibility, though new code uses .or().order()
       })),
     })),
     channel: jest.fn(() => ({
@@ -45,8 +47,8 @@ jest.mock('@/libs/supabase', () => ({
   },
 }));
 
-const mockedUseSupabaseAuth = useSupabaseAuth as jest.Mock;
-
+// Cast the mocked hooks
+const mockedUseProtectedRoute = useProtectedRoute as jest.Mock;
 const mockedFrom = supabase.from as jest.Mock;
 
 describe('MessagesPage', () => {
@@ -54,25 +56,27 @@ describe('MessagesPage', () => {
     jest.clearAllMocks();
 
     // Reset the mock chain implementation before each test
+    // This default mock handles the .or().order() chain
     const mockOrderImpl = jest.fn().mockResolvedValue({ data: [], error: null });
     const mockOrImpl = jest.fn().mockReturnValue({ order: mockOrderImpl });
-    const mockLimitImpl = jest.fn().mockResolvedValue({ data: [], error: null });
     const mockSelectImpl = jest.fn().mockReturnValue({
       or: mockOrImpl,
-      limit: mockLimitImpl,
+      limit: jest.fn().mockResolvedValue({ data: [], error: null }),
     });
     mockedFrom.mockReturnValue({ select: mockSelectImpl });
 
-    mockedUseSupabaseAuth.mockReturnValue({
-      user: null,
-      loading: false,
+    // Default to an authenticated user, as this is the component's primary state
+    mockedUseProtectedRoute.mockReturnValue({
+      user: { id: 'default-user' },
+      isLoading: false,
     });
   });
 
   it('shows the main loading spinner while authenticating', () => {
-    mockedUseSupabaseAuth.mockReturnValue({
+    // Override default auth mock for this test
+    mockedUseProtectedRoute.mockReturnValue({
       user: null,
-      loading: true,
+      isLoading: true, // This maps to `authLoading` in the component
     });
 
     render(<MessagesPage />);
@@ -82,32 +86,33 @@ describe('MessagesPage', () => {
     expect(spinner).toHaveClass('animate-spin');
   });
 
-  it('shows "Please sign in" message if user is not authenticated', () => {
-    mockedUseSupabaseAuth.mockReturnValue({
-      user: null,
-      loading: false,
-    });
-
-    render(<MessagesPage />);
-
-    expect(screen.getByRole('heading', { name: /please sign in/i })).toBeInTheDocument();
-    expect(screen.getByText('You need to be signed in to view messages.')).toBeInTheDocument();
-  });
+  /*
+   * NOTE: The test 'shows "Please sign in" message' has been removed.
+   * The new implementation uses `useProtectedRoute`, which handles
+   * redirection if the user is not authenticated. The component
+   * itself no longer renders a "Please sign in" state.
+   */
 
   it('shows "No conversations yet" when logged in but fetch returns empty', async () => {
-    mockedUseSupabaseAuth.mockReturnValue({
+    // Set up the specific user for this test
+    mockedUseProtectedRoute.mockReturnValue({
       user: { id: 'user-123' },
-      loading: false,
+      isLoading: false,
     });
+
+    // The default `mockOrderImpl` from beforeEach already returns { data: [] }
+    // so no need to re-mock `supabase.from`
 
     render(<MessagesPage />);
 
     expect(screen.getByRole('heading', { name: /conversations/i })).toBeInTheDocument();
 
+    // Wait for the "No conversations yet" message to appear after loading
     await waitFor(() => {
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
     });
 
+    // The right pane should show the placeholder
     expect(screen.getByRole('heading', { name: /select a conversation/i })).toBeInTheDocument();
   });
 
@@ -118,14 +123,19 @@ describe('MessagesPage', () => {
         id: 'convo-1',
         participant1_id: 'user-123',
         participant2_id: 'user-456',
-        participant1: {},
+        participant1: {
+          id: 'user-123',
+          first_name: 'Test',
+          last_name: 'User',
+          profile_photo_url: 'test.png',
+        },
         participant2: {
           id: 'user-456',
           first_name: 'Jane',
           last_name: 'Doe',
           profile_photo_url: 'jane.png',
         },
-        availability: { title: 'Needs a Dog Sitter' },
+        availability: { id: 'avail-1', title: 'Needs a Dog Sitter', post_type: 'petpal_available' },
         last_message_at: new Date().toISOString(),
       },
     ];
@@ -133,30 +143,34 @@ describe('MessagesPage', () => {
       {
         id: 'msg-1',
         sender_id: 'user-456',
+        recipient_id: 'user-123',
         content: 'Hello there!',
         created_at: '2023-10-27T10:00:00Z',
       },
       {
         id: 'msg-2',
         sender_id: 'user-123',
+        recipient_id: 'user-456',
         content: 'Hi!',
         created_at: '2023-10-27T10:01:00Z',
       },
     ];
 
-    mockedUseSupabaseAuth.mockReturnValue({
+    // Set up the authenticated user
+    mockedUseProtectedRoute.mockReturnValue({
       user: mockUser,
-      loading: false,
+      isLoading: false,
     });
 
+    // Mock for 'conversations' table: select().or().order()
     const convoOrder = jest.fn().mockResolvedValue({ data: mockConversations, error: null });
     const convoOr = jest.fn().mockReturnValue({ order: convoOrder });
     const convoSelect = jest.fn().mockReturnValue({ or: convoOr });
 
+    // Mock for 'messages' table: select().or().order()
     const msgOrder = jest.fn().mockResolvedValue({ data: mockMessages, error: null });
     const msgOr = jest.fn().mockReturnValue({ order: msgOrder });
-    const msgLimit = jest.fn().mockResolvedValue({ data: [], error: null });
-    const msgSelect = jest.fn().mockReturnValue({ or: msgOr, limit: msgLimit });
+    const msgSelect = jest.fn().mockReturnValue({ or: msgOr });
 
     mockedFrom.mockImplementation((tableName: string) => {
       if (tableName === 'conversations') {
@@ -165,35 +179,44 @@ describe('MessagesPage', () => {
       if (tableName === 'messages') {
         return { select: msgSelect };
       }
-      return { select: jest.fn() };
+      return { select: jest.fn() }; // Default empty mock
     });
 
     render(<MessagesPage />);
 
+    // --- 1. Check Sidebar ---
     const sidebar = screen.getByRole('heading', { name: /conversations/i }).closest('aside');
     expect(sidebar).toBeInTheDocument();
 
     await waitFor(() => {
       if (sidebar) {
+        // Find the conversation item
         expect(within(sidebar).getByRole('heading', { name: 'Jane Doe' })).toBeInTheDocument();
         expect(within(sidebar).getByText('Needs a Dog Sitter')).toBeInTheDocument();
       }
     });
 
+    // --- 2. Check Main Thread ---
+    // Wait for the message input to appear, confirming a conversation is selected
     const mainContent = screen.getByPlaceholderText(/type your message/i).closest('section');
     expect(mainContent).toBeInTheDocument();
 
     await waitFor(() => {
       if (mainContent) {
+        // Check header
         expect(within(mainContent).getByRole('heading', { name: 'Jane Doe' })).toBeInTheDocument();
+        // Check messages
         expect(within(mainContent).getByText('Hello there!')).toBeInTheDocument();
         expect(within(mainContent).getByText('Hi!')).toBeInTheDocument();
       }
     });
 
+    // --- 3. Check Message Styling ---
+    // Find *your* message
     const userMessage = screen.getByText('Hi!').closest('.message-bubble');
     expect(userMessage).toHaveClass('bg-blue-600 text-white');
 
+    // Find the *other participant's* message
     const otherMessage = screen.getByText('Hello there!').closest('.message-bubble');
     expect(otherMessage).toHaveClass('bg-white text-gray-900');
   });

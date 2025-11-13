@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient } from '@/libs/supabase/server';
+import { createClient } from '@/libs/supabase/server';
 import { sendEmail } from '@/libs/resend';
 import { strictRateLimit } from '@/libs/rateLimit';
 
@@ -44,7 +44,7 @@ export async function POST(request) {
     }
 
     // Create Supabase client with service role key for admin access
-    const supabase = createServiceClient();
+    const supabase = await createClient();
 
     // Get all users with email addresses
     const { data: users, error: usersError } = await supabase
@@ -87,15 +87,15 @@ export async function POST(request) {
           try {
             // Personalize email content
             const personalizedHtml = htmlContent
-              .replace(/{{first_name}}/g, user.first_name || '')
-              .replace(/{{last_name}}/g, user.last_name || '')
-              .replace(/{{email}}/g, user.email || '');
+              .replaceAll('{{first_name}}', user.first_name || '')
+              .replaceAll('{{last_name}}', user.last_name || '')
+              .replaceAll('{{email}}', user.email || '');
 
             const personalizedText = textContent
               ? textContent
-                  .replace(/{{first_name}}/g, user.first_name || '')
-                  .replace(/{{last_name}}/g, user.last_name || '')
-                  .replace(/{{email}}/g, user.email || '')
+                  .replaceAll('{{first_name}}', user.first_name || '')
+                  .replaceAll('{{last_name}}', user.last_name || '')
+                  .replaceAll('{{email}}', user.email || '')
               : undefined;
 
             await sendEmail({
@@ -129,7 +129,7 @@ export async function POST(request) {
       const batchResults = await Promise.all(batchPromises);
 
       // Update results
-      batchResults.forEach((result) => {
+      batchResults.forof((result) => {
         if (result.success) {
           results.successful++;
         } else {

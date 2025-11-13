@@ -5,7 +5,7 @@ import { apiRateLimit } from '@/libs/rateLimit';
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -87,7 +87,7 @@ export async function POST(request) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {
@@ -246,7 +246,7 @@ export async function PATCH(request) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,

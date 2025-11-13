@@ -3,7 +3,7 @@ import { createClient } from '@/libs/supabase/server';
 
 export async function POST() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // This endpoint can be called by a cron job or scheduled task
     // to automatically update meeting statuses to completed

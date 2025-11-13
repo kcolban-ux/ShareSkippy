@@ -14,7 +14,7 @@ export async function POST(request) {
       );
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get meeting details
     const { data: meeting, error: meetingError } = await supabase

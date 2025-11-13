@@ -1,6 +1,6 @@
-import { createServiceClient } from '@/libs/supabase/server';
-import { sendEmail } from './sendEmail';
-import { EmailPayload } from './templates';
+import { createClient } from "@/libs/supabase/server";
+import { sendEmail } from "./sendEmail";
+import { EmailPayload } from "./templates";
 
 export interface ScheduledEmail {
   id: number;
@@ -19,36 +19,40 @@ export async function processScheduledEmails(): Promise<{
   processed: number;
   errors: Array<{ id: number; error: string }>;
 }> {
-  const supabase = createServiceClient();
+  const supabase = await createClient();
   const errors: Array<{ id: number; error: string }> = [];
   let processed = 0;
 
   try {
     // Check if the scheduled_emails table exists
     const { error: tableCheckError } = await supabase
-      .from('scheduled_emails')
-      .select('id')
+      .from("scheduled_emails")
+      .select("id")
       .limit(1);
 
-    if (tableCheckError && tableCheckError.message.includes('Could not find the table')) {
-      console.log('Scheduled emails table does not exist yet. Skipping processing.');
+    if (tableCheckError?.message.includes("Could not find the table")) {
+      console.log(
+        "Scheduled emails table does not exist yet. Skipping processing.",
+      );
       return { processed: 0, errors: [] };
     }
     // Get due scheduled emails that haven't been picked up yet
     const { data: scheduledEmails, error: fetchError } = await supabase
-      .from('scheduled_emails')
-      .select('*')
-      .lte('run_after', new Date().toISOString())
-      .is('picked_at', null)
-      .order('run_after', { ascending: true })
+      .from("scheduled_emails")
+      .select("*")
+      .lte("run_after", new Date().toISOString())
+      .is("picked_at", null)
+      .order("run_after", { ascending: true })
       .limit(100); // Process in batches
 
     if (fetchError) {
-      throw new Error(`Failed to fetch scheduled emails: ${fetchError.message}`);
+      throw new Error(
+        `Failed to fetch scheduled emails: ${fetchError.message}`,
+      );
     }
 
     if (!scheduledEmails || scheduledEmails.length === 0) {
-      console.log('No scheduled emails to process');
+      console.log("No scheduled emails to process");
       return { processed: 0, errors: [] };
     }
 
@@ -59,26 +63,32 @@ export async function processScheduledEmails(): Promise<{
       try {
         // Mark as picked up to prevent duplicate processing
         const { error: pickupError } = await supabase
-          .from('scheduled_emails')
+          .from("scheduled_emails")
           .update({ picked_at: new Date().toISOString() })
-          .eq('id', scheduledEmail.id);
+          .eq("id", scheduledEmail.id);
 
         if (pickupError) {
-          console.error(`Failed to mark email ${scheduledEmail.id} as picked up:`, pickupError);
+          console.error(
+            `Failed to mark email ${scheduledEmail.id} as picked up:`,
+            pickupError,
+          );
           errors.push({ id: scheduledEmail.id, error: pickupError.message });
           continue;
         }
 
         // Get user email
         const { data: user, error: userError } = await supabase
-          .from('profiles')
-          .select('email, first_name')
-          .eq('id', scheduledEmail.user_id)
+          .from("profiles")
+          .select("email, first_name")
+          .eq("id", scheduledEmail.user_id)
           .single();
 
         if (userError || !user) {
-          console.error(`User not found for scheduled email ${scheduledEmail.id}:`, userError);
-          errors.push({ id: scheduledEmail.id, error: 'User not found' });
+          console.error(
+            `User not found for scheduled email ${scheduledEmail.id}:`,
+            userError,
+          );
+          errors.push({ id: scheduledEmail.id, error: "User not found" });
           continue;
         }
 
@@ -92,20 +102,23 @@ export async function processScheduledEmails(): Promise<{
 
         processed++;
         console.log(
-          `Successfully processed scheduled email ${scheduledEmail.id} (${scheduledEmail.email_type})`
+          `Successfully processed scheduled email ${scheduledEmail.id} (${scheduledEmail.email_type})`,
         );
       } catch (error) {
-        console.error(`Error processing scheduled email ${scheduledEmail.id}:`, error);
+        console.error(
+          `Error processing scheduled email ${scheduledEmail.id}:`,
+          error,
+        );
         errors.push({
           id: scheduledEmail.id,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
 
     return { processed, errors };
   } catch (error) {
-    console.error('Error in processScheduledEmails:', error);
+    console.error("Error in processScheduledEmails:", error);
     throw error;
   }
 }
@@ -129,10 +142,10 @@ export async function scheduleMeetingReminder({
   const reminderTime = new Date(startsAt);
   reminderTime.setDate(reminderTime.getDate() - 1); // 1 day before
 
-  const supabase = createServiceClient();
-  const { error } = await supabase.from('scheduled_emails').insert({
+  const supabase = await createClient();
+  const { error } = await supabase.from("scheduled_emails").insert({
     user_id: userId,
-    email_type: 'meeting_reminder',
+    email_type: "meeting_reminder",
     run_after: reminderTime.toISOString(),
     payload: {
       meetingId,
@@ -146,7 +159,9 @@ export async function scheduleMeetingReminder({
     throw new Error(`Failed to schedule meeting reminder: ${error.message}`);
   }
 
-  console.log(`Meeting reminder scheduled for user ${userId} at ${reminderTime.toISOString()}`);
+  console.log(
+    `Meeting reminder scheduled for user ${userId} at ${reminderTime.toISOString()}`,
+  );
 }
 
 /**
@@ -156,10 +171,10 @@ export async function scheduleNurtureEmail(userId: string): Promise<void> {
   const nurtureTime = new Date();
   nurtureTime.setDate(nurtureTime.getDate() + 3);
 
-  const supabase = createServiceClient();
-  const { error } = await supabase.from('scheduled_emails').insert({
+  const supabase = await createClient();
+  const { error } = await supabase.from("scheduled_emails").insert({
     user_id: userId,
-    email_type: 'nurture_day3',
+    email_type: "nurture_day3",
     run_after: nurtureTime.toISOString(),
     payload: {},
   });
@@ -168,19 +183,23 @@ export async function scheduleNurtureEmail(userId: string): Promise<void> {
     throw new Error(`Failed to schedule nurture email: ${error.message}`);
   }
 
-  console.log(`Nurture email scheduled for user ${userId} at ${nurtureTime.toISOString()}`);
+  console.log(
+    `Nurture email scheduled for user ${userId} at ${nurtureTime.toISOString()}`,
+  );
 }
 
 /**
  * Get scheduled emails for a user
  */
-export async function getUserScheduledEmails(userId: string): Promise<ScheduledEmail[]> {
-  const supabase = createServiceClient();
+export async function getUserScheduledEmails(
+  userId: string,
+): Promise<ScheduledEmail[]> {
+  const supabase = await createClient();
   const { data, error } = await supabase
-    .from('scheduled_emails')
-    .select('*')
-    .eq('user_id', userId)
-    .order('run_after', { ascending: true });
+    .from("scheduled_emails")
+    .select("*")
+    .eq("user_id", userId)
+    .order("run_after", { ascending: true });
 
   if (error) {
     throw new Error(`Failed to get scheduled emails: ${error.message}`);
@@ -192,13 +211,16 @@ export async function getUserScheduledEmails(userId: string): Promise<ScheduledE
 /**
  * Cancel scheduled emails for a user
  */
-export async function cancelUserScheduledEmails(userId: string, emailType?: string): Promise<void> {
-  const supabase = createServiceClient();
+export async function cancelUserScheduledEmails(
+  userId: string,
+  emailType?: string,
+): Promise<void> {
+  const supabase = await createClient();
 
-  let query = supabase.from('scheduled_emails').delete().eq('user_id', userId);
+  let query = supabase.from("scheduled_emails").delete().eq("user_id", userId);
 
   if (emailType) {
-    query = query.eq('email_type', emailType);
+    query = query.eq("email_type", emailType);
   }
 
   const { error } = await query;
@@ -207,5 +229,9 @@ export async function cancelUserScheduledEmails(userId: string, emailType?: stri
     throw new Error(`Failed to cancel scheduled emails: ${error.message}`);
   }
 
-  console.log(`Cancelled scheduled emails for user ${userId}${emailType ? ` (${emailType})` : ''}`);
+  console.log(
+    `Cancelled scheduled emails for user ${userId}${
+      emailType ? ` (${emailType})` : ""
+    }`,
+  );
 }

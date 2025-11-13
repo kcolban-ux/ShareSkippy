@@ -31,7 +31,7 @@
   @keyframes appearfromright {
     0% {
       opacity: 0.3;
-      transform: translate(15%, 0pi);
+      transform: translate(15%, 0 pi);
     }
 
     100% {
@@ -115,172 +115,9 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
-}
 
-@layer {
-  .clickable-card {
-    @apply cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
-
-    &:hover {
-      @apply ring-2 ring-blue-200;
-    }
-  }
-}
-
-@utility line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-@layer utilities {
-  :root {
-    --vh: 1dvh;
-  }
-
-  html,
-  body,
-  #next {
-    height: 100%;
-  }
-
-  html,
-  body {
-    scroll-behavior: smooth !important;
-  }
-
-  .ios-scroll {
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .min-h-0 {
-    min-height: 0 !important;
-  }
-
-  .p-safe {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
-  }
-
-  /* Message spacing improvements */
-  .message-bubble {
-    max-width: 85%;
-    overflow-wrap: break-word;
-    word-break: break-all;
-    hyphens: auto;
-  }
-
-  /* Mobile-specific message constraints */
-  @media (width <= 640px) {
-    .message-bubble {
-      max-width: 90%;
-      min-width: 0;
-      width: fit-content;
-    }
-
-    /* Ensure message container doesn't overflow */
-    .message-container {
-      max-width: 100%;
-      overflow: hidden;
-    }
-
-    /* Prevent horizontal scrolling on mobile */
-    #message-scroll {
-      overflow-x: hidden;
-      max-width: 100vw;
-    }
-
-    /* Handle long words and URLs in messages */
-    .message-bubble p {
-      word-break: break-all;
-      overflow-wrap: break-word;
-      hyphens: auto;
-      max-width: 100%;
-    }
-
-    /* Ensure the main messages page doesn't overflow */
-    .messages-page {
-      max-width: 100vw;
-      overflow-x: hidden;
-    }
-
-    /* Mobile message input improvements */
-    .message-input {
-      max-width: 100%;
-      overflow-x: hidden;
-    }
-
-    .message-input textarea {
-      word-break: break-all;
-      overflow-wrap: break-word;
-
-      /* Ensure textarea doesn't get covered by mobile keyboard */
-      transition: height 0.1s ease-out;
-    }
-
-    /* Auto-resizing textarea styles */
-    .auto-resize-textarea {
-      resize: none;
-      overflow-y: auto;
-      min-height: 48px;
-      max-height: 120px;
-      line-height: 1.4;
-    }
-
-    /* Modal textarea can be taller */
-    .modal-textarea {
-      max-height: 200px;
-      min-height: 60px;
-    }
-
-    /* Mobile keyboard handling */
-    @supports (-webkit-touch-callout: none) {
-      /* iOS Safari specific */
-      .message-input textarea {
-        appearance: none;
-        border-radius: 12px;
-      }
-    }
-
-    /* Android Chrome specific */
-    /* stylelint-disable media-feature-name-no-vendor-prefix, media-feature-name-no-unknown */
-    @media screen and (min-device-pixel-ratio: 0) {
-      .message-input textarea {
-        border-radius: 12px;
-      }
-    }
-  }
-
-  @media (width >= 640px) {
-    .message-bubble {
-      max-width: 75%;
-    }
-  }
-
-  @media (width >= 1024px) {
-    .message-bubble {
-      max-width: 65%;
-    }
-  }
-
-  /* Improved message spacing */
-  .message-container {
-    margin-bottom: 0.75rem;
-  }
-
-  .message-container:last-child {
-    margin-bottom: 0;
-  }
-
-  /* It makes the HTML progress bar filling smooth when value change. */
-  progress::-webkit-progress-value {
-    transition: 0.6s width ease-out;
-  }
-}
-
-@layer base {
   .btn-gradient {
-    @apply bg-gradient! bg-size-[300%_300%]! hover:saturate-[1.2] shadow-sm duration-100 border-0! border-transparent! bg-transparent! animate-shimmer disabled:bg-none! disabled:bg-gray-500/30!  text-white!;
+    @apply bg-gradient! bg-size-[300%_300%]! hover:saturate-[1.2] shadow-sm duration-100 border-0! border-transparent! bg-transparent! animate-shimmer disabled:bg-none! disabled:bg-gray-500/30! text-white!;
   }
 
   .btn {
@@ -418,5 +255,172 @@
     font-size: 0.75rem !important;
     font-weight: bold !important;
     line-height: 1 !important;
+  }
+}
+
+@layer components {
+  .clickable-card {
+    @apply cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+
+    &:hover {
+      @apply ring-2 ring-blue-200;
+    }
+  }
+}
+
+@layer utilities {
+  /*
+    Truncates text after 3 lines and adds an ellipsis (...).
+    Uses a non-standard -webkit-box implementation.
+  */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-clamp: 3;
+  }
+
+  :root {
+    --vh: 1dvh;
+  }
+
+  html,
+  body,
+  #next {
+    height: 100%;
+  }
+
+  html,
+  body {
+    scroll-behavior: smooth !important;
+  }
+
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .min-h-0 {
+    min-height: 0 !important;
+  }
+
+  .p-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+  }
+
+  /* Message spacing improvements */
+  .message-bubble {
+    max-width: 85%;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    hyphens: auto;
+  }
+
+  @media (width <= 640px) {
+    /* Mobile-specific message constraints */
+    .message-bubble {
+      max-width: 90%;
+      min-width: 0;
+      width: fit-content;
+    }
+
+    /* Ensure message container doesn't overflow */
+    .message-container {
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    /* Prevent horizontal scrolling on mobile */
+    #message-scroll {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    /* Handle long words and URLs in messages */
+    .message-bubble p {
+      word-break: break-all;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      max-width: 100%;
+    }
+
+    /* Ensure the main messages page doesn't overflow */
+    .messages-page {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* Mobile message input improvements */
+    .message-input {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    /* Ensure textarea doesn't get covered by mobile keyboard */
+    .message-input textarea {
+      word-break: break-all;
+      overflow-wrap: break-word;
+      transition: height 0.1s ease-out;
+    }
+
+    /* Auto-resizing textarea styles */
+    .auto-resize-textarea {
+      resize: none;
+      overflow-y: auto;
+      min-height: 48px;
+      max-height: 120px;
+      line-height: 1.4;
+    }
+
+    /* Modal textarea can be taller */
+    .modal-textarea {
+      max-height: 200px;
+      min-height: 60px;
+    }
+
+    /* Mobile keyboard handling */
+
+    /* iOS Safari specific */
+    @supports (-webkit-touch-callout: none) {
+      .message-input textarea {
+        appearance: none;
+        border-radius: 12px;
+      }
+    }
+
+    /* Android Chrome specific */
+
+    /* stylelint-disable media-feature-name-no-vendor-prefix, media-feature-name-no-unknown */
+    @media screen and (min-device-pixel-ratio: 0) {
+      .message-input textarea {
+        border-radius: 12px;
+      }
+    }
+  }
+
+  @media (width >= 640px) {
+    .message-bubble {
+      max-width: 75%;
+    }
+  }
+
+  @media (width >= 1024px) {
+    .message-bubble {
+      max-width: 65%;
+    }
+  }
+
+  /* Improved message spacing */
+  .message-container {
+    margin-bottom: 0.75rem;
+  }
+
+  .message-container:last-child {
+    margin-bottom: 0;
+  }
+
+  /* It makes the HTML progress bar filling smooth when value change. */
+  progress::-webkit-progress-value {
+    transition: 0.6s width ease-out;
   }
 }

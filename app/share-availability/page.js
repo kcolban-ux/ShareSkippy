@@ -1,42 +1,45 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui';
 import CommunitySupportSection from '@/components/CommunitySupportSection';
-import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
 import { createClient } from '@/libs/supabase/client';
 import { formatLocation } from '@/libs/utils';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 
+// #region Component
+/**
+ * @description Page component for users to create and share their availability
+ * for dog playdates or for offering petpal services.
+ */
 export default function ShareAvailability() {
-  const { user, loading: authLoading } = useUser();
+  // #region State & Hooks
+  // --- Auth logic is now handled by the protected route hook ---
+  const { user, isLoading: authLoading } = useProtectedRoute();
   const router = useRouter();
   const supabase = createClient();
 
-  // Use React Query hooks for data fetching
+  // --- Data Fetching Hooks ---
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data, isLoading: dogsLoading } = useUserDogs();
 
-  // Check if Supabase is properly configured
-  useEffect(() => {
-    try {
-      // Test the connection
-    } catch (error) {
-      console.error('Error creating Supabase client:', error);
-    }
-  }, []);
+  /**
+   * @description Array of the user's dogs. Defined early to prevent runtime errors.
+   */
+  const dogs = data || [];
 
-  // Step management
+  // --- Page/UI State ---
   const [currentStep, setCurrentStep] = useState(1);
   const [postType, setPostType] = useState(null);
-
-  // Data states
   const [selectedDogs, setSelectedDogs] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Day scheduling
+  // --- Scheduling State ---
   const [selectedDays, setSelectedDays] = useState([]);
   const [daySchedules, setDaySchedules] = useState({
     monday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
@@ -48,7 +51,7 @@ export default function ShareAvailability() {
     sunday: { enabled: false, timeSlots: [{ start: '', end: '' }] },
   });
 
-  // Form data
+  // --- Form Data State ---
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -58,7 +61,6 @@ export default function ShareAvailability() {
     urgency_notes: '',
     can_pick_up_drop_off: false,
     preferred_meeting_location: '',
-    // Location selection fields
     use_profile_location: true,
     custom_location_address: '',
     custom_location_neighborhood: '',
@@ -90,23 +92,17 @@ export default function ShareAvailability() {
     helping_others_context: '',
   });
 
-  // User profile data for location (now from React Query)
   const [verifyingCustomAddress, setVerifyingCustomAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
 
-  useEffect(() => {
-    if (authLoading) {
-      return;
-    }
+  // --- Auth redirection useEffect is now removed ---
+  // const authRedirectionEffect = ... (DELETED)
+  // #endregion
 
-    if (!user) {
-      router.push('/signin');
-      return;
-    }
-  }, [user, authLoading, router]);
-
-  // Data is now fetched via React Query hooks
-
+  // #region Handlers
+  /**
+   * @description Verifies a custom address using the OpenStreetMap Nominatim API.
+   */
   const verifyCustomAddress = async () => {
     if (
       !formData.custom_location_address.trim() ||
@@ -120,10 +116,8 @@ export default function ShareAvailability() {
 
     setVerifyingCustomAddress(true);
     try {
-      // Create a full address string for geocoding
       const fullAddress = `${formData.custom_location_address}, ${formData.custom_location_city}, ${formData.custom_location_state} ${formData.custom_location_zip_code}`;
 
-      // Get geocoding result
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
           fullAddress
@@ -159,18 +153,15 @@ export default function ShareAvailability() {
           result.address.hamlet ||
           '';
 
-        // State (if present):
         const state = result.address.state || '';
 
-        // Then keep existing formatting:
         const formatted = formatLocation({
           neighborhood: area || '',
           city,
           state,
         });
 
-        // Update form data with verified location (with proper capitalization)
-
+        // Update form data with verified location
         setFormData((prev) => ({
           ...prev,
           custom_location_lat: lat,
@@ -182,7 +173,6 @@ export default function ShareAvailability() {
 
         setError(null);
         setAddressVerified(true);
-        // We'll show this as a success state in the UI instead of alert
       } else {
         setError('Address not found. Please check your address details.');
       }
@@ -194,25 +184,36 @@ export default function ShareAvailability() {
     }
   };
 
+  /**
+   * @description Sets the post type and advances to the next step,
+   * checking if dogs exist for 'dog_available' type.
+   */
   const handlePostTypeSelect = (type) => {
     setPostType(type);
     if (type === 'dog_available' && dogs.length === 0) {
       setError('You need to add a dog to your profile before sharing dog availability.');
       return;
     }
+    setError(null); // Clear error on successful selection
     setCurrentStep(2);
   };
 
+  /**
+   * @description Toggles a dog's ID in the selectedDogs array.
+   */
   const handleDogSelection = (dogId) => {
     setSelectedDogs((prev) =>
       prev.includes(dogId) ? prev.filter((id) => id !== dogId) : [...prev, dogId]
     );
   };
 
+  /**
+   * @description Updates a single field in the main form data state.
+   */
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
-    // Reset address verification when location option changes or custom address fields change
+    // Reset address verification if custom location fields change
     if (
       field === 'use_profile_location' ||
       field === 'custom_location_address' ||
@@ -224,14 +225,23 @@ export default function ShareAvailability() {
     }
   };
 
+  /**
+   * @description A dedicated handler for checkbox inputs.
+   */
   const handleCheckboxChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  /**
+   * @description Callback for the CommunitySupportSection to update the form data.
+   */
   const handleFormDataChange = (newFormData) => {
     setFormData(newFormData);
   };
 
+  /**
+   * @description Toggles a day's 'enabled' status in the schedule.
+   */
   const toggleDay = (day) => {
     setDaySchedules((prev) => ({
       ...prev,
@@ -246,6 +256,9 @@ export default function ShareAvailability() {
     );
   };
 
+  /**
+   * @description Adds a new empty time slot to a specific day.
+   */
   const addTimeSlot = (day) => {
     setDaySchedules((prev) => ({
       ...prev,
@@ -256,8 +269,12 @@ export default function ShareAvailability() {
     }));
   };
 
+  /**
+   * @description Removes a time slot from a day by its index.
+   */
   const removeTimeSlot = (day, index) => {
-    if (daySchedules[day].timeSlots.length <= 1) return; // Keep at least one time slot
+    // Keep at least one time slot
+    if (daySchedules[day].timeSlots.length <= 1) return;
 
     setDaySchedules((prev) => ({
       ...prev,
@@ -268,6 +285,9 @@ export default function ShareAvailability() {
     }));
   };
 
+  /**
+   * @description Updates the 'start' or 'end' value of a specific time slot.
+   */
   const updateTimeSlot = (day, index, field, value) => {
     setDaySchedules((prev) => ({
       ...prev,
@@ -280,6 +300,9 @@ export default function ShareAvailability() {
     }));
   };
 
+  /**
+   * @description Validates that all selected days have valid time slots.
+   */
   const validateTimeSlots = () => {
     for (const day of selectedDays) {
       const daySchedule = daySchedules[day];
@@ -299,10 +322,16 @@ export default function ShareAvailability() {
     return true;
   };
 
+  /**
+   * @description Main handler for form submission.
+   * Validates, prepares, and inserts the availability post into Supabase.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Guard clause, though useProtectedRoute should prevent this state
     if (!user) return;
 
+    // --- Form Validations ---
     if (postType === 'dog_available' && selectedDogs.length === 0) {
       setError('Please select at least one dog for dog availability.');
       return;
@@ -317,7 +346,7 @@ export default function ShareAvailability() {
       return;
     }
 
-    // Validate location data
+    // Validate custom location data if it's being used
     if (!formData.use_profile_location) {
       if (
         !formData.custom_location_address.trim() ||
@@ -333,6 +362,7 @@ export default function ShareAvailability() {
         return;
       }
     }
+    // --- End Validations ---
 
     setSubmitting(true);
     setError(null);
@@ -349,7 +379,7 @@ export default function ShareAvailability() {
         };
       });
 
-      // Prepare location data based on user selection with proper capitalization
+      // Prepare location data based on user selection
       const locationData = formData.use_profile_location
         ? {
             use_profile_location: true,
@@ -373,7 +403,7 @@ export default function ShareAvailability() {
               : null,
           };
 
-      // Create a single availability post (with multiple dogs if applicable)
+      // Create the post object
       const postToCreate = {
         ...formData,
         ...locationData,
@@ -383,7 +413,6 @@ export default function ShareAvailability() {
         day_schedules: daySchedulesData,
       };
 
-      // For dog availability, add dog information
       if (postType === 'dog_available') {
         // Set the first dog as the primary dog_id for backward compatibility
         postToCreate.dog_id = selectedDogs[0];
@@ -393,21 +422,17 @@ export default function ShareAvailability() {
 
       const postsToCreate = [postToCreate];
 
-      // Clean up the data to ensure proper types
+      // Clean up the data to ensure proper types for Supabase
       const cleanedPosts = postsToCreate.map((post) => ({
         ...post,
-        // Ensure these are properly formatted for JSONB
         enabled_days: Array.isArray(post.enabled_days) ? post.enabled_days : [],
         day_schedules: typeof post.day_schedules === 'object' ? post.day_schedules : {},
-        // Ensure numeric fields are numbers
         display_lat: post.display_lat ? parseFloat(post.display_lat) : null,
         display_lng: post.display_lng ? parseFloat(post.display_lng) : null,
         custom_location_lat: post.custom_location_lat ? parseFloat(post.custom_location_lat) : null,
         custom_location_lng: post.custom_location_lng ? parseFloat(post.custom_location_lng) : null,
-        // Ensure date fields are properly formatted
         start_date: post.start_date || null,
         end_date: post.end_date || null,
-        // Remove any undefined values
         ...Object.fromEntries(Object.entries(post).filter(([value]) => value !== undefined)),
       }));
 
@@ -415,12 +440,6 @@ export default function ShareAvailability() {
 
       if (error) {
         console.error('Error creating availability post:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
         setError(`Failed to create availability post: ${error.message}`);
         return;
       }
@@ -434,7 +453,10 @@ export default function ShareAvailability() {
       setSubmitting(false);
     }
   };
+  // #endregion
 
+  // #region Render Logic
+  // This first loading state is for auth verification
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -446,7 +468,8 @@ export default function ShareAvailability() {
     );
   }
 
-  if (authLoading || profileLoading || dogsLoading) {
+  // This second loading state waits for auth AND data fetching
+  if (profileLoading || dogsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -457,11 +480,9 @@ export default function ShareAvailability() {
     );
   }
 
-  const dogs = data || [];
-
-  if (!user) {
-    return null; // Will redirect to signin
-  }
+  // The `if (!user) return null` check is no longer needed.
+  // `useProtectedRoute` handles redirection and guarantees `user` exists
+  // if `authLoading` is false and we are still rendering.
 
   // Check if Supabase is configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -494,7 +515,9 @@ export default function ShareAvailability() {
     { key: 'saturday', label: 'Sat' },
     { key: 'sunday', label: 'Sun' },
   ];
+  // #endregion
 
+  // #region JSX
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
@@ -547,8 +570,9 @@ export default function ShareAvailability() {
             {error}
             {error.includes('add a dog') && (
               <div className="mt-2">
-                <Link href="/my-dogs/add" className="text-red-800 underline font-medium" />
-                Add a dog to your profile
+                <Link href="/my-dogs/add" className="text-red-800 underline font-medium">
+                  Add a dog to your profile
+                </Link>
               </div>
             )}
           </div>
@@ -561,20 +585,14 @@ export default function ShareAvailability() {
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Dog Availability Option */}
-              <div
-                role="button"
-                tabIndex={0}
-                className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+              <Button
+                type="button"
+                className={`w-full text-left border-2 rounded-lg p-6 transition-all ${
                   postType === 'dog_available'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handlePostTypeSelect('dog_available')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handlePostTypeSelect('dog_available');
-                  }
-                }}
               >
                 <div className="text-4xl mb-4">🐕</div>
                 <h3 className="text-xl font-semibold mb-2">My Dog wants a Pal</h3>
@@ -588,8 +606,9 @@ export default function ShareAvailability() {
                       <Link
                         href="/my-dogs/add"
                         className="text-yellow-900 underline font-medium hover:text-yellow-700 transition-colors"
-                      />
-                      Add a dog to your profile
+                      >
+                        Add a dog to your profile
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -598,23 +617,16 @@ export default function ShareAvailability() {
                     You have {dogs.length} dog{dogs.length !== 1 ? 's' : ''} in your profile
                   </div>
                 )}
-              </div>
-
+              </Button>
               {/* Pet Sitter Availability Option */}
-              <div
-                role="button"
-                tabIndex={0}
+              <Button
+                type="button"
                 className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                   postType === 'petpal_available'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handlePostTypeSelect('petpal_available')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handlePostTypeSelect('petpal_available');
-                  }
-                }}
               >
                 <div className="text-4xl mb-4">👤</div>
                 <h3 className="text-xl font-semibold mb-2">I am a PetPal</h3>
@@ -622,7 +634,7 @@ export default function ShareAvailability() {
                   Share when you&apos;re available to get some puppy love.
                 </p>
                 <div className="text-sm text-gray-500">Help others in your neighborhood</div>
-              </div>
+              </Button>
             </div>
           </div>
         )}
@@ -651,21 +663,15 @@ export default function ShareAvailability() {
                 <h3 className="text-lg font-semibold mb-4">Select Dog(s)</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {dogs.map((dog) => (
-                    <div
+                    <Button
                       key={dog.id}
-                      role="button"
-                      tabIndex={0}
+                      type="button"
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                         selectedDogs.includes(dog.id)
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 bg-white hover:border-gray-300'
                       }`}
                       onClick={() => handleDogSelection(dog.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          handleDogSelection(dog.id);
-                        }
-                      }}
                     >
                       <div className="flex items-center space-x-3">
                         <input
@@ -692,7 +698,7 @@ export default function ShareAvailability() {
                           <div className="text-sm text-gray-500">{dog.breed}</div>
                         </div>
                       </div>
-                    </div>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -753,65 +759,74 @@ export default function ShareAvailability() {
               {/* Time Slots for Selected Days */}
               {selectedDays.length > 0 && (
                 <div className="space-y-6">
-                  {selectedDays.map((day) => (
-                    <div key={day} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="font-semibold capitalize">{day}</h4>
-                        <button
-                          type="button"
-                          onClick={() => addTimeSlot(day)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          + Add Time Slot
-                        </button>
-                      </div>
-
-                      <div className="space-y-3">
-                        {daySchedules[day].timeSlots.map((slot, index) => (
-                          <div
-                            key={index}
-                            className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3"
+                  {selectedDays
+                    .sort(
+                      (a, b) =>
+                        days.findIndex((d) => d.key === a) - days.findIndex((d) => d.key === b)
+                    )
+                    .map((day) => (
+                      <div key={day} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-semibold capitalize">{day}</h4>
+                          <button
+                            type="button"
+                            onClick={() => addTimeSlot(day)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                           >
-                            <div className="flex items-center space-x-2 w-full sm:w-auto">
-                              <input
-                                type="time"
-                                value={slot.start}
-                                onChange={(e) =>
-                                  updateTimeSlot(day, index, 'start', e.target.value)
-                                }
-                                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
-                                required
-                              />
-                              <span className="text-gray-500 text-sm sm:text-base">to</span>
-                              <input
-                                type="time"
-                                value={slot.end}
-                                onChange={(e) => updateTimeSlot(day, index, 'end', e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
-                                required
-                              />
+                            + Add Time Slot
+                          </button>
+                        </div>
+
+                        <div className="space-y-3">
+                          {daySchedules[day].timeSlots.map((slot, index) => (
+                            <div
+                              key={slot.id}
+                              className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3"
+                            >
+                              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                                <input
+                                  type="time"
+                                  value={slot.start}
+                                  onChange={(e) =>
+                                    updateTimeSlot(day, index, 'start', e.target.value)
+                                  }
+                                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+                                  required
+                                />
+                                <span className="text-gray-500 text-sm sm:text-base">to</span>
+                                <input
+                                  type="time"
+                                  value={slot.end}
+                                  onChange={(e) =>
+                                    updateTimeSlot(day, index, 'end', e.target.value)
+                                  }
+                                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500 w-full sm:w-auto"
+                                  required
+                                />
+                              </div>
+                              {daySchedules[day].timeSlots.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeTimeSlot(day, index)}
+                                  className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-300 rounded-sm hover:bg-red-50 transition-colors w-full sm:w-auto"
+                                >
+                                  Remove
+                                </button>
+                              )}
                             </div>
-                            {daySchedules[day].timeSlots.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeTimeSlot(day, index)}
-                                className="text-red-600 hover:text-red-800 text-sm px-2 py-1 border border-red-300 rounded-sm hover:bg-red-50 transition-colors w-full sm:w-auto"
-                              >
-                                Remove
-                              </button>
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
 
             {/* Description */}
             <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
               <textarea
                 id="description"
                 value={formData.description}
@@ -1135,4 +1150,6 @@ export default function ShareAvailability() {
       </div>
     </div>
   );
+  // #endregion
 }
+// #endregion

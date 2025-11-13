@@ -9,7 +9,7 @@ export async function POST(request) {
       return Response.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get user data
     const { data: user, error: userError } = await supabase

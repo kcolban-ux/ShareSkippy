@@ -1,15 +1,22 @@
+/**
+ * @fileoverview Tests for the MyDogsPage component.
+ * @path /app/(main)/my-dogs/page.test.tsx
+ */
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React from 'react';
-import { useUser } from '@/components/providers/SupabaseUserProvider';
+// import { SupabaseUserProvider } from '@/components/providers/SupabaseUserProvider'; // <-- REMOVED
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useUserDogs } from '@/hooks/useProfile';
 import { supabase } from '@/libs/supabase';
 import MyDogsPage from './page';
 
+// #region Mocks
 // Mock dependencies
-jest.mock('@/components/providers/SupabaseUserProvider', () => ({
-  useUser: jest.fn(),
+jest.mock('@/hooks/useProtectedRoute', () => ({
+  useProtectedRoute: jest.fn(),
 }));
 
 jest.mock('@/hooks/useProfile', () => ({
@@ -41,8 +48,13 @@ jest.mock('next/link', () => {
   type MockLinkProps = {
     href: string;
     children: React.ReactNode;
+    className?: string;
   };
-  const MockLink = ({ href, children }: MockLinkProps) => <a href={href}>{children}</a>;
+  const MockLink = ({ href, children, ...props }: MockLinkProps) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  );
   MockLink.displayName = 'MockLink';
   return MockLink;
 });
@@ -57,19 +69,30 @@ jest.mock('@tanstack/react-query', () => ({
 }));
 
 // Mock window.confirm
-global.confirm = jest.fn(() => true);
+globalThis.confirm = jest.fn(() => true);
 
+// Cast mocks
+const mockedUseProtectedRoute = useProtectedRoute as jest.Mock;
+const mockedUseUserDogs = useUserDogs as jest.Mock;
+// #endregion
+
+// #region Test Wrapper
 const createWrapper = () => {
   const queryClient = new QueryClient();
   // Give the wrapper component a display name
-  const QueryWrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {/* SupabaseUserProvider is no longer needed here as the component 
+          gets the user from useProtectedRoute */}
+      {children}
+    </QueryClientProvider>
   );
-  QueryWrapper.displayName = 'QueryWrapper';
-  return QueryWrapper;
+  TestWrapper.displayName = 'TestWrapper';
+  return TestWrapper;
 };
+// #endregion
 
-// Mock data
+// #region Mock Data
 const mockUser = { id: '123', email: 'user@example.com' };
 const mockDogs = [
   {
@@ -77,38 +100,52 @@ const mockDogs = [
     name: 'Buddy',
     breed: 'Golden Retriever',
     photo_url: 'http://example.com/buddy.png',
+    // Add other properties to match the Dog interface
+    age_years: 5,
+    age_months: 0,
+    size: 'large',
+    gender: 'Male' as const,
+    neutered: true,
   },
   {
     id: 'dog2',
     name: 'Lucy',
     breed: 'Labrador',
     photo_url: 'http://example.com/lucy.png',
+    age_years: 3,
+    age_months: 2,
+    size: 'large',
+    gender: 'Female' as const,
+    neutered: true,
   },
 ];
+// #endregion
 
 describe('MyDogsPage', () => {
   beforeEach(() => {
     // Reset mocks before each test
     jest.clearAllMocks();
-    (useUser as jest.Mock).mockReturnValue({ user: null, loading: false });
-    (useUserDogs as jest.Mock).mockReturnValue({ data: [], isLoading: false });
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    mockedUseProtectedRoute.mockReturnValue({ user: null, isLoading: false });
+    mockedUseUserDogs.mockReturnValue({ data: [], isLoading: false });
+    (globalThis.confirm as jest.Mock).mockReturnValue(true);
   });
 
-  it('renders loading state', () => {
-    (useUser as jest.Mock).mockReturnValue({ user: null, loading: true });
+  it('renders loading state while authenticating', () => {
+    mockedUseProtectedRoute.mockReturnValue({ user: null, isLoading: true }); // authLoading = true
     render(<MyDogsPage />, { wrapper: createWrapper() });
     expect(screen.getByText('Loading your dogs...')).toBeInTheDocument();
   });
 
-  it('renders unauthenticated state', () => {
+  it('renders loading state while fetching dogs', () => {
+    mockedUseProtectedRoute.mockReturnValue({ user: mockUser, isLoading: false }); // authLoading = false
+    mockedUseUserDogs.mockReturnValue({ data: [], isLoading: true }); // loading = true
     render(<MyDogsPage />, { wrapper: createWrapper() });
-    expect(screen.getByText('Sign in to view your dogs')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/signin');
+    expect(screen.getByText('Loading your dogs...')).toBeInTheDocument();
   });
 
   it('renders empty state when user has no dogs', () => {
-    (useUser as jest.Mock).mockReturnValue({ user: mockUser, loading: false });
+    mockedUseProtectedRoute.mockReturnValue({ user: mockUser, isLoading: false });
+    // useUserDogs default mock returns { data: [], isLoading: false }
     render(<MyDogsPage />, { wrapper: createWrapper() });
     expect(screen.getByText('No dogs yet')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Add Your First Dog' })).toHaveAttribute(
@@ -118,8 +155,8 @@ describe('MyDogsPage', () => {
   });
 
   it('renders a list of dogs', () => {
-    (useUser as jest.Mock).mockReturnValue({ user: mockUser, loading: false });
-    (useUserDogs as jest.Mock).mockReturnValue({
+    mockedUseProtectedRoute.mockReturnValue({ user: mockUser, isLoading: false });
+    mockedUseUserDogs.mockReturnValue({
       data: mockDogs,
       isLoading: false,
     });
@@ -132,8 +169,8 @@ describe('MyDogsPage', () => {
   });
 
   it('calls deleteDog and invalidates query on successful deletion', async () => {
-    (useUser as jest.Mock).mockReturnValue({ user: mockUser, loading: false });
-    (useUserDogs as jest.Mock).mockReturnValue({
+    mockedUseProtectedRoute.mockReturnValue({ user: mockUser, isLoading: false });
+    mockedUseUserDogs.mockReturnValue({
       data: mockDogs,
       isLoading: false,
     });
@@ -146,12 +183,12 @@ describe('MyDogsPage', () => {
 
     render(<MyDogsPage />, { wrapper: createWrapper() });
 
-    // Find all delete buttons (they appear on hover, but are in the DOM)
+    // Find all delete buttons (on the hover overlay)
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
     fireEvent.click(deleteButtons[0]); // Click the first "Delete" button (for Buddy)
 
     // Check confirm was called
-    expect(global.confirm).toHaveBeenCalledWith('Are you sure you want to delete this dog?');
+    expect(globalThis.confirm).toHaveBeenCalledWith('Are you sure you want to delete this dog?');
 
     // Check Supabase was called correctly
     await waitFor(() => {
@@ -163,19 +200,19 @@ describe('MyDogsPage', () => {
 
     // Check query was invalidated
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: ['dogs', '123'],
+      queryKey: ['userDogs', '123'], // Matches component logic: ['userDogs', user?.id]
     });
   });
 
   it('shows an error message if deletion fails', async () => {
-    (useUser as jest.Mock).mockReturnValue({ user: mockUser, loading: false });
-    (useUserDogs as jest.Mock).mockReturnValue({
+    mockedUseProtectedRoute.mockReturnValue({ user: mockUser, isLoading: false });
+    mockedUseUserDogs.mockReturnValue({
       data: mockDogs,
       isLoading: false,
     });
 
     // Mock a failed Supabase call
-    const mockError = new Error('Deletion failed');
+    const mockError = { message: 'Deletion failed' };
     const mockEq2 = jest.fn(() => Promise.resolve({ error: mockError }));
     const mockEq1 = jest.fn(() => ({ eq: mockEq2 }));
     const mockDelete = jest.fn(() => ({ eq: mockEq1 }));
@@ -188,7 +225,7 @@ describe('MyDogsPage', () => {
 
     // Check for the error message
     await waitFor(() => {
-      expect(screen.getByText('Failed to delete dog')).toBeInTheDocument();
+      expect(screen.getByText('Failed to delete dog. Deletion failed')).toBeInTheDocument();
     });
 
     // Ensure query was not invalidated

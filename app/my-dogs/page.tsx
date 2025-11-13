@@ -2,45 +2,91 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
-import { useUser } from '@/components/providers/SupabaseUserProvider';
+import { useState, ReactElement } from 'react';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // <-- Added
 import { useUserDogs } from '@/hooks/useProfile';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, UseQueryResult } from '@tanstack/react-query';
 import { supabase } from '@/libs/supabase';
 
-export default function MyDogsPage() {
-  const { user, loading: authLoading } = useUser();
-  const [error, setError] = useState(null);
+// #region Types
+/**
+ * @description Defines the structure of a Dog object.
+ */
+interface Dog {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  breed: string | null;
+  age_years: number;
+  age_months: number;
+  size: string | null;
+  gender: 'Male' | 'Female';
+  neutered: boolean;
+  energy_level: string | null;
+  dog_friendly: boolean;
+  cat_friendly: boolean;
+  kid_friendly: boolean;
+  leash_trained: boolean;
+  house_trained: boolean;
+  fully_vaccinated: boolean;
+  activities: string[] | null;
+  owner_id: string;
+}
+// #endregion
+
+// #region Component
+export default function MyDogsPage(): ReactElement {
+  // #region State & Hooks
+  /**
+   * @description Handles user authentication and redirection for the page.
+   * `authLoading` is true while the user's session is being verified.
+   * The hook redirects to the login page if the user is not authenticated.
+   */
+  const { user, isLoading: authLoading } = useProtectedRoute();
+
+  const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading: loading } = useUserDogs();
+  const { data, isLoading: loading } = useUserDogs() as UseQueryResult<Dog[], Error>;
+  // #endregion
 
-  // Data is now fetched via React Query hooks
-
-  const deleteDog = async (dogId) => {
+  // #region Handlers
+  /**
+   * @description Deletes a dog from the database and invalidates the query cache.
+   * @param dogId The ID of the dog to delete.
+   */
+  const deleteDog = async (dogId: string): Promise<void> => {
+    // The `!user` check is kept as a type guard for TypeScript,
+    // although `useProtectedRoute` ensures `user` is present.
     if (!user || !confirm('Are you sure you want to delete this dog?')) return;
 
     try {
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from('dogs')
         .delete()
         .eq('id', dogId)
         .eq('owner_id', user.id);
 
-      if (error) {
-        console.error('Error deleting dog:', error);
-        setError('Failed to delete dog');
+      if (deleteError) {
+        console.error('Error deleting dog:', deleteError);
+        setError('Failed to delete dog. ' + deleteError.message);
         return;
       }
 
       // Invalidate and refetch dogs data
-      queryClient.invalidateQueries({ queryKey: ['dogs', user?.id] });
-    } catch (error) {
-      console.error('Error deleting dog:', error);
-      setError('Failed to delete dog');
+      queryClient.invalidateQueries({ queryKey: ['userDogs', user?.id] });
+    } catch (err: unknown) {
+      console.error('Client error deleting dog:', err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     }
   };
+  // #endregion
 
+  // #region Render Logic
+  /**
+   * @description This loading state now waits for *both* auth verification
+   * and the fetching of user dogs to complete.
+   */
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -52,28 +98,18 @@ export default function MyDogsPage() {
     );
   }
 
-  const dogs = data || [];
+  const dogs: Dog[] = data || [];
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center">
-          <div className="text-6xl mb-6">🐕</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Sign in to view your dogs</h2>
-          <p className="text-gray-600 mb-8">
-            Connect with your local pet care community and manage your dogs.
-          </p>
-          <Link
-            href="/signin"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block font-medium"
-          >
-            Sign In
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  /**
+   * @description This `if (!user)` block is no longer needed.
+   * The `useProtectedRoute` hook handles redirection automatically
+   * if the user is not authenticated. If the code reaches this point,
+   * `user` is guaranteed to be present.
+   */
+  // if (!user) { ... } // <-- This block is now removed.
+  // #endregion
 
+  // #region JSX
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -88,7 +124,7 @@ export default function MyDogsPage() {
             className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
           >
             <span>+</span>
-            Add New Dog
+            <span>Add New Dog</span>
           </Link>
         </div>
 
@@ -117,7 +153,7 @@ export default function MyDogsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {dogs.map((dog) => (
+            {dogs.map((dog: Dog) => (
               <div
                 key={dog.id}
                 className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
@@ -140,7 +176,9 @@ export default function MyDogsPage() {
 
                   {/* Overlay with quick actions */}
                   <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all duration-200 flex items-center justify-center pointer-events-none">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 pointer-events-auto">  <Link
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 pointer-events-auto">
+                      {' '}
+                      <Link
                         href={`/my-dogs/${dog.id}/edit`}
                         className="bg-white text-gray-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
                       >
@@ -154,7 +192,6 @@ export default function MyDogsPage() {
                       </button>
                     </div>
                   </div>
-
                 </div>
                 {/* Dog Info */}
                 <div className="p-6">
@@ -165,9 +202,9 @@ export default function MyDogsPage() {
 
                     <p>
                       {dog.age_years > 0 &&
-                        `${dog.age_years} year${dog.age_years !== 1 ? 's' : ''} `}
+                        `${dog.age_years} year${dog.age_years === 1 ? '' : 's'} `}
                       {dog.age_months > 0 &&
-                        `${dog.age_months} month${dog.age_months !== 1 ? 's' : ''}`}
+                        `${dog.age_months} month${dog.age_months === 1 ? '' : 's'}`}
                     </p>
 
                     <p className="capitalize">
@@ -222,9 +259,9 @@ export default function MyDogsPage() {
                     <div className="mt-3">
                       <p className="text-xs text-gray-500 mb-1">Loves:</p>
                       <div className="flex flex-wrap gap-1">
-                        {dog.activities.slice(0, 3).map((activity, index) => (
+                        {dog.activities.slice(0, 3).map((activity: string, index: number) => (
                           <span
-                            key={index}
+                            key={`${dog.id}-${activity}-${index}`} // Use a more unique key
                             className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full"
                           >
                             {activity}
@@ -262,4 +299,6 @@ export default function MyDogsPage() {
       </div>
     </div>
   );
+  // #endregion
 }
+// #endregion

@@ -1,17 +1,17 @@
-import { createServiceClient } from '@/libs/supabase/server';
+import { createClient } from '@/libs/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const page = Number.parseInt(searchParams.get('page') || '1');
+    const limit = Number.parseInt(searchParams.get('limit') || '50');
     const emailType = searchParams.get('emailType');
     const status = searchParams.get('status');
     const userId = searchParams.get('userId');
 
-    const supabase = createServiceClient();
+    const supabase = await createClient();
 
     // Build query
     let query = supabase

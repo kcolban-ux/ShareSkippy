@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/libs/supabase/client';
 import toast from 'react-hot-toast';
 import config from '@/config';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 // This a login/singup page for Supabase Auth.
 // Successfull login redirects to /api/auth/callback where the Code Exchange is processed (see app/api/auth/callback/route.js).
@@ -15,6 +15,21 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.push('/community');
+      }
+    };
+
+    checkSession();
+  }, [router, supabase.auth]);
 
   // Handle error messages from OAuth callback
   useEffect(() => {
@@ -47,11 +62,7 @@ export default function Login() {
 
     try {
       const { type, provider } = options;
-      // Use production domain for OAuth redirects to avoid localhost issues
-      const redirectURL =
-        window.location.hostname === 'localhost' || window.location.hostname.includes('192.168')
-          ? window.location.origin + '/api/auth/callback'
-          : `https://${config.domainName}/api/auth/callback`;
+      const redirectURL = window.location.origin + '/api/auth/callback';
 
       if (type === 'oauth') {
         // Use Supabase's built-in OAuth but with custom branding

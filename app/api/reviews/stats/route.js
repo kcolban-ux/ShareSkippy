@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 // GET /api/reviews/stats - Get review statistics for a user
 export async function GET(request) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check authentication
     const {

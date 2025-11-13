@@ -1,34 +1,163 @@
+/**
+ * @fileoverview This file defines the main Messages page for the application.
+ * It handles fetching conversations, displaying a selected conversation's
+ * messages, and sending new messages. It uses a protected route hook
+ * to ensure the user is authenticated.
+ * @path /app/(main)/messages/page.tsx
+ */
+
 'use client';
-import { useCallback, useState, useEffect, useMemo, useRef } from 'react';
+
+// #region Imports
+import {
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  ReactElement,
+  FormEvent,
+  ChangeEvent,
+  KeyboardEvent,
+  SyntheticEvent,
+} from 'react';
 import Image from 'next/image';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
 import { supabase } from '@/libs/supabase';
 import MessageModal from '@/components/MessageModal';
 import MeetingModal from '@/components/MeetingModal';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // Assumed path
 
-export default function MessagesPage() {
-  const { user, loading: authLoading } = useSupabaseAuth();
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
+// --- Supabase Types ---
+import { User } from '@supabase/supabase-js';
+// #endregion
 
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
-  const [messageModal, setMessageModal] = useState({
+// #region Types
+/**
+ * @description Basic profile structure for participants and senders.
+ */
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  profile_photo_url: string | null;
+}
+
+/**
+ * @description Basic availability post details.
+ */
+interface Availability {
+  id: string;
+  title: string | null;
+  post_type: string | null;
+}
+
+/**
+ * @description The raw conversation object from Supabase, including nested relations.
+ */
+interface RawConversation {
+  id: string;
+  created_at: string;
+  participant1_id: string;
+  participant2_id: string;
+  availability_id: string | null;
+  last_message_at: string;
+  participant1: Profile;
+  participant2: Profile;
+  availability: Availability | null;
+}
+
+/**
+ * @description The processed conversation object used for state and rendering.
+ * Includes the "otherParticipant" helper properties.
+ */
+export interface Conversation extends RawConversation {
+  otherParticipant: Profile;
+  displayName: string;
+  profilePhoto: string | null;
+}
+
+/**
+ * @description The message object as returned by the 'messages' table.
+ * The component only uses fields from the table itself.
+ */
+export interface Message {
+  id: string;
+  created_at: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  conversation_id?: string | null;
+  availability_id?: string | null;
+}
+
+/**
+ * @description State for the new message modal.
+ */
+interface MessageModalState {
+  isOpen: boolean;
+  recipient: Profile | null;
+  availabilityPost: Availability | null;
+}
+
+/**
+ * @description State for the meeting modal.
+ */
+interface MeetingModalState {
+  isOpen: boolean;
+  recipient: Profile | null;
+  conversation: Conversation | null;
+}
+// #endregion
+
+// #region Component
+export default function MessagesPage(): ReactElement {
+  // #region State & Hooks
+  /**
+   * @description Handles user authentication and redirection for the page.
+   * `authLoading` is true while the user's session is being verified.
+   * The hook redirects to the login page if the user is not authenticated.
+   * We assert `user` as `User` because the hook guarantees it post-loading.
+   */
+  const { user, isLoading: authLoading } = useProtectedRoute() as {
+    user: User;
+    isLoading: boolean;
+  };
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [sending, setSending] = useState<boolean>(false);
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [messageModal, setMessageModal] = useState<MessageModalState>({
     isOpen: false,
     recipient: null,
     availabilityPost: null,
   });
-  const [meetingModal, setMeetingModal] = useState({
+  const [meetingModal, setMeetingModal] = useState<MeetingModalState>({
     isOpen: false,
     recipient: null,
     conversation: null,
   });
-  const [showConversations, setShowConversations] = useState(false);
-  const [error, setError] = useState(null);
-  const abortControllerRef = useRef(null);
+  const [showConversations, setShowConversations] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
+  /**
+   * @description Ref to hold an AbortController for cancelling in-flight message fetches.
+   */
+  const abortControllerRef = useRef<AbortController | null>(null);
+  /**
+   * @description Ref to the message scrolling container for auto-scrolling.
+   */
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // #endregion
+
+  // #region Memos
+  /**
+   * @description Creates a unique key for the selected conversation.
+   * This is used to reset the message-fetching useEffect and Supabase channel subscription.
+   */
   const selectedConversationKey = useMemo(() => {
     const c = selectedConversation;
     if (!c) return 'none';
@@ -36,27 +165,22 @@ export default function MessagesPage() {
       ':'
     );
   }, [selectedConversation]);
+  // #endregion
 
+  // #region Handlers
+  /**
+   * @description Fetches all messages for the currently selected conversation.
+   */
   const fetchMessages = useCallback(
-    async (conversationId) => {
-      if (!conversationId || !selectedConversation) return;
+    async (conversationId: string): Promise<Message[]> => {
+      if (!conversationId || !selectedConversation) return [];
 
       try {
         const { participant1_id, participant2_id } = selectedConversation;
 
         const { data, error } = await supabase
           .from('messages')
-          .select(
-            `
-            *,
-            sender:profiles!messages_sender_id_fkey (
-              id,
-              first_name,
-              last_name,
-              profile_photo_url
-            )
-            `
-          )
+          .select('*') // OPTIMIZATION: Removed unused 'sender' join.
           .or(
             // Filter for messages between p1 and p2 in either direction
             `and(sender_id.eq.${participant1_id},recipient_id.eq.${participant2_id}),and(sender_id.eq.${participant2_id},recipient_id.eq.${participant1_id})`
@@ -68,85 +192,19 @@ export default function MessagesPage() {
           throw error;
         }
 
-        return data || [];
+        return (data as Message[]) || [];
       } catch (error) {
         console.error('Error fetching messages:', error);
         return [];
       }
     },
-    [selectedConversation]
+    [selectedConversation] // Depends on selectedConversation to get participant IDs
   );
 
-  useEffect(() => {
-    if (!selectedConversation) {
-      setMessages([]);
-      setError(null);
-      return;
-    }
-
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    abortControllerRef.current = new AbortController();
-    let cancelled = false;
-
-    setLoading(true);
-    setError(null);
-
-    (async () => {
-      try {
-        const data = await fetchMessages(selectedConversation.id);
-
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          setMessages(data || []);
-        }
-      } catch (e) {
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          console.error('load messages failed', e);
-          setError('Failed to load messages. Please try again.');
-        }
-      } finally {
-        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedConversation, selectedConversationKey, fetchMessages]);
-
-  useEffect(() => {
-    if (!selectedConversation) return;
-
-    const { participant1_id, participant2_id } = selectedConversation;
-
-    const channel = supabase
-      .channel(`messages:${selectedConversationKey}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-        const m = payload.new;
-
-        const matchesParticipants =
-          (m.sender_id === participant1_id && m.recipient_id === participant2_id) ||
-          (m.sender_id === participant2_id && m.recipient_id === participant1_id);
-
-        if (matchesParticipants) {
-          setMessages((prev) => {
-            if (prev.some((x) => x.id === m.id)) return prev;
-            return [...prev, m].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
-          });
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedConversationKey, selectedConversation]);
-
-  const fetchConversations = useCallback(async () => {
+  /**
+   * @description Fetches all conversations for the currently authenticated user.
+   */
+  const fetchConversations = useCallback(async (): Promise<void> => {
     if (!user) return;
 
     try {
@@ -181,7 +239,8 @@ export default function MessagesPage() {
 
       if (error) throw error;
 
-      const processedConversations = data.map((conv) => {
+      // Process conversations to identify the "other participant"
+      const processedConversations = (data as RawConversation[]).map((conv): Conversation => {
         const otherParticipant =
           conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
         return {
@@ -205,15 +264,12 @@ export default function MessagesPage() {
     }
   }, [user, selectedConversation]);
 
-  useEffect(() => {
-    if (user && !authLoading) {
-      fetchConversations();
-    }
-  }, [user, authLoading, fetchConversations]);
-
-  const sendMessage = async (e) => {
+  /**
+   * @description Sends a new message via the API route.
+   */
+  const sendMessage = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation?.otherParticipant) return;
 
     try {
       setSending(true);
@@ -243,15 +299,17 @@ export default function MessagesPage() {
     }
   };
 
-  // const openMessageModal = (recipient, availabilityPost) => {
-  // 	setMessageModal({ isOpen: true, recipient, availabilityPost });
-  // };
-
-  const closeMessageModal = () => {
+  /**
+   * @description Closes the new message modal.
+   */
+  const closeMessageModal = (): void => {
     setMessageModal({ isOpen: false, recipient: null, availabilityPost: null });
   };
 
-  const openMeetingModal = () => {
+  /**
+   * @description Opens the meeting scheduling modal.
+   */
+  const openMeetingModal = (): void => {
     if (selectedConversation) {
       setMeetingModal({
         isOpen: true,
@@ -261,18 +319,137 @@ export default function MessagesPage() {
     }
   };
 
-  const closeMeetingModal = () => {
+  /**
+   * @description Closes the meeting scheduling modal.
+   */
+  const closeMeetingModal = (): void => {
     setMeetingModal({ isOpen: false, recipient: null, conversation: null });
   };
 
-  const handleMeetingCreated = async () => {
+  /**
+   * @description Callback fired after a meeting is created to refresh data.
+   */
+  const handleMeetingCreated = async (): Promise<void> => {
     if (selectedConversation) {
       await fetchMessages(selectedConversation.id);
       await fetchConversations();
     }
   };
+  // #endregion
 
-  const formatTime = (dateString) => {
+  // #region Effects
+  /**
+   * @description Fetches messages when the selected conversation changes.
+   * This effect includes cleanup logic to abort stale requests
+   * if the user quickly switches between conversations.
+   */
+  useEffect(() => {
+    if (!selectedConversation) {
+      setMessages([]);
+      setError(null);
+      return;
+    }
+
+    // Abort any previous fetch that is still in progress
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
+    let cancelled = false;
+
+    setLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        const data = await fetchMessages(selectedConversation.id);
+
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          setMessages(data || []);
+        }
+      } catch (e) {
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          console.error('load messages failed', e);
+          setError('Failed to load messages. Please try again.');
+        }
+      } finally {
+        if (!cancelled && !abortControllerRef.current?.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    // Cleanup function to set a cancellation flag
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedConversation, selectedConversationKey, fetchMessages]);
+
+  /**
+   * @description Subscribes to Supabase real-time changes for new messages
+   * in the currently active conversation.
+   */
+  useEffect(() => {
+    if (!selectedConversation || !user) return;
+
+    const { participant1_id, participant2_id } = selectedConversation;
+
+    const channel = supabase
+      .channel(`messages:${selectedConversationKey}`)
+      .on(
+        'postgres_changes' as never,
+        { event: '*', schema: 'public', table: 'messages' },
+        (payload: { new: Message }) => {
+          const m = payload.new;
+
+          // Check if the new message belongs to this conversation
+          const matchesParticipants =
+            (m.sender_id === participant1_id && m.recipient_id === participant2_id) ||
+            (m.sender_id === participant2_id && m.recipient_id === participant1_id);
+
+          if (matchesParticipants) {
+            setMessages((prev: Message[]) => {
+              // Avoid duplicates
+              if (prev.some((x) => x.id === m.id)) return prev;
+              // Add new message and re-sort
+              return [...prev, m].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Unsubscribe from the channel on cleanup
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversationKey, selectedConversation, user]);
+
+  /**
+   * @description Fetches the initial list of conversations once the user is loaded.
+   */
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchConversations();
+    }
+  }, [user, authLoading, fetchConversations]);
+
+  /**
+   * @description Auto-scrolls the message container to the bottom when new messages are added.
+   */
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+  // #endregion
+
+  // #region Helpers
+  /**
+   * @description Formats a date string into a simple time (e.g., "10:30 AM").
+   */
+  const formatTime = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -281,7 +458,10 @@ export default function MessagesPage() {
     });
   };
 
-  const formatDate = (dateString) => {
+  /**
+   * @description Formats a date string into a relative date (e.g., "Today", "Yesterday", "Tuesday").
+   */
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
 
@@ -300,14 +480,12 @@ export default function MessagesPage() {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
   };
+  // #endregion
 
-  const scrollRef = useRef(null);
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
+  // #region Render Logic
+  /**
+   * @description Primary loading state while verifying authentication.
+   */
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -319,17 +497,17 @@ export default function MessagesPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Please sign in</h1>
-          <p className="text-gray-600">You need to be signed in to view messages.</p>
-        </div>
-      </div>
-    );
-  }
+  /**
+   * @description This `if (!user)` block is no longer needed.
+   * The `useProtectedRoute` hook handles redirection automatically
+   * if the user is not authenticated. If the code reaches this point,
+   * `user` is guaranteed to be present.
+   */
+  // if (!user) { ... } // <-- This block is now removed.
 
+  // #endregion
+
+  // #region JSX
   return (
     <div
       className="
@@ -352,7 +530,9 @@ export default function MessagesPage() {
       <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`w-full lg:w-80 border-r border-gray-200 bg-gray-50 flex flex-col min-h-0 ${showConversations ? 'flex' : 'hidden lg:flex'}`}
+          className={`w-full lg:w-80 border-r border-gray-200 bg-gray-50 flex flex-col min-h-0 ${
+            showConversations ? 'flex' : 'hidden lg:flex'
+          }`}
         >
           <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
             <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
@@ -365,24 +545,34 @@ export default function MessagesPage() {
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto ios-scroll">
-            {loading ? (
+            {loading && (
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
               </div>
-            ) : conversations.length === 0 ? (
+            )}
+            {!loading && conversations.length === 0 && (
               <div className="p-6 text-center text-gray-500">
                 <p>No conversations yet</p>
                 <p className="text-sm mt-2">Start messaging someone from the community!</p>
               </div>
-            ) : (
+            )}
+            {!loading &&
+              conversations.length > 0 &&
               conversations.map((conversation) => (
-                <div
+                <button
                   key={conversation.id}
                   onClick={() => {
                     setSelectedConversation(conversation);
                     setShowConversations(false); // Hide sidebar on mobile after selection
                   }}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors ${
+                  onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setSelectedConversation(conversation);
+                      setShowConversations(false);
+                    }
+                  }}
+                  tabIndex={0}
+                  className={`w-full text-left p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors ${
                     selectedConversation?.id === conversation.id ? 'bg-blue-50 border-blue-200' : ''
                   }`}
                 >
@@ -412,9 +602,8 @@ export default function MessagesPage() {
                       </p>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                </button>
+              ))}
           </div>
         </aside>
 
@@ -488,7 +677,9 @@ export default function MessagesPage() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.sender_id === user.id ? 'justify-end' : 'justify-start'} message-container`}
+                    className={`flex ${
+                      message.sender_id === user.id ? 'justify-end' : 'justify-start'
+                    } message-container`}
                   >
                     <div
                       className={`message-bubble px-4 py-3 rounded-2xl wrap-break-word shadow-xs max-w-full ${
@@ -546,16 +737,16 @@ export default function MessagesPage() {
                 >
                   <textarea
                     value={newMessage}
-                    onChange={(e) => {
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
                       setNewMessage(e.target.value);
                       // Auto-resize textarea
                       const textarea = e.target;
                       textarea.style.height = 'auto';
                       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'; // Max 6 lines
                     }}
-                    onInput={(e) => {
+                    onInput={(e: SyntheticEvent<HTMLTextAreaElement>) => {
                       // Auto-resize on input (for mobile)
-                      const textarea = e.target;
+                      const textarea = e.target as HTMLTextAreaElement;
                       textarea.style.height = 'auto';
                       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
                     }}
@@ -610,4 +801,6 @@ export default function MessagesPage() {
       />
     </div>
   );
+  // #endregion
 }
+// #endregion
