@@ -19,7 +19,13 @@ export default defineConfig([
     },
   },
   {
-    ignores: ["**/package-lock.json", "**/node_modules/**", "**/coverage/**"],
+    ignores: [
+      "**/package-lock.json",
+      "**/node_modules/**",
+      "**/coverage/**",
+      "**/.vercel/**",
+      "**/.next/**",
+    ],
   },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
