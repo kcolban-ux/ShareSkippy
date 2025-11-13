@@ -23,6 +23,8 @@ interface Profile {
   bio: string | null;
   role: string | null;
   phone_number: string | null;
+  display_lat: number | null;
+  display_lng: number | null;
 }
 // #endregion TYPES
 
@@ -50,19 +52,23 @@ function determineRedirectPath(
   }
 
   // Check profile completeness for existing users
-  const hasCompleteBio: boolean = !!profile.bio &&
-    profile.bio.trim().length > 0;
+  // Treat bio as optional; require role, phone, and a verified location
   const hasRole: boolean = !!profile.role && profile.role.trim().length > 0;
   const hasPhone: boolean = !!profile.phone_number &&
     profile.phone_number.trim().length > 0;
+  const hasLocation: boolean = profile.display_lat !== null &&
+    profile.display_lng !== null;
 
   console.log("📊 Profile completeness check:");
-  console.log("   ✓ Bio:", hasCompleteBio ? "✅ Complete" : "❌ Missing");
   console.log("   ✓ Role:", hasRole ? "✅ Complete" : "❌ Missing");
   console.log("   ✓ Phone:", hasPhone ? "✅ Complete" : "❌ Missing");
+  console.log(
+    "   ✓ Location:",
+    hasLocation ? "✅ Verified (display_lat/lng present)" : "❌ Missing",
+  );
 
   // Existing user logic
-  if (hasCompleteBio && hasRole && hasPhone) {
+  if (hasRole && hasPhone && hasLocation) {
     console.log("✅ PROFILE COMPLETE → Redirecting to /community");
     return `${finalRedirectBaseUrl}/community?${cacheBust}`;
   } else {
@@ -107,17 +113,6 @@ async function processCodeExchangeAndProfileUpdate(
   const user: User = data.user;
   const finalRedirectBaseUrl: string = requestUrl.origin;
 
-  // 2. New User Check
-  const userCreatedAt = new Date(user.created_at);
-  const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
-  const isNewUser: boolean = userCreatedAt > thirtySecondsAgo;
-
-  console.log(
-    isNewUser
-      ? "🆕 NEW USER DETECTED (created within last 30 seconds)"
-      : "👤 EXISTING USER",
-  );
-
   // 3. Profile Fetch and Data Merge
   const userMetadata: UserMetadata = user.user_metadata || {};
   const googleGivenName: string | undefined = userMetadata.given_name ||
@@ -133,25 +128,38 @@ async function processCodeExchangeAndProfileUpdate(
     .eq("id", user.id)
     .single();
 
-  const updateData: Partial<Profile> = {
+  // 2. New User Check: based on whether a profile row already existed
+  const isNewUser: boolean = !existingProfile;
+  console.log(
+    isNewUser
+      ? "🆕 NEW USER DETECTED (no existing profile)"
+      : "👤 EXISTING USER",
+  );
+
+  // Build the upsert payload. Include `id` to allow insert-if-missing
+  const upsertData: Partial<Profile> & { id: string } = {
+    id: user.id,
     first_name: googleGivenName || existingProfile?.first_name || null,
     last_name: googleFamilyName || existingProfile?.last_name || null,
     profile_photo_url: googlePicture || existingProfile?.profile_photo_url ||
       null,
   };
 
-  // 4. Profile Update
-  const { data: updatedProfile } = await supabase
+  // 4. Profile Upsert (insert if missing, update if exists)
+  const { data: updatedProfile, error: profileError } = await supabase
     .from("profiles")
-    .update(updateData)
-    .eq("id", user.id)
+    .upsert(upsertData, { onConflict: "id" })
     .select()
     .single<Profile>();
 
-  console.log("✅ Profile updated with Google data");
+  if (profileError) {
+    console.error("❌ Profile upsert error:", profileError);
+  } else {
+    console.log("✅ Profile upserted with Google data");
+  }
 
   if (!updatedProfile) {
-    console.error("Profile update failed to return data.");
+    console.error("Profile upsert failed to return data.");
     return NextResponse.redirect(
       new URL("/signin?error=profile_update_failed", requestUrl.origin),
     );
