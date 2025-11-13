@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
-import { cookies } from 'next/headers';
+
 import Script from 'next/script';
 import AppLayout from '@/components/AppLayout';
 import ClientLayout from '@/components/LayoutClient';
@@ -9,6 +9,7 @@ import { QueryProvider } from '@/contexts/QueryProvider';
 import { createClient } from '@/libs/supabase/server';
 import { getSEOTags } from '@/libs/seo';
 import './globals.css';
+import PropTypes from 'prop-types';
 
 const font = Inter({ subsets: ['latin'] });
 
@@ -21,15 +22,28 @@ export const viewport = {
 
 export const metadata = getSEOTags();
 
+/**
+ * @param {{ children: import('react').ReactNode }} props
+ */
 export default async function RootLayout({ children }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Initialize the server-side Supabase client (cookies are handled internally)
+  const supabase = await createClient();
 
-  if (session) {
-    console.debug(`[Root Layout] Server found a session. User: ${session.user.id}`);
+  // Fetch the session (from cookies) and the authenticated user (validated by Auth server)
+  const [
+    {
+      data: { session },
+    },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([supabase.auth.getSession(), supabase.auth.getUser()]);
+
+  // Prefer the authoritative user from getUser() when a session exists
+  const initialSession = session && user ? { ...session, user } : session;
+
+  if (initialSession) {
+    console.debug(`[Root Layout] Server found a session. User: ${initialSession.user.id}`);
   } else {
     console.warn('[Root Layout] Server found NO session. Passing null to provider.');
   }
@@ -51,7 +65,7 @@ export default async function RootLayout({ children }) {
         </Script>
 
         <QueryProvider>
-          <SupabaseUserProvider initialSession={session}>
+          <SupabaseUserProvider initialSession={initialSession}>
             <ClientLayout>
               <AppLayout>{children}</AppLayout>
             </ClientLayout>
@@ -62,3 +76,7 @@ export default async function RootLayout({ children }) {
     </html>
   );
 }
+
+RootLayout.propTypes = {
+  children: PropTypes.node,
+};
