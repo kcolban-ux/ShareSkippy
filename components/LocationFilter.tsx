@@ -12,6 +12,7 @@ interface LocationFilterConfig {
 }
 
 interface LocationFilterProps {
+  // eslint-disable-next-line no-unused-vars
   onFilterChange: (_filter: LocationFilterConfig | null) => void;
 }
 
@@ -61,7 +62,7 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
 
   const handleZipCitySubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!zipCityInput.trim()) {
       setError('Please enter a zip code or city name');
       return;
@@ -112,11 +113,11 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
             Filter by Location
           </h3>
-          
+
           {activeFilter && (
             <div className="mb-3 text-sm text-gray-600">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {activeFilter.type === 'shared-location' 
+                {activeFilter.type === 'shared-location'
                   ? `📍 Within ${activeFilter.radius} miles of your location`
                   : `📍 Within ${activeFilter.radius} miles of ${activeFilter.query || zipCityInput}`}
               </span>
@@ -124,9 +125,7 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
           )}
 
           {error && (
-            <div className="mb-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
-              {error}
-            </div>
+            <div className="mb-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{error}</div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -150,7 +149,10 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps) 
                   )}
                 </button>
 
-                <form onSubmit={handleZipCitySubmit} className="flex flex-col sm:flex-row gap-2 flex-1">
+                <form
+                  onSubmit={handleZipCitySubmit}
+                  className="flex flex-col sm:flex-row gap-2 flex-1"
+                >
                   <input
                     type="text"
                     value={zipCityInput}
