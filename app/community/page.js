@@ -241,28 +241,35 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
                   {isMine ? 'You' : `${owner.first_name} ${owner.last_name || ''}`}
                 </h4>
                 <p className="text-sm text-gray-500 capitalize">
+                  {/* This clearly labels the human profile */}
                   {post.post_type === 'dog_available' ? 'Dog Owner' : 'PetPal'}
                 </p>
               </div>
             </div>
           )}
           
-          {/* Dog Information */}
-          {/* Moved this section below the universal owner block */}
+          {/* Dog Information (The Target for Distinction) */}
           {post.post_type !== 'petpal_available' && post.allDogs && post.allDogs.length > 0 && (
             <div className="mb-4 border-b pb-4 border-gray-100">
               {post.allDogs.length === 1 ? (
-                <div className="flex items-center space-x-3">
-                  {(post.allDogs[0].photo_url && !post.allDogs[0].photo_url.includes('undefined')) ? (
-                    <img src={post.allDogs[0].photo_url} alt={post.allDogs[0].name} className="w-12 h-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">🐾</div>
-                  )}
-                  <div>
-                    <h4 className="font-medium">{post.allDogs[0].name}</h4>
-                    <p className="text-sm text-gray-500">{post.allDogs[0].breed}</p>
+                // START MODIFICATION FOR SINGLE DOG
+                <div className="p-3 rounded-lg bg-blue-50 border border-blue-100"> 
+                  <h4 className="font-medium mb-2 text-sm text-blue-700 flex items-center">
+                    <span className="mr-1">🐾</span> Dog Profile
+                  </h4>
+                  <div className="flex items-center space-x-3">
+                    {(post.allDogs[0].photo_url && !post.allDogs[0].photo_url.includes('undefined')) ? (
+                      <img src={post.allDogs[0].photo_url} alt={post.allDogs[0].name} className="w-12 h-12 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">🐾</div>
+                    )}
+                    <div>
+                      <h4 className="font-medium">{post.allDogs[0].name}</h4>
+                      <p className="text-sm text-gray-500">{post.allDogs[0].breed}</p>
+                    </div>
                   </div>
                 </div>
+                // END MODIFICATION
               ) : (
                 <div>
                   <h4 className="font-medium mb-2 text-sm text-gray-700">Dogs Available:</h4>
@@ -850,7 +857,7 @@ export default function CommunityPage() {
                       <div className="col-span-full text-center py-12 bg-white rounded-xl shadow-md border border-gray-200">
                         <div className="text-6xl mb-4">📅</div>
                         <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No active posts</h3>
-                        <p className="text-sm sm:text-base text-gray-600 mb-4">Click "Create New Post" to share your availability or needs!</p>
+                        <p className="text-sm sm:text-base text-gray-600 mb-4">Start sharing your availability to connect with the community!</p>
                       </div>
                     )}
                 </div>
