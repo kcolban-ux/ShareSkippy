@@ -3,6 +3,15 @@
 
 const cache = new Map<string, { count: number; resetAt: number }>();
 
+/**
+ * Tracks requests per client and rejects them once the limit is exceeded.
+ *
+ * @param ip - Client IP address (fallback for anonymous traffic).
+ * @param key - Logical key such as `contact:submit` to keep counters separate.
+ * @param limit - Number of allowed requests within the window.
+ * @param windowSec - Sliding window duration in seconds.
+ * @returns `true` when the request is permitted, otherwise `false`.
+ */
 export async function rateLimit(
   ip: string,
   key: string,

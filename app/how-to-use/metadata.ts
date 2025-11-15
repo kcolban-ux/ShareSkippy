@@ -1,5 +1,8 @@
 import { Metadata } from 'next';
 
+/**
+ * Page metadata for the How-To Use guide.
+ */
 export const metadata: Metadata = {
   title: 'How to Use ShareSkippy - Complete User Guide',
   description:
