@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/libs/supabase/client';
 import MessageModal from '@/components/MessageModal';
-import LocationFilter from '@/components/LocationFilter'; // Assuming this component exists
-import { calculateDistance } from '@/libs/distance'; // Assuming this helper exists
+import LocationFilter from '@/components/LocationFilter';
+import { calculateDistance } from '@/libs/distance';
+import OptimizedImage from '@/components/ui/OptimizedImage'; 
 
 // ===================================
 //              HELPERS
@@ -138,10 +139,13 @@ function ProfilesList({ role, onMessage, locationFilter }) {
           <div key={profile.id} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
             <div className="flex items-center space-x-3 mb-3">
               {profile.photo_url ? (
-                <img
+                // Use OptimizedImage here
+                <OptimizedImage
                   src={profile.photo_url} // photo_url comes from the /api/community/profiles route
                   alt={`${profile.first_name}`}
                   className="w-10 h-10 rounded-full object-cover"
+                  width={40} // w-10 = 40px
+                  height={40} // h-10 = 40px
                 />
               ) : (
                 <div className="w-10 h-10 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-xl">
@@ -224,10 +228,13 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
           {owner.id && ( // Only display if owner profile data is present
             <div className="flex items-center space-x-3 mb-4 border-b pb-4 border-gray-100">
               {owner.profile_photo_url ? (
-                <img 
+                // Use OptimizedImage here
+                <OptimizedImage
                   src={owner.profile_photo_url} 
                   alt={`${owner.first_name} profile`} 
                   className="w-12 h-12 rounded-full object-cover" 
+                  width={48} // w-12 = 48px
+                  height={48} // h-12 = 48px
                 />
               ) : (
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
@@ -259,7 +266,14 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
                   </h4>
                   <div className="flex items-center space-x-3">
                     {(post.allDogs[0].photo_url && !post.allDogs[0].photo_url.includes('undefined')) ? (
-                      <img src={post.allDogs[0].photo_url} alt={post.allDogs[0].name} className="w-12 h-12 rounded-full object-cover" />
+                      // Use OptimizedImage here
+                      <OptimizedImage
+                          src={post.allDogs[0].photo_url}
+                          alt={post.allDogs[0].name}
+                          className="w-12 h-12 rounded-full object-cover"
+                          width={48}
+                          height={48}
+                      />
                     ) : (
                       <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">🐾</div>
                     )}
@@ -277,7 +291,14 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
                     {post.allDogs.map((dog) => (
                       <div key={dog.id} className="flex items-center space-x-2">
                         {(dog.photo_url && !dog.photo_url.includes('undefined')) ? (
-                          <img src={dog.photo_url} alt={dog.name} className="w-8 h-8 rounded-full object-cover" />
+                          // Use OptimizedImage here
+                          <OptimizedImage
+                              src={dog.photo_url}
+                              alt={dog.name}
+                              className="w-8 h-8 rounded-full object-cover"
+                              width={32} // w-8 = 32px
+                              height={32} // h-8 = 32px
+                          />
                         ) : (
                           <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">🐾</div>
                         )}
