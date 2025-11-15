@@ -1,21 +1,32 @@
 import { createClient } from '@/libs/supabase/server';
 import { NextResponse } from 'next/server';
 
+// Ensure the data is always fresh, bypassing Vercel/Next.js caching
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor');
+    const filterRole = searchParams.get('role');
+    // Ensure limit is a safe number
     const limit = Math.min(parseInt(searchParams.get('limit') || '24'), 60);
 
     const supabase = createClient();
 
-    console.log('Profiles API called with params:', { cursor, limit });
+    // 1. Fetch all user IDs with active availability posts (to exclude them)
+    // This is a fast, small query.
+    const { data: activeAvailability } = await supabase
+      .from('availability')
+      .select('owner_id')
+      .eq('status', 'active');
 
-    // Build the main query for eligible profiles
-    // We'll use a different approach to exclude users with active availability
-    let query = supabase
+    const ownersToExclude = Array.from(
+        new Set((activeAvailability || []).map((post) => post.owner_id))
+    );
+
+    // 2. Build the main profiles query with all filters applied to the database
+    let profilesQuery = supabase
       .from('profiles')
       .select(
         `
@@ -26,54 +37,66 @@ export async function GET(request) {
         neighborhood,
         role,
         bio,
-        display_lat,
-        display_lng,
+        display_lat, 
+        display_lng, 
         updated_at,
-        user_activity(at)
-      `
+        user_activity(at) 
+        `
       )
+      // Standard filtering applied to the DB
       .not('bio', 'is', null)
       .neq('bio', '')
-      .in('role', ['dog_owner', 'petpal', 'both']);
+      .in('role', ['dog_owner', 'petpal', 'both']); // Keep all eligible roles initially
 
-    // Use a more efficient approach: get all profiles first, then filter out those with active availability
-    const { data: profiles, error } = await query;
+    // Apply role filter (e.g., dog_owner only)
+    if (filterRole) {
+      profilesQuery = profilesQuery.eq('role', filterRole);
+    }
 
-    if (error) {
-      console.error('Error fetching profiles:', error);
+    // Apply the exclusion filter directly to the DB query
+    if (ownersToExclude.length > 0) {
+        // FIX: Manually format the list of IDs with parentheses and join them.
+        // This ensures the PostgREST API correctly parses the list, fixing the PGRST100 error.
+        const ownersList = ownersToExclude.join(',');
+        profilesQuery = profilesQuery.not('id', 'in', `(${ownersList})`);
+    }
+    
+    // Apply Keyset Pagination (Cursor) logic to the database query
+    if (cursor) {
+      try {
+        // Cursor format: 'updated_at|lastId'
+        const [lastSortKey, lastId] = cursor.split('|'); 
+        
+        // This query instructs the database to only return rows *after* the cursor
+        profilesQuery = profilesQuery.or(
+          `updated_at.lt.${lastSortKey},and(updated_at.eq.${lastSortKey},id.lt.${lastId})`
+        );
+      } catch (error) {
+        console.error('Error processing cursor:', error);
+      }
+    } 
+
+    // 3. Execute the query, ordering and limiting on the database side
+    const { data: rawProfiles, error: profilesError } = await profilesQuery
+        // Sort by updated_at (primary) and ID (secondary)
+        .order('updated_at', { ascending: false })
+        .order('id', { ascending: false }) 
+        .limit(limit + 1); // Fetch one extra for the next cursor check
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
     }
 
-    console.log('Raw profiles fetched:', profiles?.length || 0);
+    // 4. Process the small result set for the final output format (In-Memory Transformation)
+    const hasNextPage = rawProfiles.length > limit;
+    const items = rawProfiles.slice(0, limit);
 
-    // Now get users with active availability posts to exclude them
-    const { data: activeAvailabilityUsers, error: availabilityError } = await supabase
-      .from('availability')
-      .select('owner_id')
-      .eq('status', 'active');
-
-    if (availabilityError) {
-      console.error('Error fetching active availability users:', availabilityError);
-      return NextResponse.json({ error: 'Failed to fetch availability data' }, { status: 500 });
-    }
-
-    const excludedUserIds = new Set(activeAvailabilityUsers?.map((item) => item.owner_id) || []);
-
-    // Filter out profiles with active availability
-    const filteredProfiles = profiles.filter((profile) => !excludedUserIds.has(profile.id));
-
-    console.log(
-      'Filtered profiles (after excluding active availability):',
-      filteredProfiles.length
-    );
-
-    // Process the data to match the required format
-    const processedProfiles = filteredProfiles.map((profile) => {
-      // Calculate last_online_at from user_activity or profiles.updated_at
+    const resultItems = items.map(profile => {
+      // Calculate last_online_at 
       let lastOnlineAt = profile.updated_at;
-
+      
       if (profile.user_activity && profile.user_activity.length > 0) {
-        // Get the most recent activity
         const mostRecentActivity = profile.user_activity.sort(
           (a, b) => new Date(b.at) - new Date(a.at)
         )[0];
@@ -88,7 +111,7 @@ export async function GET(request) {
           ? profile.bio.substring(0, 140) + '...'
           : profile.bio
         : '';
-
+        
       return {
         id: profile.id,
         first_name: profile.first_name,
@@ -99,61 +122,27 @@ export async function GET(request) {
         bio_excerpt: bioExcerpt,
         display_lat: profile.display_lat,
         display_lng: profile.display_lng,
-        last_online_at: lastOnlineAt
+        last_online_at: lastOnlineAt, 
+        // We include updated_at here for cursor generation
+        updated_at: profile.updated_at
       };
     });
 
-    // Sort by last_online_at desc, then id desc
-    processedProfiles.sort((a, b) => {
-      const dateA = new Date(a.last_online_at);
-      const dateB = new Date(b.last_online_at);
-
-      if (dateA.getTime() !== dateB.getTime()) {
-        return dateB.getTime() - dateA.getTime();
-      }
-
-      return b.id.localeCompare(a.id);
-    });
-
-    // Apply cursor-based filtering if provided
-    let paginatedProfiles = processedProfiles;
-    if (cursor) {
-      try {
-        const [lastOnlineAt, lastId] = cursor.split('|');
-        const cursorDate = new Date(lastOnlineAt);
-
-        paginatedProfiles = processedProfiles.filter((profile) => {
-          const profileDate = new Date(profile.last_online_at);
-          if (profileDate.getTime() !== cursorDate.getTime()) {
-            return profileDate < cursorDate;
-          }
-          return profile.id < lastId;
-        });
-      } catch (error) {
-        console.error('Error processing cursor:', error);
-        // If cursor is invalid, return empty results
-        paginatedProfiles = [];
-      }
+    // 5. Generate next cursor
+    let nextCursor = null; 
+    if (hasNextPage) {
+      const lastProfile = items[items.length - 1];
+      // Cursor relies on the database's primary sort key: updated_at
+      nextCursor = `${lastProfile.updated_at}|${lastProfile.id}`;
     }
-
-    // Take only the requested limit
-    const resultProfiles = paginatedProfiles.slice(0, limit);
-
-    // Generate next cursor if there are more results
-    let nextCursor = null;
-    if (resultProfiles.length === limit && paginatedProfiles.length > limit) {
-      const lastProfile = resultProfiles[resultProfiles.length - 1];
-      nextCursor = `${lastProfile.last_online_at}|${lastProfile.id}`;
-    }
-
-    console.log('Returning profiles:', resultProfiles.length, 'nextCursor:', nextCursor);
-
+    
     return NextResponse.json({
-      items: resultProfiles,
+      items: resultItems,
       nextCursor,
     });
+    
   } catch (error) {
-    console.error('Error in profiles API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('General Error fetching profiles in API:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
