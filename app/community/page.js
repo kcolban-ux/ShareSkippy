@@ -71,7 +71,7 @@ function ProfilesList({ role, onMessage, locationFilter }) {
         return false;
       }
       // Note: This assumes calculateDistance is available and works as expected
-      const distance = calculateDistance(filter.lat, filter.lng, profileLat, profileLng); 
+      const distance = calculateDistance(filter.lat, filter.lng, profileLat, profileLng, 'miles'); 
       return distance <= filter.radius;
     });
   }, []);
@@ -99,7 +99,7 @@ function ProfilesList({ role, onMessage, locationFilter }) {
       }
 
       // Filter fetched profiles by location if a filter is active
-      const processedItems = locationFilter 
+      const processedItems = (locationFilter && locationFilter.lat && locationFilter.lng)
         ? filterProfilesByLocation(data.items || [], locationFilter)
         : data.items || [];
 
@@ -137,9 +137,9 @@ function ProfilesList({ role, onMessage, locationFilter }) {
         {profiles.map((profile) => (
           <div key={profile.id} className="bg-gray-50 p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
             <div className="flex items-center space-x-3 mb-3">
-              {profile.profile_photo_url ? (
+              {profile.photo_url ? (
                 <img
-                  src={profile.profile_photo_url}
+                  src={profile.photo_url} // photo_url comes from the /api/community/profiles route
                   alt={`${profile.first_name}`}
                   className="w-10 h-10 rounded-full object-cover"
                 />
@@ -154,7 +154,7 @@ function ProfilesList({ role, onMessage, locationFilter }) {
               </div>
             </div>
             {/* Using bio_excerpt from the fast API route */}
-            <p className="text-sm text-gray-600 line-clamp-3 mb-3 grow">{profile.bio_excerpt || profile.bio}</p> 
+            <p className="text-sm text-gray-600 line-clamp-3 mb-3 grow">{profile.bio_excerpt}</p> 
             <div className="text-xs text-gray-400 mb-4">
                 {profile.neighborhood && <span>{profile.neighborhood}, </span>}
                 {profile.city && <span>{profile.city}</span>}
@@ -204,12 +204,13 @@ function ProfilesList({ role, onMessage, locationFilter }) {
 //          POST CARD (Reusable Component)
 // ===================================
 const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, deletePost }) => {
-    const owner = post.owner || { first_name: 'You' }; 
+    // FIX: Ensure the owner object is properly available
+    const owner = post.owner || post.owner_id || { first_name: 'Owner', last_name: '' }; 
 
     return (
       <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200 flex flex-col justify-between">
         <div>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">{post.title}</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{post.title}</h3>
           
           {/* Urgency Badge (New Feature) */}
           {post.is_urgent && (
@@ -219,7 +220,35 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
             </div>
           )}
 
+          {/* FIX: Owner Information (Universal Display for all post types) */}
+          {owner.id && ( // Only display if owner profile data is present
+            <div className="flex items-center space-x-3 mb-4 border-b pb-4 border-gray-100">
+              {owner.profile_photo_url ? (
+                <img 
+                  src={owner.profile_photo_url} 
+                  alt={`${owner.first_name} profile`} 
+                  className="w-12 h-12 rounded-full object-cover" 
+                />
+              ) : (
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
+                    post.post_type === 'dog_available' ? 'bg-blue-100' : 'bg-green-100'
+                }`}>
+                  {post.post_type === 'dog_available' ? '🐕' : '🤝'}
+                </div>
+              )}
+              <div>
+                <h4 className="font-medium">
+                  {isMine ? 'You' : `${owner.first_name} ${owner.last_name || ''}`}
+                </h4>
+                <p className="text-sm text-gray-500 capitalize">
+                  {post.post_type === 'dog_available' ? 'Dog Owner' : 'PetPal'}
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* Dog Information */}
+          {/* Moved this section below the universal owner block */}
           {post.post_type !== 'petpal_available' && post.allDogs && post.allDogs.length > 0 && (
             <div className="mb-4 border-b pb-4 border-gray-100">
               {post.allDogs.length === 1 ? (
@@ -227,7 +256,7 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
                   {(post.allDogs[0].photo_url && !post.allDogs[0].photo_url.includes('undefined')) ? (
                     <img src={post.allDogs[0].photo_url} alt={post.allDogs[0].name} className="w-12 h-12 rounded-full object-cover" />
                   ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">🐕</div>
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">🐾</div>
                   )}
                   <div>
                     <h4 className="font-medium">{post.allDogs[0].name}</h4>
@@ -243,7 +272,7 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
                         {(dog.photo_url && !dog.photo_url.includes('undefined')) ? (
                           <img src={dog.photo_url} alt={dog.name} className="w-8 h-8 rounded-full object-cover" />
                         ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">🐕</div>
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">🐾</div>
                         )}
                         <div className="text-sm">
                           <div className="font-medium">{dog.name}</div>
@@ -256,25 +285,10 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
               )}
             </div>
           )}
-          
-          {/* PetPal Information */}
-          {post.post_type === 'petpal_available' && (
-            <div className="flex items-center space-x-3 mb-4 border-b pb-4 border-gray-100">
-              {owner.profile_photo_url ? (
-                <img src={owner.profile_photo_url} alt={`${owner.first_name} ${owner.last_name}`} className="w-12 h-12 rounded-full object-cover" />
-              ) : (
-                <div className="w-12 h-12 bg-linear-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center">🤝</div>
-              )}
-              <div>
-                <h4 className="font-medium">{owner.first_name} {owner.last_name}</h4>
-                <p className="text-sm text-gray-500">PetPal</p>
-              </div>
-            </div>
-          )}
 
           {/* Description (New Feature) */}
           {post.description && (
-             <p className="text-gray-600 mb-4 line-clamp-3 text-sm">{post.description}</p>
+               <p className="text-gray-600 mb-4 line-clamp-3 text-sm">{post.description}</p>
           )}
 
           {/* Location */}
@@ -375,7 +389,7 @@ const PostCard = ({ post, isMine = false, user, openMessageModal, deletingPost, 
 
 
 // ===================================
-//        COMMUNITY PAGE (Main)
+//          COMMUNITY PAGE (Main)
 // ===================================
 
 export default function CommunityPage() {
@@ -432,18 +446,19 @@ export default function CommunityPage() {
         setLoading(true);
     }
     
+    // Define the common owner select clause
+    const ownerSelectClause = `
+      *,
+      owner:profiles!availability_owner_id_fkey (
+        id, first_name, last_name, profile_photo_url, neighborhood, city
+      )
+    `;
+    
     try {
       // 1. Fetch Dog Availability posts (excluding current user)
       let dogQuery = supabase
         .from('availability')
-        .select(
-          `
-          *,
-          owner:profiles!availability_owner_id_fkey (
-            id, first_name, last_name, profile_photo_url, neighborhood, city
-          )
-          `
-        )
+        .select(ownerSelectClause)
         .eq('post_type', 'dog_available')
         .eq('status', 'active');
         
@@ -468,14 +483,7 @@ export default function CommunityPage() {
       // 2. Fetch PetPal Availability posts (excluding current user)
       let petpalQuery = supabase
         .from('availability')
-        .select(
-          `
-          *,
-          owner:profiles!availability_owner_id_fkey (
-            id, first_name, last_name, profile_photo_url, neighborhood, city
-          )
-          `
-        )
+        .select(ownerSelectClause)
         .eq('post_type', 'petpal_available')
         .eq('status', 'active');
         
@@ -493,9 +501,10 @@ export default function CommunityPage() {
 
       // 3. Fetch User's Own Availability posts
       if (currentUser) {
+        // FIX: Ensure profile data is included for "My Posts" tab
         const { data: myPosts, error: myError } = await supabase
           .from('availability')
-          .select(`*`)
+          .select(ownerSelectClause) // Use the select clause with owner profile
           .eq('owner_id', currentUser.id)
           .order('created_at', { ascending: false });
 
@@ -516,7 +525,7 @@ export default function CommunityPage() {
     } finally {
       setLoading(false);
     }
-  }, [refreshing]); 
+  }, [refreshing, supabase]); 
 
   // Filter posts by location (New Feature Logic)
   const filterPostsByLocation = (posts, filter) => {
@@ -534,7 +543,7 @@ export default function CommunityPage() {
       }
 
       // Calculate distance from filter location to post location
-      const distance = calculateDistance(filter.lat, filter.lng, postLat, postLng);
+      const distance = calculateDistance(filter.lat, filter.lng, postLat, postLng, 'miles');
 
       return distance <= filter.radius;
     });
@@ -544,7 +553,7 @@ export default function CommunityPage() {
 
   // Apply location filter when filter or unfiltered posts change
   useEffect(() => {
-    if (locationFilter) {
+    if (locationFilter && locationFilter.lat && locationFilter.lng) {
       // Apply filter to dog posts
       const filteredDogPosts = filterPostsByLocation(allDogPosts, locationFilter);
       setDogAvailabilityPosts(filteredDogPosts);
@@ -553,11 +562,11 @@ export default function CommunityPage() {
       const filteredPetpalPosts = filterPostsByLocation(allPetpalPosts, locationFilter);
       setPetpalAvailabilityPosts(filteredPetpalPosts);
     } else {
-      // Reset to unfiltered posts when filter is cleared
+      // Reset to unfiltered posts when filter is cleared or incomplete
       setDogAvailabilityPosts(allDogPosts);
       setPetpalAvailabilityPosts(allPetpalPosts);
     }
-  }, [locationFilter, allDogPosts, allPetpalPosts]);
+  }, [locationFilter, allDogPosts, allPetpalPosts, filterPostsByLocation]);
 
   // Initial load and network detection (Merged Logic)
   useEffect(() => {
@@ -581,7 +590,7 @@ export default function CommunityPage() {
     };
     
     getUserAndData();
-  }, [fetchAvailabilityData]);
+  }, [fetchAvailabilityData, supabase]);
 
 
   const openMessageModal = (recipient, availabilityPost) => {
@@ -803,7 +812,7 @@ export default function CommunityPage() {
                 <span className="mr-2">👤</span>
                 PetPals in the Community (No Active Posts)
               </h3>
-              <ProfilesList 
+              <ProfilesList
                 role="petpal" 
                 onMessage={openMessageModal}
                 locationFilter={locationFilter}
@@ -811,41 +820,41 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
-
+        
         {/* Tab Content: My Availability */}
         {activeTab === 'my-availability' && user && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Active and Inactive Posts</h2>
-                <Link
-                  href="/share-availability"
-                  className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
-                >
-                  Create New Post
-                </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {myAvailabilityPosts.map((post) => (
-                <PostCard 
-                    key={post.id} 
-                    post={post} 
-                    isMine={true} 
-                    user={user} 
-                    deletingPost={deletingPost} 
-                    deletePost={deletePost} 
-                />
-              ))}
-              
-              {myAvailabilityPosts.length === 0 && (
-                <div className="col-span-full text-center py-12 bg-white rounded-xl shadow-md border border-gray-200">
-                  <div className="text-6xl mb-4">📅</div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No availability posts yet</h3>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4">Start sharing your availability to connect with the community!</p>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center pb-2 border-b">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Active Posts</h2>
+                    <Link
+                      href="/share-availability"
+                      className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 sm:px-6 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
+                    >
+                      Create New Post
+                    </Link>
                 </div>
-              )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    {myAvailabilityPosts.map((post) => (
+                      <PostCard 
+                          key={post.id} 
+                          post={post} 
+                          isMine={true} 
+                          user={user} 
+                          deletingPost={deletingPost} 
+                          deletePost={deletePost} 
+                      />
+                    ))}
+                    
+                    {myAvailabilityPosts.length === 0 && (
+                      <div className="col-span-full text-center py-12 bg-white rounded-xl shadow-md border border-gray-200">
+                        <div className="text-6xl mb-4">📅</div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No active posts</h3>
+                        <p className="text-sm sm:text-base text-gray-600 mb-4">Click "Create New Post" to share your availability or needs!</p>
+                      </div>
+                    )}
+                </div>
             </div>
-          </div>
         )}
 
         {/* Message Modal */}
