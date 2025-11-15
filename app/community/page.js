@@ -6,7 +6,7 @@ import { createClient } from '@/libs/supabase/client';
 import MessageModal from '@/components/MessageModal';
 import LocationFilter from '@/components/LocationFilter';
 import { calculateDistance } from '@/libs/distance';
-import OptimizedImage from '@/components/ui/OptimizedImage'; 
+import OptimizedImage from '@/components/ui/OptimizedImage';
 
 // ===================================
 //              HELPERS
@@ -439,36 +439,36 @@ export default function CommunityPage() {
 
   const supabase = createClient();
   
-  // Helper function for fetching all dogs for a post (used by fetchAvailabilityData)
-  const fetchDogsForPost = async (post) => {
-      let dogIds = [];
-      
-      if (post.dog_id) {
-          dogIds.push(post.dog_id);
-      }
-      if (post.dog_ids && Array.isArray(post.dog_ids) && post.dog_ids.length > 0) {
-          dogIds = [...dogIds, ...post.dog_ids];
-      }
-      
-      dogIds = [...new Set(dogIds)].filter(Boolean); // Remove duplicates and falsy values
-      
-      if (dogIds.length > 0) {
-          const { data: allDogs, error: dogsError } = await supabase
-              .from('dogs')
-              .select('id, name, breed, photo_url, size')
-              .in('id', dogIds);
-              
-          if (!dogsError && allDogs) {
-              return allDogs;
-          } else {
-              console.error('Error fetching dogs for post:', post.id, dogsError);
-              return [];
-          }
-      }
-      return [];
-  };
-
   const fetchAvailabilityData = useCallback(async (currentUser) => {
+    // Move fetchDogsForPost inside useCallback to avoid dependency issues
+    const fetchDogsForPost = async (post) => {
+        let dogIds = [];
+        
+        if (post.dog_id) {
+            dogIds.push(post.dog_id);
+        }
+        if (post.dog_ids && Array.isArray(post.dog_ids) && post.dog_ids.length > 0) {
+            dogIds = [...dogIds, ...post.dog_ids];
+        }
+        
+        dogIds = [...new Set(dogIds)].filter(Boolean); // Remove duplicates and falsy values
+        
+        if (dogIds.length > 0) {
+            const { data: allDogs, error: dogsError } = await supabase
+                .from('dogs')
+                .select('id, name, breed, photo_url, size')
+                .in('id', dogIds);
+                
+            if (!dogsError && allDogs) {
+                return allDogs;
+            } else {
+                console.error('Error fetching dogs for post:', post.id, dogsError);
+                return [];
+            }
+        }
+        return [];
+    };
+
     // Only set loading state if we are not refreshing
     if (!refreshing) {
         setLoading(true);
@@ -556,7 +556,7 @@ export default function CommunityPage() {
   }, [refreshing, supabase]); 
 
   // Filter posts by location (New Feature Logic)
-  const filterPostsByLocation = (posts, filter) => {
+  const filterPostsByLocation = useCallback((posts, filter) => {
     if (!filter || !posts || posts.length === 0) {
       return posts || [];
     }
@@ -577,7 +577,7 @@ export default function CommunityPage() {
     });
 
     return filteredPosts;
-  };
+  }, []);
 
   // Apply location filter when filter or unfiltered posts change
   useEffect(() => {
@@ -760,7 +760,7 @@ export default function CommunityPage() {
                   href="/share-availability"
                   className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
                 >
-                  Share My Dog's Availability
+                  Share My Dog&apos;s Availability
                 </Link>
               </div>
               
