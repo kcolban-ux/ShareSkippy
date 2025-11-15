@@ -1,67 +1,59 @@
 # CONTRIBUTING to ShareSkippy 🐾
 
-Thank you for your interest in contributing to **ShareSkippy**, the community-based platform for dog care. This guide covers the process, standards, and workflow for making code changes.
+Thanks for contributing to **ShareSkippy**! This document covers the expectations, workflow, and quality checks we follow so contributions stay reliable and secure.
 
----
+## Development environment
 
-## ⚙️ Development Environment
+- Follow the **Local development setup** steps in `README.md`, which rely on Node.js 20.x, `npm`, Supabase, Resend, and the Taskfile workflow (`task dev`).
+- The Taskfile scripts wire together `npx supabase start`, `.env.local` population, and `npm run dev`, so you can focus on building instead of wiring infrastructure.
 
-All contributors must follow the [Local Development Setup steps in the `README.md`](#) to get the project running. This typically includes: **Node.js 20.x**, **Supabase**, and **Taskfile**.
+## Verification commands
 
-**Verification Step**
-Always run the validation commands before creating a Pull Request to ensure all checks pass:
+Run these before opening a PR to keep CI green:
 
 ```bash
-npm run test
 npm run lint
+npm run test
 npm run build
 ```
 
----
+Optionally reset the local database when migrations change:
 
-## 📝 Code Standards & Conventions
+```bash
+task db:reset
+```
 
-We maintain a high standard of quality to ensure the platform is secure, reliable, and easy to maintain.
+## Code standards & expectations
 
-### 1. Code Quality
+- **TypeScript-first:** All new logic should be typed without using `any` unless there is a strong, documented reason. Prefer interfaces, discriminated unions, and `Record` where appropriate.
+- **Hooks & composition:** Use React hooks (`useMemo`, `useCallback`, custom hooks) to keep components modular. Avoid class components and deep prop drilling.
+- **API routes:** Implement server logic with Next.js Route Handlers under `app/api/`.
+- **Security:** Validate external inputs, avoid inline SQL, sanitize data before rendering, and document any assumptions in TSDoc.
+- **Comments:** Use TSDoc-style comments for exported helpers and components. Only explain _why_ something exists, not _what_ it does if that's obvious.
 
-- The project uses **TypeScript** and runs under **strict mode**. New code must be fully typed.
-- Code is automatically formatted using **Prettier** and must pass all linting checks.
-- **Security and Safety** are paramount; ensure all changes are reviewed for potential community trust or data security issues.
+## Workflow
 
-### 2. Technology & Style
+1. **Branching**
 
-- **Next.js:** Components should leverage Server Components by default. Use the `'use client'` directive sparingly, only when interactive features are strictly necessary. Minimize client-side rendering.
-- **UI Components:** Reuse existing components found in the `components/ui/` directory (e.g., `Button.js`, `Icon.js`) to maintain visual consistency.
-- **API Routes:** All API endpoints must use Next.js **Route Handlers** (`app/api/`).
-- **Database:** Changes to the Supabase (PostgreSQL) schema should be introduced via proper **Supabase Migrations**.
+- Never commit directly to `main`. Create descriptive branches (e.g., `feat/add-location-filter`).
+- Keep your branch up to date with `main` to reduce merge conflicts.
 
----
+2. **Committing**
 
-## ➡️ Pull Request Workflow
+- Make focused commits with clear intent, ideally one change per commit.
+- Follow Conventional Commits for clarity (e.g., `fix: prevent null profile crash`).
 
-All contributions must follow a clear, documented process for integration into the `main` branch.
+3. **Pull requests**
 
-### 1. Branching
+- Target `main` and describe:
+  - What changed
+  - Why the change is needed (reference issues or goals)
+  - How to test (include steps or screenshots when relevant)
+- Wait for at least one maintainer review before merging.
+- Testing the preview deployment before merge is encouraged.
+- Production deployments are restricted to the repository owner after approval.
 
-- **Never** commit directly to the `main` branch.
-- Create a new, specific branch for your feature or fix (e.g., `feat/add-new-feature`, `fix/message-bug`).
-- Pull the latest changes from `main` regularly to avoid merge conflicts.
+## Support resources
 
-### 2. Committing
-
-- Keep commits **small and focused**, with each commit representing a single logical, reversible change.
-- Write clear commit messages that explain _what_ you did, following the **Conventional Commits** specification.
-  - _Examples:_ `feat: implement community filtering by distance`, `fix: resolve hydration warning on profile page`, `refactor: optimize data fetching in useProfile hook`.
-
-### 3. Submission and Review
-
-1.  Ensure all checks pass by running validation commands.
-2.  Open a Pull Request (PR) targeting the `main` branch.
-3.  The PR description **must** clearly document:
-    - What was changed.
-    - Why the change was needed (link to an issue or project goal).
-    - How the changes can be tested (include screenshots/videos for visual updates).
-4.  **A code review is mandatory** before a merge can occur. Request a review from Kaia or a maintainer.
-5.  Perform manual inspection and e2e tests of the preview deployment.
-6.  **Poduction Deployment** is restricted to the owner (`Kaia`) after the review is complete and approved.
+- `README.md` has the latest setup instructions, Taskfile workflow, and cron guidance (`scripts/setup-deletion-cron.sh`).
+- Reach out to the maintainers for questions about policy, architecture, or credentials.
