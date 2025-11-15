@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ProfileCard from './ProfileCard';
+import { calculateDistance } from '@/libs/distance';
 
-export default function ProfilesList({ role, onMessage }) {
+export default function ProfilesList({ role, onMessage, locationFilter }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -99,8 +100,31 @@ export default function ProfilesList({ role, onMessage }) {
     }
   }, [isVisible, profiles.length, loading, fetchProfiles]);
 
-  // Filter profiles by role
-  const filteredProfiles = profiles.filter((profile) => {
+  // Filter profiles by location
+  const filterProfilesByLocation = (profiles, filter) => {
+    if (!filter || !filter.lat || !filter.lng) {
+      return profiles;
+    }
+
+    return profiles.filter(profile => {
+      // Skip profiles without location data
+      if (!profile.display_lat || !profile.display_lng) {
+        return false;
+      }
+
+      const distance = calculateDistance(
+        filter.lat,
+        filter.lng,
+        profile.display_lat,
+        profile.display_lng
+      );
+
+      return distance <= filter.radius;
+    });
+  };
+
+  // Filter profiles by role first
+  const roleFilteredProfiles = profiles.filter(profile => {
     if (role === 'dog_owner') {
       return profile.role === 'dog_owner' || profile.role === 'both';
     } else if (role === 'petpal') {
@@ -108,6 +132,11 @@ export default function ProfilesList({ role, onMessage }) {
     }
     return true;
   });
+
+  // Then filter by location if filter is active
+  const filteredProfiles = locationFilter
+    ? filterProfilesByLocation(roleFilteredProfiles, locationFilter)
+    : roleFilteredProfiles;
 
   // Skeleton loader component
   const SkeletonCard = () => (

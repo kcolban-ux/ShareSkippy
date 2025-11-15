@@ -8,84 +8,135 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get('cursor');
-    const filterRole = searchParams.get('role'); // Get the required role
+    const filterRole = searchParams.get('role');
     // Ensure limit is a safe number
     const limit = Math.min(parseInt(searchParams.get('limit') || '24'), 60);
 
-    const supabase = createClient(); // --- 1. Fetch only the owner IDs of active availability posts (Optimized) ---
-    // This small query runs concurrently with the profiles query's preparation.
+    const supabase = createClient();
+
+    // 1. Fetch all user IDs with active availability posts (to exclude them)
     const { data: activeAvailability } = await supabase
       .from('availability')
       .select('owner_id')
       .eq('status', 'active');
-    const ownersWithActivePosts = new Set((activeAvailability || []).map((post) => post.owner_id)); // --- 2. Fetch Profiles with Server-Side Filtering (CRITICAL OPTIMIZATION) ---
 
+    const ownersToExclude = Array.from(
+        new Set((activeAvailability || []).map((post) => post.owner_id))
+    );
+
+    // 2. Build the main profiles query with all filters applied to the database
     let profilesQuery = supabase
       .from('profiles')
       .select(
         `
-        id,
-        first_name,
-        profile_photo_url,
-        city,
-        neighborhood,
-        role,
-        bio,
-        updated_at,
-        user_activity(at) 
-      `
+        id,
+        first_name,
+        profile_photo_url,
+        city,
+        neighborhood,
+        role,
+        bio,
+        display_lat, 
+        display_lng, 
+        updated_at,
+        user_activity(at) 
+        `
       )
-      .not('bio', 'is', null) // Must have a bio
+      // Standard filtering applied to the DB
+      .not('bio', 'is', null)
       .neq('bio', '')
-      .in('role', ['dog_owner', 'petpal', 'both']) // Must have a valid role
-      .order('updated_at', { ascending: false }); // Apply role filter DIRECTLY to the DB query
+      .in('role', ['dog_owner', 'petpal', 'both']);
+
+    // Apply role filter
     if (filterRole) {
       profilesQuery = profilesQuery.eq('role', filterRole);
-    } // Apply cursor BEFORE fetching (CRITICAL OPTIMIZATION)
+    }
 
-    let nextSortKey = null;
+    // Apply the exclusion filter to the DB query (FIXES THE "unexpected 1" ERROR)
+    if (ownersToExclude.length > 0) {
+        profilesQuery = profilesQuery.not('id', 'in', ownersToExclude);
+    }
+    
+    // Apply Keyset Pagination (Cursor) logic to the database query
     if (cursor) {
       try {
-        // Cursor format: 'sortKey|lastId'
-        const [lastSortKey, lastId] = cursor.split('|'); // This uses standard keyset pagination logic
+        // Cursor format: 'updated_at|lastId'
+        const [lastSortKey, lastId] = cursor.split('|'); 
+        
+        // This query instructs the database to only return rows *after* the cursor
         profilesQuery = profilesQuery.or(
           `updated_at.lt.${lastSortKey},and(updated_at.eq.${lastSortKey},id.lt.${lastId})`
         );
-        nextSortKey = lastSortKey; // Keep for next cursor generation logic
       } catch (error) {
         console.error('Error processing cursor:', error);
       }
-    } // Fetch only LIMIT + 1 to check for the next page
+    } 
 
-    profilesQuery = profilesQuery.limit(limit + 1);
+    // 3. Execute the query, ordering and limiting on the database side
+    const { data: rawProfiles, error: profilesError } = await profilesQuery
+        .order('updated_at', { ascending: false })
+        .order('id', { ascending: false }) // Secondary sort key for cursor
+        .limit(limit + 1); // Fetch one extra for the next cursor check
 
-    const { data: allProfiles, error: profilesError } = await profilesQuery;
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
       return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
-    } // --- 3. Filter profiles in memory (only for exclusion list) ---
-    // This should be a small set due to limit + 1
-
-    const filteredProfiles = (allProfiles || [])
-      .filter((profile) => {
-        // Exclude profiles that have an active availability post
-        return !ownersWithActivePosts.has(profile.id);
-      })
-      .map((profile) => ({
-        ...profile,
-        sortKey: profile.updated_at,
-      })); // --- 4. Final Pagination and Cursor Generation ---
-
-    const resultProfiles = filteredProfiles.slice(0, limit);
-    let nextCursor = null; // Check if we fetched one extra profile OR if the initial database query returned more than the limit
-    if (filteredProfiles.length > limit) {
-      const lastProfile = resultProfiles[resultProfiles.length - 1];
-      nextCursor = `${lastProfile.sortKey}|${lastProfile.id}`;
     }
+
+    // 4. Process the small result set for the final output format (In-Memory Transformation)
+    const hasNextPage = rawProfiles.length > limit;
+    const items = rawProfiles.slice(0, limit);
+
+    const resultItems = items.map(profile => {
+      // Calculate last_online_at from user_activity or profiles.updated_at
+      let lastOnlineAt = profile.updated_at;
+      
+      if (profile.user_activity && profile.user_activity.length > 0) {
+        // Find most recent activity on the small result set
+        const mostRecentActivity = profile.user_activity.sort(
+          (a, b) => new Date(b.at) - new Date(a.at)
+        )[0];
+        if (mostRecentActivity && mostRecentActivity.at) {
+          lastOnlineAt = mostRecentActivity.at;
+        }
+      }
+
+      // Truncate bio to ~140 characters
+      const bioExcerpt = profile.bio
+        ? profile.bio.length > 140
+          ? profile.bio.substring(0, 140) + '...'
+          : profile.bio
+        : '';
+        
+      return {
+        id: profile.id,
+        first_name: profile.first_name,
+        photo_url: profile.profile_photo_url,
+        city: profile.city,
+        neighborhood: profile.neighborhood,
+        role: profile.role,
+        bio_excerpt: bioExcerpt,
+        display_lat: profile.display_lat,
+        display_lng: profile.display_lng,
+        last_online_at: lastOnlineAt, 
+        // We include updated_at here for cursor generation
+        updated_at: profile.updated_at
+      };
+    });
+
+    // 5. Generate next cursor
+    let nextCursor = null; 
+    if (hasNextPage) {
+      const lastProfile = items[items.length - 1];
+      // Cursor relies on the database's primary sort key: updated_at
+      nextCursor = `${lastProfile.updated_at}|${lastProfile.id}`;
+    }
+    
     return NextResponse.json({
-      items: resultProfiles,
+      items: resultItems,
       nextCursor,
     });
+    
   } catch (error) {
     console.error('General Error fetching profiles in API:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

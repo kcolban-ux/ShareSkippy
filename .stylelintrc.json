@@ -1,0 +1,18 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "color-hex-case": "lower",
+    "color-hex-length": "short",
+    "comment-empty-line-before": "always",
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-block-no-redundant-longhand-properties": true,
+    "declaration-block-trailing-semicolon": "always",
+    "indentation": 2,
+    "max-line-length": 100,
+    "no-duplicate-selectors": true,
+    "rule-empty-line-before": "always",
+    "selector-list-comma-newline-after": "always",
+    "selector-list-comma-space-after": "always-single-line"
+  }
+}
+

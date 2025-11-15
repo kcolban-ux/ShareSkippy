@@ -129,6 +129,8 @@ export default function MyDogsPage() {
                       src={dog.photo_url}
                       alt={dog.name}
                       className="w-full h-full object-cover"
+                      width={400}
+                      height={400}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
@@ -137,9 +139,8 @@ export default function MyDogsPage() {
                   )}
 
                   {/* Overlay with quick actions */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
-                      <Link
+                  <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-all duration-200 flex items-center justify-center pointer-events-none">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2 pointer-events-auto">  <Link
                         href={`/my-dogs/${dog.id}/edit`}
                         className="bg-white text-gray-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
                       >
@@ -153,8 +154,8 @@ export default function MyDogsPage() {
                       </button>
                     </div>
                   </div>
-                </div>
 
+                </div>
                 {/* Dog Info */}
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{dog.name}</h3>
