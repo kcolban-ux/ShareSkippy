@@ -12,6 +12,11 @@ interface ScrollSpyTocProps {
   sections: Section[];
 }
 
+/**
+ * Renders a sticky table of contents that highlights the section in view.
+ *
+ * @param props.sections - Ordered list of headings to include in the TOC.
+ */
 export default function ScrollSpyToc({ sections }: ScrollSpyTocProps) {
   const [activeId, setActiveId] = useState<string>('');
 

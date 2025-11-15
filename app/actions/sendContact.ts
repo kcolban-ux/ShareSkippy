@@ -3,6 +3,17 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { rateLimit } from "@/lib/ratelimit";
+/**
+ * Validates contact form submissions, applies rate limiting, and emails support using Resend.
+ * @param formData - The `FormData` payload submitted by the client.
+ * @returns A success flag plus optional inline error messages.
+ */
+export async function sendContact(formData: FormData) {
+"use server";
+
+import { z } from "zod";
+import { headers } from "next/headers";
+import { rateLimit } from "@/lib/ratelimit";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),

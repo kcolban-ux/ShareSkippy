@@ -5,6 +5,12 @@ interface SectionHeadingProps {
   children: React.ReactNode;
 }
 
+/**
+ * Renders a section heading with a convenient permalink anchor.
+ *
+ * @param props.id - Unique anchor ID for the section.
+ * @param props.children - Heading copy to display.
+ */
 export default function SectionHeading({ id, children }: SectionHeadingProps) {
   return (
     <div className="flex items-center gap-2 group">

@@ -16,7 +16,14 @@ const variantClasses = {
   gray: 'bg-gray-100 text-gray-800',
 };
 
-export default function Badge({ children, variant = 'blue', className }: BadgeProps) {
+/**
+ * Displays a stylized label chip in configurable tones for small metadata.
+ *
+ * @param props.children - Label text or inline elements.
+ * @param props.variant - Visual tone to apply (default `blue`).
+ * @param props.className - Additional classes forwarded to the wrapper.
+ */
+export default function Badge({ children, variant = 'blue', className }: Readonly<BadgeProps>) {
   return (
     <span
       className={cn(
