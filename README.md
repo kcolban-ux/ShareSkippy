@@ -16,67 +16,82 @@ ShareSkippy makes it easy for dog owners to find trusted community members who c
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Auth, Storage)
-- **Deployment**: Vercel
-- **Styling**: DaisyUI, Tailwind CSS
+- **Frontend:** Next.js 14 (App Router), React, Tailwind CSS with DaisyUI
+- **Backend:** Supabase (PostgreSQL, Auth, Storage)
+- **Infra:** Vercel deployments
+- **Email:** Resend for magic links and transactional notifications
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-
-- Node.js 20.x
+- Node.js 20.x (see `engines.node` in `package.json`)
+- npm 10+ (per `packageManager`)
 - Git
-- A code editor (we recommend VS Code)
-- [Taskfile](https://taskfile.dev/docs/installation)
-- Fork of the main repository
+- Taskfile CLI (`task`, install instructions at https://taskfile.dev/docs/installation)
 
-### Local Development Setup
+## Local development setup (recommended)
 
-1. **Clone the forked repository**
+1. **Clone your fork**
 
-   `git clone https://github.com/YOUR_USERNAME/ShareSkippy.git`
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/ShareSkippy.git
+   cd ShareSkippy
+   ```
 
-   `cd ShareSkippy`
+2. **Run the Taskfile dev workflow**
 
-2. **Install dependencies**
+   ```bash
+   task dev
+   ```
 
-   `task dev`
+   This performs:
+   - `task setup:init` → installs dependencies and initializes Supabase (say `n` when asked about telemetry)
+   - `task services:start` → boots the local Supabase services
+   - `task setup:env` → copies `.env.example` to `.env.local`, populates Supabase keys via `scripts/populate-env-keys.{ps1,sh}`, and prints guidance for the required `RESEND_API_KEY`
+   - `npm run dev` → launches the Next.js dev server
 
-   Enter 'n' for Supabase's init questions when prompted
+   `task dev` defers `task services:stop`, so Supabase stops automatically once you exit the session.
 
-3. **Optional: Add Resend API Key**
+3. **Edit secrets**
 
-   For integration testing with Resend, add your API key to your .env.local file from [resend.com](https://resend.com).
+   Update `.env.local` with:
+   - Verify Supabase connection values (URL, anon key, service role key)
+   - Optional `RESEND_API_KEY` for sending emails
+   - Optional `CRON_SECRET_TOKEN` for the deletion cron job (`scripts/setup-deletion-cron.sh` explains how to use this)
 
-4. **Open your browser**
+4. **Open the app**
 
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Visit `http://localhost:3000` once `npm run dev` reports the server is ready.
 
-### Verify Setup
+## Environment variables
 
-Run these commands to ensure everything is working:
+- The template lives in `.env.example`; it documents the required Supabase/Resend keys and sets `NODE_ENV=development` by default.
+- `scripts/populate-env-keys.ps1` / `scripts/populate-env-keys.sh` are invoked by the Taskfile to refresh Supabase anon and service keys when the local stack starts.
+- Optional placeholders for Stripe/OpenAI remain commented for historical reference, but we rely solely on Supabase and Resend for now.
+
+## Helpful commands
+
+- `task dev`: full setup, Supabase start, env generation, and `npm run dev`.
+- `task setup:env`: ensure `.env.local` exists and remind you to add `RESEND_API_KEY`.
+- `task setup:env:supabase:populate`: refresh Supabase keys from `npx supabase status -o env` (Windows uses PowerShell, macOS/Linux run the shell script).
+- `task services:start` / `task services:stop`: manually control the local Supabase stack.
+- `task db:reset`: reset the database if migrations are out of sync.
+- `npm run lint`, `npm run test`, `npm run build`: validation tools the project runs in CI.
+
+## Cron job helper
+
+- `scripts/setup-deletion-cron.sh` guides you through configuring the `CRON_SECRET_TOKEN` and adding the secure endpoint to your scheduler (cron, GitHub Actions, Vercel Cron, etc.).
+
+## Verification checklist
 
 ```bash
-npm run validate  # Runs all checks: formatting, linting, type checking, tests
+npm run lint
+task db:reset   # optional; useful before seeding or migrations
+npm run test
 ```
 
-## Development environment
+## Contributing & support
 
-- Node: 20.x (see `.nvmrc`)
-- Package manager: npm (see `packageManager` in `package.json`)
-
-## Local Authentication
-
-- Google authentication requires setting up a GCP project for authentication and adding your own API key to the project.
-- Magic link is the preferred method of local authentication.
-  1.  Navigate to sign in, enter your email, and click the magic link button.
-  2.  Navigate to http://localhost:54324 to find the email with the magic link.
-  3.  Click the link. It will automatically open a new tab to the app.
-
-## Contributing
-
-This is a community-driven project. We welcome contributions!
+Community contributions are welcome! Make sure the above setup works locally, run the verification commands, describe your changes in the PR, and request a review once automated checks pass.
 
 ## License
 

@@ -11,6 +11,9 @@ const safetyItems = [
   'Keep emergency contact information for both humans and dogs readily available',
 ];
 
+/**
+ * Displays a quick safety reminder list for users and guests.
+ */
 export default function SafetyChecklist() {
   return (
     <Callout tone="red" title="✅ Quick Safety Checklist">
