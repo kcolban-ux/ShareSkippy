@@ -813,8 +813,8 @@ export default function CommunityPage() {
                 <span className="mr-2">🐕</span>
                 Dog Owners in the Community
               </h3>
-              <ProfilesList 
-                role="dog_owner" 
+              <ProfilesList
+                role="dog_owner"
                 onMessage={openMessageModal}
                 locationFilter={locationFilter}
               />
@@ -976,8 +976,8 @@ export default function CommunityPage() {
                 <span className="mr-2">🤝</span>
                 PetPals in the Community
               </h3>
-              <ProfilesList 
-                role="petpal" 
+              <ProfilesList
+                role="petpal"
                 onMessage={openMessageModal}
                 locationFilter={locationFilter}
               />
