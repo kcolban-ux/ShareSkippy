@@ -15,6 +15,7 @@ export async function GET(request) {
     const supabase = createClient();
 
     // 1. Fetch all user IDs with active availability posts (to exclude them)
+    // This is a fast, small query.
     const { data: activeAvailability } = await supabase
       .from('availability')
       .select('owner_id')
@@ -45,16 +46,19 @@ export async function GET(request) {
       // Standard filtering applied to the DB
       .not('bio', 'is', null)
       .neq('bio', '')
-      .in('role', ['dog_owner', 'petpal', 'both']);
+      .in('role', ['dog_owner', 'petpal', 'both']); // Keep all eligible roles initially
 
-    // Apply role filter
+    // Apply role filter (e.g., dog_owner only)
     if (filterRole) {
       profilesQuery = profilesQuery.eq('role', filterRole);
     }
 
-    // Apply the exclusion filter to the DB query (FIXES THE "unexpected 1" ERROR)
+    // Apply the exclusion filter directly to the DB query
     if (ownersToExclude.length > 0) {
-        profilesQuery = profilesQuery.not('id', 'in', ownersToExclude);
+        // FIX: Manually format the list of IDs with parentheses and join them.
+        // This ensures the PostgREST API correctly parses the list, fixing the PGRST100 error.
+        const ownersList = ownersToExclude.join(',');
+        profilesQuery = profilesQuery.not('id', 'in', `(${ownersList})`);
     }
     
     // Apply Keyset Pagination (Cursor) logic to the database query
@@ -74,8 +78,9 @@ export async function GET(request) {
 
     // 3. Execute the query, ordering and limiting on the database side
     const { data: rawProfiles, error: profilesError } = await profilesQuery
+        // Sort by updated_at (primary) and ID (secondary)
         .order('updated_at', { ascending: false })
-        .order('id', { ascending: false }) // Secondary sort key for cursor
+        .order('id', { ascending: false }) 
         .limit(limit + 1); // Fetch one extra for the next cursor check
 
     if (profilesError) {
@@ -88,11 +93,10 @@ export async function GET(request) {
     const items = rawProfiles.slice(0, limit);
 
     const resultItems = items.map(profile => {
-      // Calculate last_online_at from user_activity or profiles.updated_at
+      // Calculate last_online_at 
       let lastOnlineAt = profile.updated_at;
       
       if (profile.user_activity && profile.user_activity.length > 0) {
-        // Find most recent activity on the small result set
         const mostRecentActivity = profile.user_activity.sort(
           (a, b) => new Date(b.at) - new Date(a.at)
         )[0];
