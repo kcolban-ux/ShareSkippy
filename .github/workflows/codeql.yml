@@ -24,7 +24,7 @@ jobs:
       matrix:
         include:
           - language: javascript-typescript
-            build-mode: manual
+            build-mode: none
           - language: actions
             build-mode: none
 
