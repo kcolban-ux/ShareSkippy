@@ -3,6 +3,20 @@ import { createClient } from '@/libs/supabase/server';
 import { sendEmail } from '@/libs/resend';
 import { strictRateLimit } from '@/libs/rateLimit';
 
+const updateResultsWithBatch = (results, batchResults) => {
+  for (const result of batchResults) {
+    if (result.success) {
+      results.successful++;
+    } else {
+      results.failed++;
+      results.errors.push({
+        email: result.email,
+        error: result.error,
+      });
+    }
+  }
+};
+
 export async function POST(request) {
   try {
     // Apply rate limiting
@@ -129,17 +143,7 @@ export async function POST(request) {
       const batchResults = await Promise.all(batchPromises);
 
       // Update results
-      batchResults.forof((result) => {
-        if (result.success) {
-          results.successful++;
-        } else {
-          results.failed++;
-          results.errors.push({
-            email: result.email,
-            error: result.error,
-          });
-        }
-      });
+      updateResultsWithBatch(results, batchResults);
 
       // Add delay between batches to respect rate limits
       if (i + batchSize < users.length) {
