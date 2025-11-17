@@ -31,7 +31,7 @@
   @keyframes appearfromright {
     0% {
       opacity: 0.3;
-      transform: translate(15%, 0 pi);
+      transform: translate(15%, 0 px);
     }
 
     100% {
