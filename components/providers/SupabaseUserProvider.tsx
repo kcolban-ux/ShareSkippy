@@ -111,7 +111,7 @@ export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
 
       if (!logoutResponse.ok) {
         const serverMessage =
-          (await logoutResponse.text()) || 'Failed to revoke session on server.';
+          (await logoutResponse.text()) ?? 'Failed to revoke session on server.';
         throw new Error(serverMessage);
       }
 
