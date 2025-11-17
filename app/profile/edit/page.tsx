@@ -231,7 +231,7 @@ export default function ProfileEditPage() {
     };
 
     initializeProfile();
-  }, [isAuthLoading, router, loadDraft, setProfile, loadProfile]);
+  }, [isAuthLoading, router, user, loadDraft, setProfile, loadProfile]);
   // #endregion Data Loading Logic
 
   /**
