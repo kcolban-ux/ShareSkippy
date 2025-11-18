@@ -1,34 +1,47 @@
+// #region Imports
 import React from 'react';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMeetings, useUpdateMeetingStatus } from './useMeetings';
-// 1. Import the specific hook to mock
 import { useUser } from '@/components/providers/SupabaseUserProvider';
+// #endregion Imports
 
-// 2. Mock the module with a factory, providing a jest.fn() for the hook
+// #region Mocks
+/**
+ * Mock the SupabaseUserProvider module to gain control over the useUser hook.
+ */
 jest.mock('@/components/providers/SupabaseUserProvider', () => ({
   useUser: jest.fn(),
 }));
 
-// 3. Cast the imported hook to a Jest mock for type safety
+/**
+ * Create a typed mock reference for the useUser hook.
+ */
 const useUserMock = useUser as jest.Mock;
 
-// 4. Cast globalThis.fetch to a mock to satisfy TypeScript
+/**
+ * Mock the global fetch function for intercepting API calls.
+ */
 (globalThis.fetch as jest.Mock) = jest.fn();
-// Create a typed alias for easier use
 const fetchMock = globalThis.fetch as jest.Mock;
+// #endregion Mocks
 
+// #region Test Helpers
+/**
+ * Creates a React Query client and a wrapper component for testing hooks.
+ * Disables query/mutation retries to ensure tests run quickly and are deterministic.
+ *
+ * @returns {React.ComponentType<{ children: React.ReactNode }>} A QueryClientProvider component.
+ */
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
       },
-      // THIS BLOCK IS REQUIRED TO MAKE THE TEST PASS
       mutations: {
         retry: false,
       },
-      //
     },
   });
 
@@ -40,35 +53,31 @@ const createWrapper = () => {
 
   return QueryProvider;
 };
+// #endregion Test Helpers
 
+// #region Test Suites
 describe('useMeetings', () => {
   beforeEach(() => {
-    // Clear mocks for both fetch and the user hook
     fetchMock.mockClear();
     useUserMock.mockClear();
-
-    // Set a default successful user mock
     useUserMock.mockReturnValue({ user: { id: '123' }, loading: false });
   });
 
   it('should fetch meetings successfully', async () => {
     const meetings = [{ id: 1, name: 'Meeting 1' }];
 
-    // 6. Provide *two* mocks, one for each call
     fetchMock
       .mockResolvedValueOnce({
-        // First call: /api/meetings/update-status
         ok: true,
         status: 200,
         headers: new Headers(),
         json: async () => ({}),
       })
       .mockResolvedValueOnce({
-        // Second call: /api/meetings
         ok: true,
         status: 200,
         headers: new Headers(),
-        json: async () => ({ meetings }), // <-- Return the expected payload
+        json: async () => ({ meetings }),
       });
 
     const { result } = renderHook(() => useMeetings(), { wrapper: createWrapper() });
@@ -79,32 +88,27 @@ describe('useMeetings', () => {
       method: 'POST',
     });
     expect(fetchMock).toHaveBeenCalledWith('/api/meetings');
-    // This will now pass
-    expect(result.current.data.meetings).toEqual(meetings);
+    expect(result.current.data?.meetings).toEqual(meetings);
   });
 
   it('should return an error if fetching meetings fails', async () => {
-    // 7. Mock the second call as a failure
     fetchMock
       .mockResolvedValueOnce({
-        // First call: /api/meetings/update-status (Succeeds)
         ok: true,
         status: 200,
         headers: new Headers(),
         json: async () => ({}),
       })
       .mockResolvedValueOnce({
-        // Second call: /api/meetings (Fails)
-        ok: false, // <-- Set to false
+        ok: false,
         status: 500,
         headers: new Headers(),
-        json: async () => ({ error: 'Failed to fetch' }), // <-- Return error payload
+        json: async () => ({ error: 'Failed to fetch' }),
       });
 
     const { result } = renderHook(() => useMeetings(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    // This will now pass
     expect(result.current.error?.message).toBe('Failed to fetch');
   });
 
@@ -129,7 +133,6 @@ describe('useUpdateMeetingStatus', () => {
     const status = 'confirmed';
     const message = 'Confirmed';
 
-    // 8. Add status and headers to the mock
     fetchMock.mockResolvedValue({
       ok: true,
       status: 200,
@@ -141,7 +144,11 @@ describe('useUpdateMeetingStatus', () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ meetingId, status, message });
+    result.current.mutate({
+      meetingId,
+      status: status as Parameters<typeof result.current.mutate>[0]['status'],
+      message,
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -157,7 +164,6 @@ describe('useUpdateMeetingStatus', () => {
     const status = 'confirmed';
     const message = 'Confirmed';
 
-    // 9. Add status and headers to the mock
     fetchMock.mockResolvedValue({
       ok: false,
       status: 500,
@@ -169,9 +175,33 @@ describe('useUpdateMeetingStatus', () => {
       wrapper: createWrapper(),
     });
 
-    result.current.mutate({ meetingId, status, message });
+    const originalSetTimeout = globalThis.setTimeout;
+    const immediateSetTimeout = ((callback: TimerHandler, _delay?: number, ...args: any[]) => {
+      if (typeof callback === 'function') {
+        act(() => {
+          callback(...args);
+        });
+      }
+      return originalSetTimeout(() => undefined, 0);
+    }) as unknown as typeof setTimeout;
+    (immediateSetTimeout as unknown as { __promisify__?: typeof setTimeout }).__promisify__ = (
+      originalSetTimeout as unknown as { __promisify__?: typeof setTimeout }
+    ).__promisify__;
+    globalThis.setTimeout = immediateSetTimeout;
 
-    await waitFor(() => expect(result.current.isError).toBe(true));
+    try {
+      await expect(
+        result.current.mutateAsync({
+          meetingId,
+          status: status as Parameters<typeof result.current.mutate>[0]['status'],
+          message,
+        })
+      ).rejects.toThrow('Update failed');
+    } finally {
+      globalThis.setTimeout = originalSetTimeout;
+    }
+
     expect(result.current.error?.message).toBe('Update failed');
   });
 });
+// #endregion Test Suites
