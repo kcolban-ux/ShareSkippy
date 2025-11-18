@@ -51,11 +51,6 @@ jobs:
           queries: security-extended,security-and-quality
           config-file: ./.github/codeql/codeql-config.yml
 
-      - name: Run manual build steps
-        if: matrix.build-mode == 'manual'
-        run: |
-          npm run build --if-present
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
