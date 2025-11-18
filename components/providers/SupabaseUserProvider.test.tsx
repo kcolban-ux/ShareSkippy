@@ -1,15 +1,26 @@
 import '@testing-library/jest-dom';
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, afterEach, beforeAll } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Session } from '@supabase/supabase-js';
-import { SupabaseUserProvider, useUser } from '@/components/providers/SupabaseUserProvider';
 import { createClient } from '@/libs/supabase/client';
 
+const mockCreateClient = jest.fn<() => ReturnType<typeof createClient>>();
+
 jest.mock('@/libs/supabase/client', () => ({
-  createClient: jest.fn(),
+  createClient: mockCreateClient,
 }));
 
 type BrowserClient = Awaited<ReturnType<typeof import('@/libs/supabase/client').createClient>>;
+
+let SupabaseUserProvider: typeof import('./SupabaseUserProvider').SupabaseUserProvider;
+let useUserHook: typeof import('./SupabaseUserProvider').useUser;
+
+beforeAll(async () => {
+  // @ts-expect-error NodeNext requires extension enforcement, but Jest's ts-jest resolves the .tsx file at runtime.
+  const module = await import('./SupabaseUserProvider');
+  SupabaseUserProvider = module.SupabaseUserProvider;
+  useUserHook = module.useUser;
+});
 
 describe('SupabaseUserProvider', () => {
   const mockSignOut = jest.fn<() => Promise<{ error: Error | null }>>();
@@ -26,12 +37,20 @@ describe('SupabaseUserProvider', () => {
   } as unknown as BrowserClient;
 
   const TestConsumer = () => {
-    const { user, signOut, loading } = useUser();
+    if (!useUserHook) {
+      throw new Error('useUser hook not initialized');
+    }
+    const { user, signOut, loading } = useUserHook();
 
     return (
       <div>
         <span data-testid="user-id">{user?.id ?? 'no-user'}</span>
-        <button onClick={() => void signOut()} disabled={loading}>
+        <button
+          onClick={() => {
+            signOut().catch(() => {});
+          }}
+          disabled={loading}
+        >
           Sign Out
         </button>
       </div>
@@ -66,7 +85,7 @@ describe('SupabaseUserProvider', () => {
       json: async () => ({ error: null }),
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
-    (createClient as jest.MockedFunction<typeof createClient>).mockReturnValue(supabaseClient);
+    mockCreateClient.mockReturnValue(supabaseClient);
   });
 
   afterEach(() => {
@@ -97,7 +116,10 @@ describe('SupabaseUserProvider', () => {
 
   it('throws when useUser is consumed outside the provider', () => {
     const BrokenConsumer = () => {
-      useUser();
+      if (!useUserHook) {
+        throw new Error('useUser hook not initialized');
+      }
+      useUserHook();
       return null;
     };
 
