@@ -1,3 +1,4 @@
+// #region Imports
 import {
   sendEmail,
   scheduleEmail,
@@ -9,17 +10,27 @@ import {
 } from './sendEmail'; // Adjust path if your test file is elsewhere
 import { sendEmail as resendSendEmail } from '@/libs/resend';
 import { loadEmailTemplate } from './templates';
+// #endregion Imports
 
-// Mock external dependencies
+// #region Mocks
+/**
+ * Mock the Resend email sending library.
+ */
 jest.mock('@/libs/resend', () => ({
   sendEmail: jest.fn(),
 }));
 
+/**
+ * Mock the email template loading utility.
+ */
 jest.mock('./templates', () => ({
   loadEmailTemplate: jest.fn(),
 }));
 
-// Mock the Supabase client chain
+/**
+ * Create a chainable mock object for the Supabase client query builder.
+ * Each method returns `this` to allow chaining (e.g., .select().eq()...).
+ */
 const mockSupabaseChain = {
   select: jest.fn().mockReturnThis(),
   insert: jest.fn().mockReturnThis(),
@@ -31,24 +42,40 @@ const mockSupabaseChain = {
   single: jest.fn(),
 };
 
+/**
+ * Mock the Supabase client's `.from()` method.
+ */
 const mockFrom = jest.fn(() => mockSupabaseChain);
+
+/**
+ * Mock the service client factory.
+ */
 const mockCreateServiceClient = jest.fn(() => ({ from: mockFrom }));
 
+/**
+ * Mock the server-side Supabase client module.
+ */
 jest.mock('@/libs/supabase/server', () => ({
-  createServiceClient: () => mockCreateServiceClient(),
+  createClient: () => mockCreateServiceClient(),
 }));
 
-// Type-safe mock functions
+/**
+ * Create typed references to the mocked functions for type-safe usage.
+ */
 const mockedResendSendEmail = resendSendEmail as jest.Mock;
 const mockedLoadEmailTemplate = loadEmailTemplate as jest.Mock;
 
-// Silence console output during tests
+/**
+ * Silence console logs and errors during tests to keep test output clean.
+ */
 jest.spyOn(console, 'log').mockImplementation(() => {});
 jest.spyOn(console, 'error').mockImplementation(() => {});
+// #endregion Mocks
 
-// Test data
+// #region Test Data
 const testUserId = 'user-123-abc';
 const testEmail = 'test@example.com';
+
 const baseEmailParams: SendEmailParams = {
   userId: testUserId,
   to: testEmail,
@@ -65,11 +92,14 @@ const mockEmailEvent: EmailEvent = {
   payload: {},
   created_at: new Date().toISOString(),
 };
+// #endregion Test Data
 
 describe('Email Service', () => {
+  // #region Test Lifecycle
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Reset all mock chain methods and their implementations
     mockSupabaseChain.select.mockClear().mockReturnThis();
     mockSupabaseChain.insert.mockClear().mockReturnThis();
     mockSupabaseChain.update.mockClear().mockReturnThis();
@@ -86,36 +116,37 @@ describe('Email Service', () => {
   afterAll(() => {
     jest.restoreAllMocks();
   });
+  // #endregion Test Lifecycle
 
-  // ----------------------------------------
-  // sendEmail
-  // ----------------------------------------
+  // #region Test Cases
   describe('sendEmail', () => {
     it('should send an email using a template', async () => {
-      // 1. Mock idempotency check (select.eq.eq.single)
-      // FIX: The correct function is .mockImplementationOnce()
-      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain); // for .eq('user_id', ...)
-      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain); // for .eq('email_type', ...)
-      mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null }); // for .single()
+      /**
+       * Mock the database flow for a new email:
+       * 1. Idempotency check: .single() resolves to { data: null } (no existing email).
+       * 2. Template loading: mockedLoadEmailTemplate resolves with content.
+       * 3. Event creation: .single() resolves with the new event object.
+       * 4. Resend call: mockedResendSendEmail resolves with a Resend ID.
+       * 5. Event update: .eq() (for the update) resolves successfully.
+       */
+      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain);
+      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain);
+      mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null });
 
-      // 2. Mock template loading
       mockedLoadEmailTemplate.mockResolvedValue({
         subject: 'Welcome!',
         html: '<p>Welcome</p>',
         text: 'Welcome',
       });
 
-      // 3. Mock DB event creation (insert.select.single)
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: mockEmailEvent,
         error: null,
-      }); // for .single()
+      });
 
-      // 4. Mock Resend success
       mockedResendSendEmail.mockResolvedValue({ id: 'resend-id-123' });
 
-      // 5. Mock DB event update (success) (update.eq)
-      mockSupabaseChain.eq.mockResolvedValueOnce({ error: null }); // for .eq('id', ...)
+      mockSupabaseChain.eq.mockResolvedValueOnce({ error: null });
 
       const result = await sendEmail(baseEmailParams);
 
@@ -156,7 +187,12 @@ describe('Email Service', () => {
         text: 'Hi',
       };
 
-      // 1. Mock DB event creation
+      /**
+       * Mock the flow for an explicit email (no idempotency check):
+       * 1. Event creation: .single() resolves with the new event.
+       * 2. Resend call: mockedResendSendEmail resolves.
+       * 3. Event update: .eq() resolves.
+       */
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: {
           ...mockEmailEvent,
@@ -165,9 +201,7 @@ describe('Email Service', () => {
         },
         error: null,
       });
-      // 2. Mock Resend
       mockedResendSendEmail.mockResolvedValue({ id: 'resend-id-456' });
-      // 3. Mock DB update
       mockSupabaseChain.eq.mockResolvedValueOnce({ error: null });
 
       await sendEmail(explicitParams);
@@ -186,12 +220,15 @@ describe('Email Service', () => {
       const existingEvent = { id: 99, status: 'sent' };
       const fullExistingEvent = { ...mockEmailEvent, id: 99, status: 'sent' };
 
-      // 1. Mock idempotency check (finds existing)
+      /**
+       * Mock the idempotency check finding an existing event:
+       * 1. Check: .single() resolves with the existing event stub.
+       * 2. Fetch full event: .single() resolves with the full event.
+       */
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: existingEvent,
         error: null,
       });
-      // 2. Mock fetch full event to return
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: fullExistingEvent,
         error: null,
@@ -207,30 +244,32 @@ describe('Email Service', () => {
     it('should handle Resend failure and update event status', async () => {
       const sendError = new Error('Resend API failed');
 
-      // 1. Mock idempotency check (select.eq.eq.single)
-      // FIX: The correct function is .mockImplementationOnce()
-      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain); // for .eq('user_id', ...)
-      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain); // for .eq('email_type', ...)
-      mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null }); // for .single()
+      /**
+       * Mock the flow for a failed Resend API call:
+       * 1. Idempotency check: .single() resolves { data: null }.
+       * 2. Template loading: Resolves successfully.
+       * 3. Event creation: .single() resolves with the new event.
+       * 4. Resend call: mockedResendSendEmail REJECTS with an error.
+       * 5. Event update (failure): .eq() resolves successfully.
+       */
+      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain);
+      mockSupabaseChain.eq.mockImplementationOnce(() => mockSupabaseChain);
+      mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null });
 
-      // 2. Mock template
       mockedLoadEmailTemplate.mockResolvedValue({
         subject: 'Welcome!',
         html: '<p>Welcome</p>',
         text: 'Welcome',
       });
 
-      // 3. Mock event creation (insert.select.single)
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: mockEmailEvent,
         error: null,
-      }); // for .single()
+      });
 
-      // 4. Mock Resend failure
       mockedResendSendEmail.mockRejectedValue(sendError);
 
-      // 5. Mock DB update (failure) (update.eq)
-      mockSupabaseChain.eq.mockResolvedValueOnce({ error: null }); // for .eq('id', ...)
+      mockSupabaseChain.eq.mockResolvedValueOnce({ error: null });
 
       await expect(sendEmail(baseEmailParams)).rejects.toThrow('Resend API failed');
 
@@ -242,10 +281,8 @@ describe('Email Service', () => {
     });
 
     it('should throw if subject is missing', async () => {
-      // 1. Mock idempotency check (no existing email)
       mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null });
 
-      // 2. Mock template
       mockedLoadEmailTemplate.mockResolvedValue({
         subject: null,
         html: '<p>Hi</p>',
@@ -258,17 +295,14 @@ describe('Email Service', () => {
     });
 
     it('should throw if event creation fails', async () => {
-      // 1. Mock idempotency check (no existing email)
       mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null });
 
-      // 2. Mock template
       mockedLoadEmailTemplate.mockResolvedValue({
         subject: 'Welcome!',
         html: '<p>Hi</p>',
         text: 'Hi',
       });
 
-      // 3. Mock DB insert failure
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: null,
         error: new Error('DB insert error'),
@@ -280,9 +314,6 @@ describe('Email Service', () => {
     });
   });
 
-  // ----------------------------------------
-  // scheduleEmail
-  // ----------------------------------------
   describe('scheduleEmail', () => {
     it('should insert a scheduled email record', async () => {
       const runAfter = new Date('2025-12-01T10:00:00Z');
@@ -319,9 +350,6 @@ describe('Email Service', () => {
     });
   });
 
-  // ----------------------------------------
-  // recordUserActivity
-  // ----------------------------------------
   describe('recordUserActivity', () => {
     it('should insert a user activity record', async () => {
       mockSupabaseChain.insert.mockResolvedValue({ error: null });
@@ -333,7 +361,6 @@ describe('Email Service', () => {
       });
 
       expect(mockFrom).toHaveBeenCalledWith('user_activity');
-      // FIX: Corrected typo in expectation
       expect(mockSupabaseChain.insert).toHaveBeenCalledWith({
         user_id: testUserId,
         event: 'login',
@@ -361,9 +388,6 @@ describe('Email Service', () => {
     });
   });
 
-  // ----------------------------------------
-  // getUserLastActivity
-  // ----------------------------------------
   describe('getUserLastActivity', () => {
     it('should return the last activity date if found', async () => {
       const activityDate = '2025-10-20T12:00:00Z';
@@ -394,9 +418,6 @@ describe('Email Service', () => {
     });
   });
 
-  // ----------------------------------------
-  // shouldSendReengageEmail
-  // ----------------------------------------
   describe('shouldSendReengageEmail', () => {
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date('2025-10-31T12:00:00Z'));
@@ -408,11 +429,15 @@ describe('Email Service', () => {
 
     it('should return true if inactive for 7+ days and no recent re-engage', async () => {
       const lastLogin = '2025-10-20T12:00:00Z';
+      /**
+       * Mock:
+       * 1. Get last login: .single() resolves with an old date.
+       * 2. Check for recent re-engage: .single() resolves { data: null }.
+       */
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: { at: lastLogin },
         error: null,
       });
-
       mockSupabaseChain.single.mockResolvedValueOnce({ data: null, error: null });
 
       const result = await shouldSendReengageEmail(testUserId);
@@ -438,11 +463,15 @@ describe('Email Service', () => {
 
     it('should return false if inactive but already re-engaged recently', async () => {
       const lastLogin = '2025-10-20T12:00:00Z';
+      /**
+       * Mock:
+       * 1. Get last login: .single() resolves with an old date.
+       * 2. Check for recent re-engage: .single() resolves with a recent email.
+       */
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: { at: lastLogin },
         error: null,
       });
-
       mockSupabaseChain.single.mockResolvedValueOnce({
         data: { created_at: '2025-10-25T12:00:00Z' },
         error: null,
@@ -463,4 +492,5 @@ describe('Email Service', () => {
       expect(mockFrom).toHaveBeenCalledTimes(1);
     });
   });
+  // #endregion Test Cases
 });
