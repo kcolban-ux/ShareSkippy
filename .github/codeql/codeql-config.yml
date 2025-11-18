@@ -1,4 +1,4 @@
-name: "ShareSkippy CodeQL Config"
+name: 'ShareSkippy CodeQL Config'
 
 paths-ignore:
   - 'node_modules'
@@ -11,3 +11,4 @@ paths-ignore:
   - '**/*.spec.tsx'
   - 'jest.config.ts'
   - 'jest.setup.js'
+  - '**/tests/*'
