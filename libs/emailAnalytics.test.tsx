@@ -1,6 +1,6 @@
 jest.mock('./supabase/server');
 
-import { createServiceClient } from './supabase/server';
+import { createClient } from './supabase/server';
 import { EmailAnalytics } from './emailAnalytics';
 
 // Mock the external dependency
@@ -16,7 +16,7 @@ const mockSupabaseChain = {
 
 const mockFrom = jest.fn(() => mockSupabaseChain);
 
-const mockedCreateServiceClient = createServiceClient as jest.Mock;
+const mockedCreateServiceClient = createClient as jest.Mock;
 
 mockedCreateServiceClient.mockImplementation(() => ({
   from: mockFrom,
