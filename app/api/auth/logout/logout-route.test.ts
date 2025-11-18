@@ -8,33 +8,52 @@ import {
     it,
     jest,
 } from "@jest/globals";
-import { POST } from "@/app/api/auth/logout/route";
-import { createClient } from "@/libs/supabase/server";
-
-jest.mock("@/libs/supabase/server", () => ({
-    createClient: jest.fn(),
-}));
-
 type SupabaseServerClient = Awaited<
     ReturnType<typeof import("@/libs/supabase/server").createClient>
 >;
 
+type LogoutRouteModule = typeof import("./route");
+type LogoutRoutePOST = LogoutRouteModule["POST"];
+
+const mockSignOut = jest.fn<() => Promise<{ error: Error | null }>>();
+const mockClient = {
+    auth: {
+        signOut: mockSignOut,
+    },
+} as unknown as SupabaseServerClient;
+
+const mockCookieStore = {
+    getAll: jest.fn(() => []),
+    set: jest.fn(),
+    setAll: jest.fn(() => {}),
+};
+
+const mockCreateServerClient = jest.fn(() => mockClient);
+
+const loadLogoutRoutePOST = async (): Promise<LogoutRoutePOST> => {
+    // @ts-expect-error NodeNext enforces file extensions, but Jest uses ts-jest to resolve the .ts file.
+    const module: LogoutRouteModule = await import("./route");
+    return module.POST;
+};
+
+jest.mock("next/headers", () => ({
+    cookies: jest.fn(() => mockCookieStore),
+}));
+
+jest.mock("@supabase/ssr", () => ({
+    createServerClient: mockCreateServerClient,
+}));
+
 describe("Logout API Route", () => {
-    const mockSignOut = jest.fn<() => Promise<{ error: Error | null }>>();
     let consoleErrorSpy: ReturnType<typeof jest.spyOn>;
-    const mockClient = {
-        auth: {
-            signOut: mockSignOut,
-        },
-    } as unknown as SupabaseServerClient;
 
     beforeEach(() => {
         jest.clearAllMocks();
+        mockSignOut.mockReset();
+        mockCreateServerClient.mockReturnValue(mockClient);
         consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(
             () => {},
         );
-        (createClient as jest.MockedFunction<typeof createClient>)
-            .mockResolvedValue(mockClient);
     });
 
     afterEach(() => {
@@ -42,6 +61,7 @@ describe("Logout API Route", () => {
     });
 
     it("returns a successful JSON response when the Supabase signOut call succeeds", async () => {
+        const POST = await loadLogoutRoutePOST();
         mockSignOut.mockResolvedValue({ error: null });
 
         const response = await POST();
@@ -51,6 +71,7 @@ describe("Logout API Route", () => {
     });
 
     it("propagates Supabase errors with a 500 status", async () => {
+        const POST = await loadLogoutRoutePOST();
         const supabaseError = new Error("session clear failed");
         mockSignOut.mockResolvedValue({ error: supabaseError });
 
