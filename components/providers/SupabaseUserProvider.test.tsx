@@ -17,9 +17,9 @@ let useUserHook: typeof import('./SupabaseUserProvider').useUser;
 
 beforeAll(async () => {
   // @ts-expect-error NodeNext requires extension enforcement, but Jest's ts-jest resolves the .tsx file at runtime.
-  const module = await import('./SupabaseUserProvider');
-  SupabaseUserProvider = module.SupabaseUserProvider;
-  useUserHook = module.useUser;
+  const routeModule = await import('./SupabaseUserProvider');
+  SupabaseUserProvider = routeModule.SupabaseUserProvider;
+  useUserHook = routeModule.useUser;
 });
 
 describe('SupabaseUserProvider', () => {
