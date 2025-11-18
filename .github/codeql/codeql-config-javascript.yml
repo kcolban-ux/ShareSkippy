@@ -1,0 +1,13 @@
+name: "ShareSkippy CodeQL Config - JavaScript/TypeScript"
+
+paths-ignore:
+  - 'node_modules'
+  - '.next'
+  - '.vercel'
+  # Exclude all test files, which are a source of false positives
+  - '**/*.test.js'
+  - '**/*.test.tsx'
+  - '**/*.spec.js'
+  - '**/*.spec.tsx'
+  - 'jest.config.ts'
+  - 'jest.setup.js'
