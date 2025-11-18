@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+
 export function validateEmail(email: unknown): boolean;
 export function validatePhoneNumber(phone: string): boolean;
 export function validateRequired(value: unknown, fieldName: string): boolean;
