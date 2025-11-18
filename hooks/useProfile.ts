@@ -23,10 +23,27 @@ export interface UserDog {
   id: string;
   owner_id: string;
   name: string;
-  breed: string;
-  age: number;
+  breed: string | null;
+  birthday: string | null;
+  age_years: number;
+  age_months: number;
+  size: string | null;
+  photo_url: string | null;
+  gender: string | null;
+  neutered: boolean;
+  temperament: string[] | null;
+  energy_level: string | null;
+  dog_friendly: boolean;
+  cat_friendly: boolean;
+  kid_friendly: boolean;
+  leash_trained: boolean;
+  crate_trained: boolean;
+  house_trained: boolean;
+  fully_vaccinated: boolean;
+  activities: string[] | null;
+  description: string | null;
   created_at: string;
-  // Add other dog fields here
+  updated_at: string | null;
 }
 
 /**
