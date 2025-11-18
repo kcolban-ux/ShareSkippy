@@ -175,8 +175,15 @@ describe('useUpdateMeetingStatus', () => {
       wrapper: createWrapper(),
     });
 
+    type SetTimeoutRestArgs =
+      Parameters<typeof setTimeout> extends [TimerHandler, number?, ...infer Rest] ? Rest : never;
+
     const originalSetTimeout = globalThis.setTimeout;
-    const immediateSetTimeout = ((callback: TimerHandler, _delay?: number, ...args: any[]) => {
+    const immediateSetTimeout = ((
+      callback: TimerHandler,
+      _delay?: number,
+      ...args: SetTimeoutRestArgs
+    ) => {
       if (typeof callback === 'function') {
         act(() => {
           callback(...args);
