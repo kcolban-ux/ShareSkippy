@@ -106,7 +106,8 @@ describe('ShareAvailability Page', () => {
     render(<ShareAvailability />);
 
     // Should show the warning on Step 1
-    expect(screen.getByText(/You need to add a dog to your profile first/i)).toBeInTheDocument();
+    expect(screen.getByText(/No dog found in your profile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Add a dog to your profile/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByText(/My Dog wants a Pal/i));
 

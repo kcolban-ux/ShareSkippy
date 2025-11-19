@@ -4,35 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, ReactElement } from 'react';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // <-- Added
-import { useUserDogs } from '@/hooks/useProfile';
-import { useQueryClient, UseQueryResult } from '@tanstack/react-query';
+import { useUserDogs, UserDog } from '@/hooks/useProfile';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/libs/supabase';
-
-// #region Types
-/**
- * @description Defines the structure of a Dog object.
- */
-interface Dog {
-  id: string;
-  name: string;
-  photo_url: string | null;
-  breed: string | null;
-  age_years: number;
-  age_months: number;
-  size: string | null;
-  gender: 'Male' | 'Female';
-  neutered: boolean;
-  energy_level: string | null;
-  dog_friendly: boolean;
-  cat_friendly: boolean;
-  kid_friendly: boolean;
-  leash_trained: boolean;
-  house_trained: boolean;
-  fully_vaccinated: boolean;
-  activities: string[] | null;
-  owner_id: string;
-}
-// #endregion
 
 // #region Component
 export default function MyDogsPage(): ReactElement {
@@ -47,7 +21,7 @@ export default function MyDogsPage(): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data, isLoading: loading } = useUserDogs() as UseQueryResult<Dog[], Error>;
+  const { data, isLoading: loading } = useUserDogs();
   // #endregion
 
   // #region Handlers
@@ -98,7 +72,7 @@ export default function MyDogsPage(): ReactElement {
     );
   }
 
-  const dogs: Dog[] = data || [];
+  const dogs: UserDog[] = data || [];
 
   /**
    * @description This `if (!user)` block is no longer needed.
@@ -153,7 +127,7 @@ export default function MyDogsPage(): ReactElement {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {dogs.map((dog: Dog) => (
+            {dogs.map((dog: UserDog) => (
               <div
                 key={dog.id}
                 className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"

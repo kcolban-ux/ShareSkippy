@@ -1,11 +1,16 @@
-import { createServiceClient } from './supabase/server';
+import { createClient } from './supabase/server';
 
 /**
  * Track email delivery and engagement metrics
  */
 export class EmailAnalytics {
-  constructor() {
-    this.supabase = createServiceClient();
+  supabase = null;
+
+  async getSupabase() {
+    if (!this.supabase) {
+      this.supabase = await createClient();
+    }
+    return this.supabase;
   }
 
   /**
@@ -19,7 +24,8 @@ export class EmailAnalytics {
    */
   async trackEmailSent({ emailType, userId, trigger, emailId, recipientEmail }) {
     try {
-      const { error } = await this.supabase.from('email_events').insert({
+      const supabase = await this.getSupabase();
+      const { error } = await supabase.from('email_events').insert({
         email_type: emailType,
         user_id: userId,
         trigger: trigger,
@@ -43,7 +49,8 @@ export class EmailAnalytics {
    */
   async trackEmailOpened(emailId) {
     try {
-      const { error } = await this.supabase.from('email_events').insert({
+      const supabase = await this.getSupabase();
+      const { error } = await supabase.from('email_events').insert({
         email_id: emailId,
         event_type: 'opened',
         timestamp: new Date().toISOString(),
@@ -64,7 +71,8 @@ export class EmailAnalytics {
    */
   async trackEmailClicked(emailId, linkUrl) {
     try {
-      const { error } = await this.supabase.from('email_events').insert({
+      const supabase = await this.getSupabase();
+      const { error } = await supabase.from('email_events').insert({
         email_id: emailId,
         event_type: 'clicked',
         link_url: linkUrl,
@@ -87,7 +95,8 @@ export class EmailAnalytics {
    */
   async trackEmailBounced(emailId, bounceType, reason) {
     try {
-      const { error } = await this.supabase.from('email_events').insert({
+      const supabase = await this.getSupabase();
+      const { error } = await supabase.from('email_events').insert({
         email_id: emailId,
         event_type: 'bounced',
         bounce_type: bounceType,
@@ -109,7 +118,8 @@ export class EmailAnalytics {
    */
   async trackEmailComplained(emailId) {
     try {
-      const { error } = await this.supabase.from('email_events').insert({
+      const supabase = await this.getSupabase();
+      const { error } = await supabase.from('email_events').insert({
         email_id: emailId,
         event_type: 'complained',
         timestamp: new Date().toISOString(),
@@ -131,7 +141,8 @@ export class EmailAnalytics {
    */
   async getEmailMetrics(startDate, endDate, emailType = null) {
     try {
-      let query = this.supabase
+      const supabase = await this.getSupabase();
+      let query = supabase
         .from('email_events')
         .select('*')
         .gte('timestamp', startDate.toISOString())
@@ -181,7 +192,8 @@ export class EmailAnalytics {
    */
   async getUserEmailHistory(userId) {
     try {
-      const { data, error } = await this.supabase
+      const supabase = await this.getSupabase();
+      const { data, error } = await supabase
         .from('email_events')
         .select('*')
         .eq('user_id', userId)

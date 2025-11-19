@@ -247,3 +247,9 @@ export async function scheduleReengageEmails(): Promise<{
     throw error;
   }
 }
+
+export const __testExports = process.env.NODE_ENV === "test"
+  ? {
+    shouldSendReengageEmail,
+  }
+  : {};
