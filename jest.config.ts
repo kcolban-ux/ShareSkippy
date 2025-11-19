@@ -95,7 +95,7 @@ const config: Config = {
   transform: {
     "^.+\\.(t|j)sx?$": "babel-jest",
   },
-  testPathIgnorePatterns: ["\\node_modules\\", "<rootDir>/tests/e2e/"],
+  testPathIgnorePatterns: ["\\\\node_modules\\\\", "<rootDir>/tests/e2e/"],
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
   // modulePathIgnorePatterns: [],
 
