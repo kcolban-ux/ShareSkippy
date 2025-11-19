@@ -5,9 +5,13 @@ test.describe("Landing page", () => {
         await page.goto("/");
         await expect(page.getByRole("heading", { name: /Happy Dogs\./ }))
             .toBeVisible();
-        await expect(page.getByRole("button", { name: /Share Your Dog/i }))
+        await expect(
+            page.getByRole("button", { name: /Share Your Dog/i }).first(),
+        )
             .toBeVisible();
-        await expect(page.getByRole("button", { name: /Borrow a Dog/i }))
+        await expect(
+            page.getByRole("button", { name: /Borrow a Dog/i }).first(),
+        )
             .toBeVisible();
     });
 });
