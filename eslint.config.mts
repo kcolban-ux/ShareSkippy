@@ -23,8 +23,8 @@ export default defineConfig([
       "**/package-lock.json",
       "**/node_modules/**",
       "**/coverage/**",
-      "**/.next/**",
       "**/.vercel/**",
+      "**/.next/**",
     ],
   },
   {

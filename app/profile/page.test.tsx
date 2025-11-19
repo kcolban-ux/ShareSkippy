@@ -53,7 +53,7 @@ jest.mock('@/libs/supabase/client', () => ({
   })),
 }));
 
-const mockedUseUser = useUser;
+const mockedUseUser = useUser as jest.Mock<ReturnType<typeof useUser>, Parameters<typeof useUser>>;
 
 describe('ProfilePage', () => {
   beforeEach(() => {
@@ -62,6 +62,8 @@ describe('ProfilePage', () => {
     mockedUseUser.mockReturnValue({
       user: null,
       loading: true,
+      session: null,
+      signOut: jest.fn().mockResolvedValue({ error: null }),
     });
     mockSingle.mockResolvedValue({ data: null, error: null });
   });
@@ -75,6 +77,8 @@ describe('ProfilePage', () => {
     mockedUseUser.mockReturnValue({
       user: null,
       loading: false,
+      session: null,
+      signOut: jest.fn().mockResolvedValue({ error: null }),
     });
     render(<ProfilePage />);
 
@@ -86,8 +90,16 @@ describe('ProfilePage', () => {
 
   it('shows "Profile Not Found" if user exists but profile is null', async () => {
     mockedUseUser.mockReturnValue({
-      user: { id: 'user-123' },
+      user: {
+        id: 'user-123',
+        app_metadata: ['app'],
+        user_metadata: ['user'],
+        aud: 'aud',
+        created_at: '',
+      },
       loading: false,
+      session: null,
+      signOut: jest.fn().mockResolvedValue({ error: null }),
     });
     // Simulate "not found"
     mockSingle.mockResolvedValue({
@@ -108,8 +120,16 @@ describe('ProfilePage', () => {
 
   it('shows a generic error message if profile fetch fails', async () => {
     mockedUseUser.mockReturnValue({
-      user: { id: 'user-123' },
+      user: {
+        id: 'user-123',
+        app_metadata: ['app'],
+        user_metadata: ['user'],
+        aud: 'aud',
+        created_at: '',
+      },
       loading: false,
+      session: null,
+      signOut: jest.fn().mockResolvedValue({ error: null }),
     });
     mockSingle.mockRejectedValue(new Error('Database connection failed'));
     render(<ProfilePage />);
@@ -139,8 +159,16 @@ describe('ProfilePage', () => {
     };
 
     mockedUseUser.mockReturnValue({
-      user: { id: 'user-123' },
+      user: {
+        id: 'user-123',
+        app_metadata: ['app'],
+        user_metadata: ['user'],
+        aud: 'aud',
+        created_at: '',
+      },
       loading: false,
+      session: null,
+      signOut: jest.fn().mockResolvedValue({ error: null }),
     });
     mockSingle.mockResolvedValue({ data: mockProfile, error: null });
 

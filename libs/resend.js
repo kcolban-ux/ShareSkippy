@@ -1,11 +1,21 @@
 import { Resend } from 'resend';
 import config from '@/config';
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error('RESEND_API_KEY is not set');
-}
+let resendClient;
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResendClient = () => {
+  if (resendClient) {
+    return resendClient;
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY is not set');
+  }
+
+  resendClient = new Resend(apiKey);
+  return resendClient;
+};
 
 /**
  * Validates email content to improve deliverability
@@ -93,8 +103,8 @@ export const sendEmail = async ({ to, subject, text, html, replyTo }) => {
   if (!text && html) {
     // Strip HTML tags for text version if not provided
     text = html
-      .replace(/<[^>]*>/g, '')
-      .replace(/\s+/g, ' ')
+      .replaceAll(/<[^>]*>/g, '')
+      .replaceAll(/\s+/g, ' ')
       .trim();
   }
 
@@ -112,7 +122,7 @@ export const sendEmail = async ({ to, subject, text, html, replyTo }) => {
     },
   };
 
-  const { data, error } = await resend.emails.send(emailData);
+  const { data, error } = await getResendClient().emails.send(emailData);
 
   if (error) {
     console.error('Error sending email:', error.message);

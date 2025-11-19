@@ -15,8 +15,9 @@
     "lint:css": "stylelint \"**/*.css\" --ignore-path .gitignore",
     "lint": "npm run lint:js && npm run lint:css",
     "lint:fix": "npm run lint:js --fix && npm run lint:css --fix",
-    "typecheck": "echo 'Typecheck configured in Task 2'",
+    "typecheck": "tsc --noEmit",
     "test": "jest",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
@@ -43,6 +44,7 @@
     "resend": "^4.0.1",
     "sharp": "^0.34.4",
     "stripe": "^13.11.0",
+    "ts-node": "^10.9.2",
     "zod": "^4.1.8"
   },
   "devDependencies": {
