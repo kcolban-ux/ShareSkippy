@@ -82,7 +82,8 @@
     "stylelint-config-standard": "^39.0.1",
     "stylelint-config-tailwindcss": "^1.0.0",
     "supabase": "^2.51.0",
-    "tailwindcss": "^4.1.16"
+    "tailwindcss": "^4.1.16",
+    "web-streams-polyfill": "^4.2.0"
   },
   "babel": {
     "presets": [
