@@ -37,7 +37,7 @@
       "prettier --write"
     ],
     "*.{test,spec}.{js,jsx,ts,tsx}": [
-      "jest --bail --findRelatedTests"
+      "jest --bail --passWithNoTests --findRelatedTests"
     ],
     "*.css": [
       "stylelint --fix",
