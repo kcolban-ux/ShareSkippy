@@ -19,7 +19,8 @@
     "test": "jest",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
     "analyze": "ANALYZE=true next build",
-    "playwright:install": "npx playwright install"
+    "playwright:install": "npx playwright install",
+    "seed:test": "ts-node-esm scripts/seed-test-data.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.1.0",
