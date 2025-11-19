@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:e2e": "npm run seed:test && npx playwright test",
+    "test:e2e:ci": "npm run seed:test && npx playwright test --reporter=github",
     "analyze": "ANALYZE=true next build",
     "playwright:install": "npx playwright install",
     "seed:test": "ts-node-esm scripts/seed-test-data.ts"
