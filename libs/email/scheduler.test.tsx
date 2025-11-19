@@ -295,7 +295,8 @@ describe('Scheduled Email Functions', () => {
 
   describe('scheduleNurtureEmail', () => {
     it('should schedule a nurture email 3 days from now', async () => {
-      const expectedNurtureTime = new Date('2025-11-04T11:00:00.000Z');
+      const expectedNurtureTime = new Date(MOCK_DATE);
+      expectedNurtureTime.setDate(expectedNurtureTime.getDate() + 3);
 
       mockSupabase.insert.mockResolvedValueOnce({ error: null });
 
