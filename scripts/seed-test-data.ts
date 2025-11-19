@@ -35,20 +35,20 @@ const e2eUser: E2EUser = {
 };
 
 async function deleteExistingUser(email: string) {
-    const { data, error } = await supabase.auth.admin.listUsers({
-        filter: `email=eq.${email}`,
-    });
+    const { data, error } = await supabase.auth.admin.listUsers();
 
     if (error) {
         throw error;
     }
 
-    if (!data?.length) {
+    const matchingUsers = data.users.filter((user) => user.email === email);
+
+    if (!matchingUsers.length) {
         return;
     }
 
     await Promise.all(
-        data.map((user) => supabase.auth.admin.deleteUser(user.id)),
+        matchingUsers.map((user) => supabase.auth.admin.deleteUser(user.id)),
     );
 }
 
@@ -66,13 +66,13 @@ async function seedUser() {
         throw error;
     }
 
-    if (!data) {
+    if (!data?.user) {
         throw new Error("Failed to create Playwright E2E user.");
     }
 
     const profilePayload = {
-        id: data.id,
-        email: data.email,
+        id: data.user.id,
+        email: e2eUser.email,
         first_name: e2eUser.metadata.first_name,
         last_name: e2eUser.metadata.last_name,
         role: "owner",
@@ -89,7 +89,7 @@ async function seedUser() {
         throw profileError;
     }
 
-    return data;
+    return data.user;
 }
 
 async function seedDog(ownerId: string) {
@@ -159,7 +159,11 @@ async function main() {
     console.log("Seeding complete. Playwright can sign in with", e2eUser.email);
 }
 
-void main().catch((error) => {
-    console.error("Playwright seed failed:", error);
-    process.exit(1);
-});
+(async () => {
+    try {
+        await main();
+    } catch (error) {
+        console.error("Playwright seed failed:", error);
+        process.exit(1);
+    }
+})();
