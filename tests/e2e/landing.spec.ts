@@ -13,5 +13,13 @@ test.describe("Landing page", () => {
             page.getByRole("button", { name: /Borrow a Dog/i }).first(),
         )
             .toBeVisible();
+        await page.evaluate(() =>
+            window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: "instant",
+            })
+        );
+        const footer = page.getByRole("contentinfo");
+        await expect(footer).toBeVisible();
     });
 });
