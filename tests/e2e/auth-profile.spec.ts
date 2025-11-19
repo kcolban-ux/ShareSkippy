@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { expect, test } from "@playwright/test";
 
 const E2E_SECRET = process.env.E2E_AUTH_SECRET;
@@ -14,12 +15,16 @@ test.describe("Authenticated profile flow", () => {
         await expect(page).toHaveURL(/\/community/);
     });
 
-    test("navigates from landing to profile, updates info, and returns to community", async ({page,}) => {
+    test("navigates from landing to profile, updates info, and returns to community", async ({ page }) => {
         await page.goto("/");
-        await page.getByRole("link", { name: "Community" }).click();
+        await page.getByRole("link", { name: "Community", exact: true }).first()
+            .click();
         await expect(page).toHaveURL(/\/community/);
 
-        const profileLink = page.getByRole("link", { name: "Profile" });
+        const profileLink = page.getByRole("link", {
+            name: "Profile",
+            exact: true,
+        }).first();
         await profileLink.click();
         await expect(page).toHaveURL(/\/profile$/);
 
@@ -63,7 +68,8 @@ test.describe("Authenticated profile flow", () => {
         await page.getByRole("button", { name: "Save Profile" }).click();
         await page.waitForURL(/\/onboarding\/welcome/);
 
-        await page.getByRole("link", { name: "Community" }).click();
+        await page.getByRole("link", { name: "Community", exact: true }).first()
+            .click();
         await expect(page).toHaveURL(/\/community/);
     });
 });
