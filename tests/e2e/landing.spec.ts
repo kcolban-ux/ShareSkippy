@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./globals";
 
 test.describe("Landing page", () => {
     test("renders hero messaging and CTA", async ({ page }) => {
