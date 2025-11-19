@@ -101,7 +101,8 @@
     "stylelint-config-tailwindcss": "^1.0.1",
     "supabase": "^2.72.8",
     "tailwindcss": "^4.1.16",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "web-streams-polyfill": "^4.2.0"
   },
   "babel": {
     "presets": [

@@ -15,6 +15,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  testPathIgnorePatterns: ['\\\\node_modules\\\\', '<rootDir>/tests/e2e/'],
   transformIgnorePatterns: ['/node_modules/(?!daisyui)/'],
   coverageThreshold: {
     global: {

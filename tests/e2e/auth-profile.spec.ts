@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { expect, test } from './globals';
 
 const E2E_SECRET = process.env.E2E_AUTH_SECRET;
