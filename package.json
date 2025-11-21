@@ -22,7 +22,7 @@
     "test:e2e:ci": "npm run seed:test && playwright test --reporter=github",
     "analyze": "ANALYZE=true next build",
     "playwright:install": "playwright install",
-    "seed:test": "ts-node-esm scripts/seed-test-data.ts"
+    "seed:test": "ts-node-esm scripts/seed-test-data.mts"
   },
   "dependencies": {
     "@headlessui/react": "^2.1.0",
