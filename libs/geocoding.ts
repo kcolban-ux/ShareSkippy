@@ -26,10 +26,10 @@ export async function geocodeLocation(query: string): Promise<Coordinates | null
   try {
     // Improved geocoding: better format for zip codes and cities
     let searchQuery = query.trim();
-    
+
     // Check if it's a zip code (5 digits)
     const isZipCode = /^\d{5}$/.test(searchQuery);
-    
+
     // For zip codes, add country code for better accuracy
     if (isZipCode) {
       searchQuery = `${searchQuery}, USA`;
@@ -59,7 +59,7 @@ export async function geocodeLocation(query: string): Promise<Coordinates | null
         lat: parseFloat(result.lat),
         lng: parseFloat(result.lon),
       };
-      
+
       return coords;
     }
 
@@ -69,4 +69,3 @@ export async function geocodeLocation(query: string): Promise<Coordinates | null
     return null;
   }
 }
-

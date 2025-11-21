@@ -106,7 +106,7 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
       return profiles;
     }
 
-    return profiles.filter(profile => {
+    return profiles.filter((profile) => {
       // Skip profiles without location data
       if (!profile.display_lat || !profile.display_lng) {
         return false;
@@ -124,7 +124,7 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
   };
 
   // Filter profiles by role first
-  const roleFilteredProfiles = profiles.filter(profile => {
+  const roleFilteredProfiles = profiles.filter((profile) => {
     if (role === 'dog_owner') {
       return profile.role === 'dog_owner' || profile.role === 'both';
     } else if (role === 'petpal') {
