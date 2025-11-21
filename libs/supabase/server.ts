@@ -1,10 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getCookieOptions } from "@/libs/cookieOptions";
+import { ensureEnvDefaults } from "@/libs/loadEnv.mjs";
 
 // #region TYPES
 type SupabaseKeyType = "anon" | "service_role";
 // #endregion TYPES
+
+ensureEnvDefaults();
 
 /**
  * @async
@@ -31,9 +34,9 @@ export async function createClient(type: SupabaseKeyType = "anon") {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
           } catch {
             // Safe to ignore in Server Components/Middleware if session refresh is handled.
           }
