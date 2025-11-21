@@ -40,6 +40,12 @@ interface SupabaseUserProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Supplies Supabase auth context to descendant components, handling hydration and sign-out logic.
+ *
+ * @param props.initialSession - SSR-provided session used to prevent flash-of-unauthenticated content.
+ * @param props.children - Descendant UI that relies on `useUser`.
+ */
 export const SupabaseUserProvider: FC<SupabaseUserProviderProps> = ({
   initialSession,
   children,

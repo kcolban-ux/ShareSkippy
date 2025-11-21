@@ -16,6 +16,11 @@ const contactSchema = z.object({
   hp: z.string().optional(), // Honeypot field
 });
 
+/**
+ * Validates contact form submissions, applies rate limiting, and emails support using Resend.
+ * @param formData - The `FormData` payload submitted by the client.
+ * @returns A success flag plus optional inline error messages.
+ */
 export async function sendContact(formData: FormData) {
   try {
     // Convert FormData to object

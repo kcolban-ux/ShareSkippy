@@ -12,6 +12,11 @@ interface MobileTocProps {
   sections: Section[];
 }
 
+/**
+ * Shows a collapsible table of contents for mobile layouts with analytics hooks.
+ *
+ * @param props.sections - Section anchors to display.
+ */
 export default function MobileToc({ sections }: MobileTocProps) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
 
