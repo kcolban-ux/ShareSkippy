@@ -1,5 +1,11 @@
 const nextConfig = {
-  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev', 'localhost', '127.0.0.1'],
+  allowedDevOrigins: [
+    'local-origin.dev',
+    '*.local-origin.dev',
+    'localhost',
+    '127.0.0.1',
+    'http://10.5.0.2:3000',
+  ],
 
   reactStrictMode: true,
 
