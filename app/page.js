@@ -3,6 +3,7 @@ import { createClient } from '@/libs/supabase/client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { renderSchemaTags } from '@/libs/seo';
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 
 // Carousel messages for the hero section
 const carouselMessages = [
@@ -23,50 +24,80 @@ const communityStories = [
   {
     quote: 'I cant have a dog in my apartment, but now I hike with Max every week.',
     author: 'Sarah, Dog Lover',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       "I work from home and needed a break from Zoom meetings. Walking neighbors' dogs gives me fresh air, exercise, and some seriously good puppy therapy.",
     author: 'Mike, Remote Worker',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       "My dog has boundless energy, and I couldn't keep up. Now he gets playdates with other pups, and I get peace of mind knowing he's happy and socialized.",
     author: 'Lisa, Dog Owner',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote: 'Recovering from surgery, my neighbors made sure Bella still got her daily walks.',
     author: 'David, Recovering Owner',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       'My parents are elderly and their dog, Charlie, needs more exercise than they can manage. Neighbors who step in have been a lifesaver — Charlie is thrilled, and my parents feel supported.',
     author: 'Jennifer, Family Member',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       'Single mom here — I was overwhelmed trying to juggle work, school, and my two kids. Now my pup gets outside while I prep dinner.',
     author: 'Maria, Single Parent',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       "I've always wanted a dog but live in an apartment that doesn't allow pets. Now I get weekend puppy cuddles, and it's the highlight of my week.",
     author: 'Alex, Apartment Dweller',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       "After moving to a new neighborhood, I didn't know anyone. Walking dogs with neighbors helped me make friends and get my daily steps in.",
     author: 'Tom, New Neighbor',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       "I work long hours and couldn't give Luna the walks she needed. Now neighbors help take her on hikes, and she's happier than ever.",
     author: 'Rachel, Busy Professional',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
   {
     quote:
       'I was recovering from illness and worried about leaving my dog alone. With help from local dog lovers, he still gets daily playtime and has discovered his love for swimming.',
     author: 'James, Recovering Owner',
+    rating: 5,
+    image:
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5c2QCGWIDwM5VfLmcIWkU3aMzzQ18uf2ISQ&s',
   },
 ];
 
@@ -77,6 +108,38 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  const nextTestimonial = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % communityStories.length);
+    setTimeout(() => setIsTransitioning(false), 100);
+  };
+
+  const prevTestimonial = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setCurrentIndex(
+      (prevIndex) => (prevIndex - 1 + communityStories.length) % communityStories.length
+    );
+    setTimeout(() => setIsTransitioning(false), 100);
+  };
+
+  const getTestimonialPosition = (index) => {
+    if (window.innerWidth < 768) {
+      return index === currentIndex ? 'center' : 'hidden';
+    }
+
+    const position = (index - currentIndex + communityStories.length) % communityStories.length;
+
+    if (position === 0) return 'center';
+    if (position === 1) return 'right';
+    if (position === communityStories.length - 1) return 'left';
+
+    return 'hidden';
+  };
 
   // Get user session
   useEffect(() => {
@@ -169,17 +232,20 @@ export default function Home() {
         <section className="relative overflow-hidden pt-20 pb-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-                Happy Dogs.
-                <span className="block text-blue-600">Happy Humans.</span>
-                <span className="block text-indigo-600">Happier Neighborhoods.</span>
-              </h1>
+              <div>
+                <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+                  Happy Dogs.
+                  <span className="block text-blue-600">Happy Humans.</span>
+                  <span className="block text-indigo-600">Happier Neighborhoods.</span>
+                </h1>
 
-              <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed">
-                ShareSkippy connects dog owners with dog lovers for free walks, hikes, cuddles, and
-                adventures — all without the cost or full-time responsibility of ownership. Dogs get
-                exercise and love, humans get companionship, and neighborhoods grow stronger.
-              </p>
+                <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed">
+                  ShareSkippy connects dog owners with dog lovers for free walks, hikes, cuddles,
+                  and adventures — all without the cost or full-time responsibility of ownership.
+                  Dogs get exercise and love, humans get companionship, and neighborhoods grow
+                  stronger.
+                </p>
+              </div>
 
               {/* Carousel Messages */}
               <div className="relative mb-8 max-w-5xl mx-auto">
@@ -461,16 +527,100 @@ export default function Home() {
               </h2>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {communityStories.slice(0, 6).map((story, index) => (
-                <div
-                  key={index}
-                  className="bg-linear-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all"
-                >
-                  <p className="text-lg text-gray-800 mb-4 italic">&ldquo;{story.quote}&rdquo;</p>
-                  <p className="text-sm text-gray-600 font-semibold">— {story.author}</p>
+            <div className=" bg-white py-5 mt-10 lg:mt-20">
+              <div className=" mx-auto container">
+                {/* Carousel Container */}
+                <div className="relative h-80 overflow-hidden">
+                  {/* Navigation Arrows */}
+                  <button
+                    onClick={prevTestimonial}
+                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 bg-blue-400 rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
+                    aria-label="Previous testimonial"
+                  >
+                    <ChevronLeft size={24} className="text-blue-300" />
+                  </button>
+
+                  <button
+                    onClick={nextTestimonial}
+                    className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 bg-white rounded-full p-2 shadow-md hover:bg-blue-400 transition-colors"
+                    aria-label="Next testimonial"
+                  >
+                    <ChevronRight size={24} className="text-blue-300" />
+                  </button>
+
+                  {/* Cards */}
+                  <div className="flex items-center justify-center w-full h-[400px] md:h-[450px] relative">
+                    {communityStories.map((testimonial, index) => {
+                      const position = getTestimonialPosition(index);
+
+                      if (position === 'hidden') return null;
+
+                      return (
+                        <div
+                          key={index}
+                          className={`absolute transition-all duration-500 ${
+                            position === 'left'
+                              ? 'md:-rotate-12 left-0 md:right-20 transform md:-translate-x-25 -translate-x-8 opacity-80 scale-65 -translate-y-25'
+                              : position === 'right'
+                                ? 'md:rotate-12 right-0 md:right-30 transform md:translate-x-25 translate-x-8 opacity-80 scale-65 -translate-y-4 md:-translate-y-15'
+                                : 'left-1/2 transform -translate-x-1/2 z-10 scale-70 md:-translate-y-20'
+                          }`}
+                        >
+                          <div
+                            className="border border-gray-200 rounded-4xl w-[447px] p-6 h-full flex flex-col bg-[#F6F6F6]"
+                            style={{ minHeight: '400px' }}
+                          >
+                            <div className="flex items-center mb-4">
+                              <img
+                                src={testimonial.image}
+                                alt={'pic'}
+                                className="w-20 h-20 rounded-full object-cover mr-3 mt-5"
+                              />
+                              <div>
+                                <h3 className="font-semibold text-gray-900 text-2xl">
+                                  {testimonial.author}
+                                </h3>
+
+                                <div className="flex items-center mt-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      size={16}
+                                      className={
+                                        i < testimonial.rating ? 'text-blue-400 fill-blue-600' : ''
+                                      }
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Content */}
+                            <p className="text-gray-700 text-[20px] grow mt-5">
+                              "{testimonial.quote}"
+                            </p>
+
+                            <hr className="border-gray-200 " />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
+
+                {/*Indicator */}
+                <div className="flex justify-center  space-x-4">
+                  {communityStories.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`w-6 h-2 rounded-lg ${
+                        currentIndex === index ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="text-center mt-12">
@@ -483,6 +633,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        {/* new community stories */}
 
         {/* Closing CTA Section */}
         <section className="py-20 bg-linear-to-br from-blue-600 to-indigo-600">
