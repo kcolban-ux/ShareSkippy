@@ -1,4 +1,4 @@
-## Pull Request Title: [Concise description of the change]
+## Pull Request Title: (Concise description of the change)
 
 ### ✨ Type of Change
 
@@ -45,9 +45,9 @@ Before merging, the reviewer should ensure the following have been addressed:
 
 Please pay special attention to these areas during your review:
 
-1.  **[Specific Area 1]:** _E.g., Logic in `api/users/handler.go` - checking for potential race conditions._
-2.  **[Specific Area 2]:** _E.g., New component props and data flow - checking for clarity and reusability._
-3.  **[Specific Area 3]:** _E.g., Error handling and logging mechanisms._
+1.  **(Specific Area 1):** _E.g., Logic in `api/users/handler.go` - checking for potential race conditions._
+2.  **(Specific Area 2):** _E.g., New component props and data flow - checking for clarity and reusability._
+3.  **(Specific Area 3):** _E.g., Error handling and logging mechanisms._
 
 ---
 
