@@ -687,6 +687,7 @@ export default function ShareAvailability() {
                               className="w-full h-full object-cover rounded-full"
                               width={48}
                               height={48}
+                              unoptimized
                             />
                           ) : (
                             <span className="text-2xl">🐕</span>

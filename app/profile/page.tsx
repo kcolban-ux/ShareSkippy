@@ -212,6 +212,7 @@ export default function ProfilePage(): JSX.Element {
               className="w-24 h-24 rounded-full mx-auto object-cover"
               width={96}
               height={96}
+              unoptimized
             />
           </div>
         )}

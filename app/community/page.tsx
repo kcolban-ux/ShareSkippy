@@ -454,6 +454,7 @@ export default function CommunityPage() {
         throw dogError;
       }
       const postsWithDogs: AvailabilityPostType[] = dogPosts || [];
+
       setAllDogPosts(postsWithDogs);
 
       // 2. Fetch petpal availability posts
@@ -479,6 +480,7 @@ export default function CommunityPage() {
         throw petpalError;
       }
       const postsWithData: AvailabilityPostType[] = petpalPosts || [];
+
       setAllPetpalPosts(postsWithData);
 
       // 3. Fetch user's own availability posts
@@ -754,6 +756,7 @@ export default function CommunityPage() {
                               width={48}
                               height={48}
                               className="w-12 h-12 rounded-full object-cover"
+                              unoptimized
                             />
                           ) : (
                             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
@@ -779,6 +782,7 @@ export default function CommunityPage() {
                                     width={32}
                                     height={32}
                                     className="w-8 h-8 rounded-full object-cover"
+                                    unoptimized
                                   />
                                 ) : (
                                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">

@@ -77,6 +77,7 @@ const LoggedInNav = () => {
               priority={true}
               width={32}
               height={32}
+              unoptimized
             />
             <span className="font-extrabold text-base sm:text-lg text-white">{config.appName}</span>
           </Link>
@@ -154,6 +155,7 @@ const LoggedInNav = () => {
                 priority={true}
                 width={32}
                 height={32}
+                unoptimized
               />
               <span className="font-extrabold text-base sm:text-lg text-white">
                 {config.appName}

@@ -194,6 +194,7 @@ export default function WelcomePage() {
                     src={match.profile_photo_url || '/default-avatar.png'}
                     alt={match.first_name}
                     className="w-20 h-20 rounded-full object-cover shrink-0"
+                    unoptimized
                   />
 
                   {/* Profile Info */}

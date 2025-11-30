@@ -229,6 +229,7 @@ export default function MeetingModal({
                   src={recipient.profile_photo_url}
                   alt={`${recipient.first_name} ${recipient.last_name}`}
                   className="w-12 h-12 rounded-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-lg font-medium text-gray-600">
