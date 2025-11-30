@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { ensureEnvDefaults } from "../libs/loadEnv.mjs";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 
@@ -11,8 +10,6 @@ type E2EUser = {
         last_name: string;
     };
 };
-
-ensureEnvDefaults();
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
