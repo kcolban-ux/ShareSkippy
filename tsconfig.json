@@ -14,6 +14,10 @@
     "esModuleInterop": true,
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
+    "types": [
+      "jest",
+      "node"
+    ],
     "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
@@ -38,6 +42,8 @@
     "src/**/*.tsx",
     "components/**/*.ts",
     "components/**/*.tsx",
+    "hooks/**/*.ts",
+    "hooks/**/*.tsx",
     "lib/**/*.ts",
     "lib/**/*.tsx",
     "libs/**/*.ts",

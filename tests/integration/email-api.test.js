@@ -1,3 +1,7 @@
+/**
+ * @jest-environment node
+ */
+
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { NextRequest } from 'next/server';
 

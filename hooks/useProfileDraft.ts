@@ -1,240 +1,224 @@
-// #region Imports
+// #region 📜 Imports
 import {
-    Dispatch,
-    SetStateAction,
-    useCallback,
-    useEffect,
-    useState,
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
 } from "react";
-// #endregion Imports
+// #endregion 📜 Imports
 
-// #region Types
-/**
- * @interface DraftMetadata
- * @description Structure of data stored in session storage alongside the profile data.
- */
-interface DraftMetadata {
-    timestamp: number;
-    version: string;
-}
+// #region 🛡️ Types and Constants
 
 /**
- * @interface StoredDraft<T>
- * @description The structure of the complete object stored in session storage.
- * @template T - The type of the user profile data.
+ * Defines the structure of the draft object as it is stored
+ * in sessionStorage, including metadata.
+ * @template TProfile The type of the profile data.
  */
-type StoredDraft<T> = T & DraftMetadata;
-
-/**
- * @interface ProfileDraftHook<T>
- * @description The public API exposed by the hook.
- * @template T - The type of the user profile data.
- */
-interface ProfileDraftHook<T> {
-    profile: T;
-    setProfile: Dispatch<SetStateAction<T>>; // Note: This setter is wrapped to auto-save.
-    loadDraft: () => T | null;
-    clearDraft: () => void;
-    hasDraft: boolean;
-    draftSource: "session" | null;
-}
-
-/**
- * @function isErrorWithMessage
- * @description Type guard to safely access the message property of an unknown error.
- * @param {unknown} error - The object caught in the catch block.
- * @returns {error is { message: string }}
- */
-function isErrorWithMessage(error: unknown): error is { message: string } {
-    return (
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof (error as { message: unknown }).message === "string"
-    );
-}
-// #endregion Types
-
-// #region Hook Definition
-/**
- * @hook
- * @description Manages a state object with automatic saving and loading to/from sessionStorage.
- * @template T - The type of the profile data (e.g., ProfileState interface).
- * @param {T} initialProfile - The initial starting data structure.
- * @returns {ProfileDraftHook<T>}
- */
-export const useProfileDraft = <T extends Record<string, unknown>>(
-    initialProfile: T,
-): ProfileDraftHook<T> => {
-    // #region State
-    // FIX: State initialized with generic type T
-    const [profile, setProfile] = useState<T>(initialProfile);
-    const [hasDraft, setHasDraft] = useState<boolean>(false);
-    // #endregion State
-
-    // #region Storage Logic
-    /**
-     * @function saveToSessionStorage
-     * @description Saves the given profile data to sessionStorage, handling quota errors.
-     * @param {T} profileData - The current profile data to save.
-     * @returns {void}
-     */
-    const saveToSessionStorage = useCallback((profileData: T): void => {
-        const storedData: StoredDraft<T> = {
-            ...profileData,
-            timestamp: Date.now(),
-            version: "2.0",
-        };
-
-        try {
-            sessionStorage.setItem("profileDraft", JSON.stringify(storedData));
-            console.log("💾 Draft saved to sessionStorage");
-        } catch (error: unknown) {
-            let errorMessage = "Failed to save to sessionStorage.";
-            if (isErrorWithMessage(error)) errorMessage = error.message;
-
-            console.warn(`❌ ${errorMessage}`, error);
-
-            // Handle quota exceeded by clearing storage and retrying
-            if (
-                isErrorWithMessage(error) &&
-                error.message.includes("QuotaExceededError")
-            ) {
-                try {
-                    sessionStorage.clear();
-                    sessionStorage.setItem(
-                        "profileDraft",
-                        JSON.stringify(storedData),
-                    );
-                    console.log("💾 Draft saved after clearing storage");
-                } catch (retryError) {
-                    console.error(
-                        "❌ Failed to save even after clearing storage:",
-                        retryError,
-                    );
-                }
-            }
-        }
-    }, []);
-
-    /**
-     * @function loadFromSessionStorage
-     * @description Loads the draft from sessionStorage, merging it with initial data structure.
-     * @returns {T | null} - The loaded and merged profile data, or null if no valid draft exists.
-     */
-    const loadFromSessionStorage = useCallback((): T | null => {
-        try {
-            const draft = sessionStorage.getItem("profileDraft");
-            if (draft) {
-                // FIX: Cast parsed data to the expected stored structure
-                const parsed: StoredDraft<T> = JSON.parse(draft);
-
-                console.log("📂 Draft loaded from sessionStorage");
-                setHasDraft(true);
-
-                // Merge with initial state to ensure all fields are present and typed correctly
-                // NOTE: This relies on the consumer calling setProfile with the result after initial load.
-                return { ...initialProfile, ...parsed } as T;
-            }
-            return null;
-        } catch (error: unknown) {
-            console.warn("❌ Failed to load draft from sessionStorage:", error);
-
-            // Clear corrupted data
-            try {
-                sessionStorage.removeItem("profileDraft");
-            } catch (clearError) {
-                console.warn("❌ Failed to clear corrupted draft:", clearError);
-            }
-            return null;
-        }
-    }, [initialProfile]);
-
-    /**
-     * @function clearDraft
-     * @description Clears the draft from sessionStorage.
-     * @returns {void}
-     */
-    const clearDraft = useCallback((): void => {
-        try {
-            sessionStorage.removeItem("profileDraft");
-            setHasDraft(false);
-            console.log("🗑️ Draft cleared from sessionStorage");
-        } catch (error) {
-            console.warn("❌ Failed to clear draft:", error);
-        }
-    }, []);
-    // #endregion Storage Logic
-
-    // #region Effects and Wrapped Setter
-    /**
-     * @effect
-     * @description Handles cross-tab synchronization of the draft data.
-     */
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent): void => {
-            if (e.key === "profileDraft" && e.newValue) {
-                try {
-                    // FIX: Explicitly type the parsed incoming data
-                    const newDraft: StoredDraft<T> = JSON.parse(e.newValue);
-
-                    // FIX: Use the state updater function form which is properly typed
-                    setProfile((prev: T) => ({ ...prev, ...newDraft }));
-                    setHasDraft(true);
-
-                    console.log("🔄 Draft synchronized from another tab");
-                } catch (error) {
-                    console.warn(
-                        "❌ Failed to sync draft from storage event:",
-                        error,
-                    );
-                }
-            }
-        };
-
-        // Check window existence as this hook runs in a Next.js environment
-        if (typeof globalThis !== "undefined") {
-            globalThis.addEventListener("storage", handleStorageChange);
-            return () =>
-                globalThis.removeEventListener("storage", handleStorageChange);
-        }
-    }, []);
-
-    /**
-     * @function updateProfile
-     * @description A wrapped state setter that automatically saves the resulting state to storage.
-     * @param {SetStateAction<T>} updater - The new state object or an updater function.
-     * @returns {void}
-     */
-    const updateProfile = useCallback(
-        (updater: SetStateAction<T>): void => {
-            // FIX: Explicitly type 'prev' in the state setter callback
-            setProfile((prev: T) => {
-                // Determine the updated object. Updater can be an object (T) or a function ((prev: T) => T).
-                const updated = typeof updater === "function"
-                    ? updater(prev)
-                    : updater;
-
-                // Save the new value before returning it to state
-                saveToSessionStorage(updated);
-
-                return updated;
-            });
-        },
-        [saveToSessionStorage],
-    );
-    // #endregion Effects and Wrapped Setter
-
-    // #region Hook Return
-    return {
-        profile,
-        // Expose the wrapped setter as setProfile
-        setProfile: updateProfile,
-        loadDraft: loadFromSessionStorage,
-        clearDraft,
-        hasDraft,
-        // FIX: Ensure draftSource returns 'session' or null, matching the interface
-        draftSource: hasDraft ? "session" : null,
-    };
-    // #endregion Hook Return
+type StoredDraft<TProfile> = TProfile & {
+  timestamp: number;
+  version: string;
 };
+
+/**
+ * Describes the updater function for the profile state,
+ * allowing either a new value or a function.
+ * @template TProfile The type of the profile data.
+ */
+type ProfileUpdater<TProfile> = SetStateAction<TProfile>;
+
+/**
+ * Defines the public return shape of the useProfileDraft hook.
+ * @template TProfile The type of the profile data.
+ */
+export interface UseProfileDraftResult<TProfile> {
+  /** The current profile state (draft or initial). */
+  profile: TProfile;
+  /**
+   * Updates the profile state and automatically saves the draft
+   * to sessionStorage.
+   */
+  setProfile: Dispatch<ProfileUpdater<TProfile>>;
+  /**
+   * Attempts to load the draft from sessionStorage.
+   * @returns The saved profile data (TProfile) or null if no valid draft exists.
+   */
+  loadDraft: () => TProfile | null;
+  /** Clears the draft from sessionStorage. */
+  clearDraft: () => void;
+  /** True if a draft was successfully loaded or saved. */
+  hasDraft: boolean;
+  /** The source of the current draft data. */
+  draftSource: "session" | null;
+}
+
+const DRAFT_KEY = "profileDraft";
+const DRAFT_VERSION = "2.0";
+
+// #endregion 🛡️ Types and Constants
+
+// #region 🎣 Hook Implementation
+
+/**
+ * Manages a draft state for a profile, automatically saving to and loading
+ * from sessionStorage with cross-tab synchronization and error handling.
+ *
+ * @param initialProfile The default/initial state of the profile.
+ * @returns An object containing the draft state and management functions.
+ */
+export const useProfileDraft = <TProfile extends object>(
+  initialProfile: TProfile,
+): UseProfileDraftResult<TProfile> => {
+  const [profile, setProfile] = useState<TProfile>(initialProfile);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  // #region 💾 Storage Logic (Callbacks)
+
+  /**
+   * Saves the provided profile data to sessionStorage with metadata.
+   * Handles QuotaExceededError by clearing storage and retrying once.
+   */
+  const saveToSessionStorage = useCallback((profileData: TProfile) => {
+    const draftToStore: StoredDraft<TProfile> = {
+      ...profileData,
+      timestamp: Date.now(),
+      version: DRAFT_VERSION,
+    };
+
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftToStore));
+      console.log("💾 Draft saved to sessionStorage");
+    } catch (error: unknown) {
+      console.warn("❌ Failed to save to sessionStorage:", error);
+
+      // Check if it's a QuotaExceededError
+      if (
+        error instanceof DOMException && error.name === "QuotaExceededError"
+      ) {
+        console.warn("⚠️ Quota exceeded. Clearing storage and retrying...");
+        try {
+          // Clear and retry saving
+          sessionStorage.clear();
+          sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftToStore));
+          console.log("💾 Draft saved after clearing storage");
+        } catch (retryError: unknown) {
+          console.error(
+            "❌ Failed to save even after clearing storage:",
+            retryError,
+          );
+        }
+      }
+    }
+  }, []);
+
+  /**
+   * Loads and parses the draft from sessionStorage.
+   * Returns only the profile data, stripping metadata.
+   * Clears corrupted data if parsing fails.
+   */
+  const loadFromSessionStorage = useCallback((): TProfile | null => {
+    try {
+      const draft = sessionStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const parsed = JSON.parse(draft) as StoredDraft<TProfile>;
+        console.log("📂 Draft loaded from sessionStorage");
+        setHasDraft(true);
+
+        // Strip metadata before returning the profile data
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+        const { timestamp: _ts, version: _v, ...profileData } = parsed;
+        return profileData as TProfile;
+      }
+      return null;
+    } catch (error: unknown) {
+      console.warn("❌ Failed to load draft from sessionStorage:", error);
+      // Clear corrupted data
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+      } catch (clearError: unknown) {
+        console.warn("❌ Failed to clear corrupted draft:", clearError);
+      }
+      return null;
+    }
+  }, []);
+
+  /**
+   * Clears the draft from sessionStorage and resets the hasDraft flag.
+   */
+  const clearDraft = useCallback(() => {
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+      setHasDraft(false);
+      console.log("🗑️ Draft cleared from sessionStorage");
+    } catch (error: unknown) {
+      console.warn("❌ Failed to clear draft:", error);
+    }
+  }, []);
+
+  // #endregion 💾 Storage Logic (Callbacks)
+
+  // #region 🔄 Synchronization Effect
+
+  /**
+   * Listens for storage events to sync drafts across tabs.
+   */
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === DRAFT_KEY && e.newValue) {
+        try {
+          const newDraft = JSON.parse(e.newValue) as StoredDraft<TProfile>;
+
+          // Strip metadata before setting state
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+          const { timestamp: _ts, version: _v, ...profileData } = newDraft;
+
+          setProfile(profileData as TProfile);
+          setHasDraft(true);
+          console.log("🔄 Draft synchronized from another tab");
+        } catch (error: unknown) {
+          console.warn("❌ Failed to sync draft from storage event:", error);
+        }
+      }
+    };
+
+    globalThis.addEventListener("storage", handleStorageChange);
+    return () => globalThis.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // #endregion 🔄 Synchronization Effect
+
+  // #region 🚀 State Management
+
+  /**
+   * An enhanced setter function that updates the profile state
+   * and automatically triggers a save to sessionStorage.
+   */
+  const updateProfile = useCallback(
+    (updater: ProfileUpdater<TProfile>) => {
+      setProfile((prev) => {
+        const updated = typeof updater === "function"
+          // eslint-disable-next-line no-unused-vars
+          ? (updater as (prev: TProfile) => TProfile)(prev)
+          : updater;
+
+        saveToSessionStorage(updated);
+        setHasDraft(true); // Mark as having a draft on save
+        return updated;
+      });
+    },
+    [saveToSessionStorage],
+  );
+
+  // #endregion 🚀 State Management
+
+  return {
+    profile,
+    setProfile: updateProfile,
+    loadDraft: loadFromSessionStorage,
+    clearDraft,
+    hasDraft,
+    draftSource: hasDraft ? "session" : null,
+  };
+};
+
+// #endregion 🎣 Hook Implementation

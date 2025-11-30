@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui';
 import CommunitySupportSection from '@/components/CommunitySupportSection';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
 import { createClient } from '@/libs/supabase/client';
@@ -585,10 +584,10 @@ export default function ShareAvailability() {
 
             <div className="grid md:grid-cols-2 gap-6">
               {/* Dog Availability Option */}
-              <Button
+              <button
                 type="button"
-                className={`w-full text-left border-2 rounded-lg p-6 transition-all ${
-                  postType === 'dog_available'
+                className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                  postType === 'petpal_available'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
@@ -601,7 +600,7 @@ export default function ShareAvailability() {
                 </p>
                 {dogs.length === 0 && (
                   <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-sm text-sm">
-                    ⚠️ You need to add a dog to your profile first
+                    ⚠️ No dog found in your profile
                     <div className="mt-2">
                       <Link
                         href="/my-dogs/add"
@@ -617,9 +616,9 @@ export default function ShareAvailability() {
                     You have {dogs.length} dog{dogs.length !== 1 ? 's' : ''} in your profile
                   </div>
                 )}
-              </Button>
+              </button>
               {/* Pet Sitter Availability Option */}
-              <Button
+              <button
                 type="button"
                 className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
                   postType === 'petpal_available'
@@ -634,7 +633,7 @@ export default function ShareAvailability() {
                   Share when you&apos;re available to get some puppy love.
                 </p>
                 <div className="text-sm text-gray-500">Help others in your neighborhood</div>
-              </Button>
+              </button>
             </div>
           </div>
         )}
@@ -663,7 +662,7 @@ export default function ShareAvailability() {
                 <h3 className="text-lg font-semibold mb-4">Select Dog(s)</h3>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {dogs.map((dog) => (
-                    <Button
+                    <button
                       key={dog.id}
                       type="button"
                       className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
@@ -698,7 +697,7 @@ export default function ShareAvailability() {
                           <div className="text-sm text-gray-500">{dog.breed}</div>
                         </div>
                       </div>
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>

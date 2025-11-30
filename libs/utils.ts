@@ -1,13 +1,13 @@
 // #region Types
 
 /**
- * @description Defines the allowable values for the `cn` utility function.
+ * Defines the allowable values for the `cn` utility function.
  * This includes strings, or falsy values that should be filtered out.
  */
 type ClassValue = string | undefined | null | false;
 
 /**
- * @description Represents the structure for location data fields.
+ * Represents the structure for location data fields.
  * All fields are optional and can be null.
  */
 interface LocationFields {
@@ -21,7 +21,7 @@ interface LocationFields {
 // #region Constants
 
 /**
- * @description A Set of common US state abbreviations to keep uppercase.
+ * A Set of common US state abbreviations to keep uppercase.
  * Using a Set provides faster (O(1)) lookups compared to an array's .includes().
  */
 const stateAbbreviations: Set<string> = new Set([
@@ -80,7 +80,7 @@ const stateAbbreviations: Set<string> = new Set([
 // #region Functions
 
 /**
- * @description Utility function to merge class names, filtering out falsy values.
+ * Utility function to merge class names, filtering out falsy values.
  * @param {...ClassValue} classes - A list of class names to merge.
  * @returns {string} - A single string of merged class names.
  */
@@ -89,14 +89,13 @@ export function cn(...classes: ClassValue[]): string {
 }
 
 /**
- * @description Properly capitalizes location text, handling abbreviations and exceptions.
+ * Properly capitalizes location text, handling abbreviations and exceptions.
  * @param {string | null | undefined} text - The text to capitalize.
  * @returns {string | null | undefined} - Properly capitalized text, or the original falsy value.
  */
 export function capitalizeLocation(
   text: string | null | undefined,
 ): string | null | undefined {
-  // Type guard: If text is falsy (null, undefined, ''), return it directly.
   if (!text) {
     return text;
   }
@@ -104,44 +103,58 @@ export function capitalizeLocation(
   const lowerText = text.toLowerCase().trim();
 
   // If it's a state abbreviation, return it uppercase
-  // Use .has() for efficient O(1) lookup in the Set
   if (stateAbbreviations.has(lowerText)) {
     return lowerText.toUpperCase();
   }
 
   // Split by spaces and capitalize each word
   const words: string[] = lowerText.split(" ");
-  const capitalizedWords: string[] = words.map((word: string) => {
-    // Handle special cases for articles and prepositions
-    if (
-      word === "of" || word === "the" || word === "and" || word === "in" ||
-      word === "at"
-    ) {
-      return word;
-    }
+  const specialWords = new Set(["of", "the", "and", "in", "at"]);
 
-    // Capitalize first letter of each word
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  });
+  const capitalizeSegment = (segment: string) =>
+    segment ? segment.charAt(0).toUpperCase() + segment.slice(1) : segment;
+
+  const capitalizedWords: string[] = words.map(
+    (word: string, index: number) => {
+      if (!word) return word;
+
+      const segments = word.split("-");
+      const capitalizedSegments = segments.map(
+        (segment: string, segmentIndex: number) => {
+          if (segmentIndex === 0) {
+            return capitalizeSegment(segment);
+          }
+
+          return segment;
+        },
+      );
+      const normalizedWord = capitalizedSegments.join("-");
+
+      // Handle special articles/prepositions, but allow the first word to be capitalized
+      if (specialWords.has(word) && index > 0) {
+        return word;
+      }
+
+      return normalizedWord;
+    },
+  );
 
   return capitalizedWords.join(" ");
 }
 
 /**
- * @description Formats a location object with proper capitalization.
+ * Formats a location object with proper capitalization.
  * @param {LocationFields | null | undefined} location - Object containing location fields.
  * @returns {LocationFields | null | undefined} - Object with capitalized fields, or the original falsy value.
  */
 export function formatLocation(
   location: LocationFields | null | undefined,
 ): LocationFields | null | undefined {
-  // Type guard: If location is falsy, return it directly.
   if (!location) {
     return location;
   }
 
-  // We can call capitalizeLocation directly on each property,
-  // as it's built to handle null/undefined values.
+  // capitalizeLocation is built to handle null/undefined values.
   return {
     neighborhood: capitalizeLocation(location.neighborhood),
     city: capitalizeLocation(location.city),
