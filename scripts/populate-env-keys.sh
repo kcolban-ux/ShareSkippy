@@ -1,4 +1,4 @@
-ENV_FILE=".env.local"
+ENV_FILE="${1:-.env}"
 
 command -v npx >/dev/null 2>&1 || { echo >&2 "Error: npx is required but not found. Please run 'npm install'."; exit 1; }
 
