@@ -8,7 +8,7 @@ import { useUser } from '@/libs/supabase/hooks';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
 import PhotoUpload from '@/components/ui/PhotoUpload';
-
+import dynamic from 'next/dynamic';
 
 const initialProfileState = {
   first_name: '',
@@ -37,6 +37,12 @@ const initialProfileState = {
   state: '',
   zip_code: '',
 };
+
+// disable server-side rendering to prevent prerendering error
+const DynamicAutoComplete = dynamic(
+  () => import("@mapbox/search-js-react").then((mod) => mod.AddressAutofill),
+  { ssr: false }
+);
 
 // --- COMPONENT START ---
 
@@ -624,6 +630,18 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
+                <DynamicAutoComplete accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}>
+                  <input
+                    type="text"
+                    name="street_address"
+                    id="street_address"
+                    value={profile.street_address}
+                    onChange={handleInputChange}
+                    placeholder="123 Main Street"
+                    autoComplete="address-line1"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  />
+                </DynamicAutoComplete>
                 <input
                   type="text"
                   name="street_address"
@@ -646,6 +664,7 @@ export default function ProfileEditPage() {
                   value={profile.city}
                   onChange={handleInputChange}
                   placeholder="Berkeley"
+                  autoComplete="address-level2"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
@@ -661,6 +680,7 @@ export default function ProfileEditPage() {
                   value={profile.state}
                   onChange={handleInputChange}
                   placeholder="CA"
+                  autoComplete="address-level1"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
@@ -676,6 +696,7 @@ export default function ProfileEditPage() {
                   value={profile.zip_code}
                   onChange={handleInputChange}
                   placeholder="94704"
+                  autoComplete="postal-code"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
