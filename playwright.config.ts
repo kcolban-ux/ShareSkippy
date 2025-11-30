@@ -1,7 +1,4 @@
 import { defineConfig } from "@playwright/test";
-import { ensureEnvDefaults } from "./libs/loadEnv.mjs";
-
-ensureEnvDefaults();
 
 export default defineConfig({
   testDir: "./tests/e2e",
