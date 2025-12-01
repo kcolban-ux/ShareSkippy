@@ -44,6 +44,8 @@ const DynamicAutoComplete = dynamic(
   { ssr: false }
 );
 
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+
 // --- COMPONENT START ---
 
 export default function ProfileEditPage() {
@@ -630,10 +632,10 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
-                <DynamicAutoComplete accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}>
+                <DynamicAutoComplete accessToken={MAPBOX_TOKEN}>
                   <input
                     type="text"
-                    name="street_address"
+                    name="street_address"npm
                     id="street_address"
                     value={profile.street_address}
                     onChange={handleInputChange}
