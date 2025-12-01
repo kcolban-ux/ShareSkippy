@@ -141,6 +141,7 @@ export default function MyDogsPage(): ReactElement {
                       className="w-full h-full object-cover"
                       width={400}
                       height={400}
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">

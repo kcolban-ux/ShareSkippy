@@ -82,6 +82,7 @@ const Testimonial = ({
                 priority={priority}
                 width={40}
                 height={40}
+                unoptimized
               />
             )}
             <div>
@@ -109,6 +110,7 @@ const Testimonial = ({
                 priority={priority}
                 width={48}
                 height={48}
+                unoptimized
               />
             )}
             <div>
@@ -133,6 +135,7 @@ const Testimonial = ({
                   priority={priority}
                   width={50}
                   height={50}
+                  unoptimized
                 />
               </div>
             ))}
@@ -164,6 +167,7 @@ const Testimonial = ({
                   alt={`${name}'s testimonial`}
                   width={48}
                   height={48}
+                  unoptimized
                 />
               ) : (
                 <span className="w-10 h-10 md:w-12 md:h-12 rounded-full flex justify-center items-center text-lg font-medium bg-base-300">
@@ -198,6 +202,7 @@ const Testimonial = ({
                     alt={`${name}'s testimonial`}
                     width={48}
                     height={48}
+                    unoptimized
                   />
                 ) : (
                   <span className="w-10 h-10 md:w-12 md:h-12 rounded-full flex justify-center items-center text-lg font-medium bg-base-300">

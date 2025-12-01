@@ -40,6 +40,7 @@ const Hero = () => {
           priority={true}
           width={500}
           height={500}
+          unoptimized
         />
       </div>
     </section>

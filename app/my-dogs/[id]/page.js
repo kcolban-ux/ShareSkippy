@@ -173,7 +173,14 @@ export default function DogDetailsPage() {
           {/* Dog Photo */}
           <div className="aspect-video bg-gray-100 relative">
             {dog.photo_url ? (
-              <Image src={dog.photo_url} alt={dog.name} className="w-full h-full object-cover" height={400} width={400} />
+              <Image
+                src={dog.photo_url}
+                alt={dog.name}
+                className="w-full h-full object-cover"
+                height={400}
+                width={400}
+                unoptimized
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-8xl">🐕</div>
             )}

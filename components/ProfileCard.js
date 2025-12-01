@@ -31,6 +31,7 @@ export default function ProfileCard({ profile, onMessage }) {
               e.target.style.display = 'none';
               e.target.nextElementSibling.style.display = 'flex';
             }}
+            unoptimized
           />
         ) : null}
         <div

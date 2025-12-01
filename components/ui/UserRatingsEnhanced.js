@@ -127,6 +127,7 @@ export default function UserRatingsEnhanced({ userId, userRole }) {
                     src={review.reviewer.profile_photo_url}
                     alt="Reviewer"
                     className="w-8 h-8 rounded-full mr-3 object-cover"
+                    unoptimized
                   />
                 )}
                 <div>

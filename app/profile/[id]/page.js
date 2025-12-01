@@ -187,6 +187,7 @@ export default function PublicProfilePage() {
                 width={128}
                 height={128}
                 className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-blue-100"
+                unoptimized
               />
             ) : (
               <div className="w-24 h-24 sm:w-32 sm:h-32 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-4xl border-4 border-blue-100">
@@ -368,6 +369,7 @@ export default function PublicProfilePage() {
                         width={64}
                         height={64}
                         className="w-16 h-16 rounded-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-2xl">

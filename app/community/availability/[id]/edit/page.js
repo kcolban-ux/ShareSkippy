@@ -526,6 +526,7 @@ export default function EditAvailability() {
                             src={availability.allDogs[0].photo_url}
                             alt={availability.allDogs[0].name}
                             className="w-24 h-24 rounded-full object-cover shadow-md"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-3xl shadow-md">
@@ -648,6 +649,7 @@ export default function EditAvailability() {
                                 src={dog.photo_url}
                                 alt={dog.name}
                                 className="w-16 h-16 rounded-full object-cover shadow-md"
+                                unoptimized
                               />
                             ) : (
                               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-2xl shadow-md">
