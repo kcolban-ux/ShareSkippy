@@ -1,5 +1,9 @@
 import Link from 'next/link';
 import { LEGAL } from '@/lib/legal';
+import { FaFacebook } from 'react-icons/fa';
+import { BsInstagram } from 'react-icons/bs';
+import { AiFillTikTok } from 'react-icons/ai';
+import { FaLinkedin } from 'react-icons/fa';
 
 // Footer component matching the ShareSkippy design - updated
 const Footer = () => {
@@ -9,13 +13,35 @@ const Footer = () => {
         {/* Top section with three columns */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Left Column - Brand Information */}
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left flex flex-col justify-between">
             <h3 className="text-2xl font-bold mb-4 text-white">ShareSkippy</h3>
             <p className="text-sm mb-4 text-white">
               Connecting dog lovers with dog owners for free, community-based dog sharing
               experiences.
             </p>
-            <p className="text-sm text-white">© 2025 ShareSkippy. All rights reserved.</p>
+            <div className="flex gap-5 items-center justify-center md:justify-start">
+              <a
+                href="https://www.facebook.com/profile.php?id=61582128129445&mibextid=wwXIfr"
+                target="blank"
+              >
+                <FaFacebook size={24} />
+              </a>
+              <a href="https://www.instagram.com/share_skippy/" target="blank">
+                <BsInstagram size={24} />
+              </a>
+              <a
+                href="https://www.tiktok.com/@shareskippy?is_from_webapp=1&sender_device=pc"
+                target="blank"
+              >
+                <AiFillTikTok size={24} />
+              </a>
+              <a href="https://www.linkedin.com/company/shareskippy/" target="blank">
+                <FaLinkedin size={24} />
+              </a>
+            </div>
+            <div className="mt-5">
+              <p className="text-sm text-white">© 2025 ShareSkippy. All rights reserved.</p>
+            </div>
           </div>
 
           {/* Middle Column - Quick Links */}
