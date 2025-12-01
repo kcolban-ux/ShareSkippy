@@ -25,6 +25,8 @@ export default function ProfileCard({ profile, onMessage }) {
           <Image
             src={photo_url}
             alt={first_name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover"
             onError={(e) => {
               console.error('Profile image failed to load:', photo_url);
