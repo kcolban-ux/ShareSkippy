@@ -15,7 +15,7 @@ Status: Reviewed cookie handling, headers, and secret exposure; no behavior chan
 
 ## Secrets in client code
 
-- Only public env vars referenced in code: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (expected for Supabase browser usage). No private secrets detected in client bundles.
+- Only public env vars referenced in code: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (expected for Supabase browser usage). No private secrets detected in client bundles.
 
 ## Opportunities (documented, not applied)
 

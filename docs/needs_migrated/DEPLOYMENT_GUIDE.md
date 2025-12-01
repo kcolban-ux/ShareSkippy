@@ -15,7 +15,7 @@
 4. Vercel will auto-detect Next.js settings
 5. Add your environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `RESEND_API_KEY`
    - `OPENAI_API_KEY` (if using AI features)
@@ -59,7 +59,7 @@ Create these in your hosting platform:
 ```bash
 # Supabase (Production)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-remote-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-remote-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-remote-service-role-key
 
 # Email

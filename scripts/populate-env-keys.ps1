@@ -39,8 +39,8 @@ $NewContent = @(
     Get-Content -Path $ENV_FILE | ForEach-Object {
         
         # Check and replace the Anon Key
-        if ($_ -match '^NEXT_PUBLIC_SUPABASE_ANON_KEY=') {
-            "NEXT_PUBLIC_SUPABASE_ANON_KEY=$AnonKeyRawValue"
+        if ($_ -match '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=') {
+            "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$AnonKeyRawValue"
         }
         # Check and replace the Service Key
         elseif ($_ -match '^SUPABASE_SERVICE_ROLE_KEY=') {

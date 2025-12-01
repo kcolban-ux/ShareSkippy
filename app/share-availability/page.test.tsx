@@ -18,7 +18,7 @@ jest.mock('@/hooks/useProfile');
 jest.mock('@/libs/supabase/client');
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://dummy-url.com';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-key';
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'dummy-key';
 
 // Cast the imported mocks to Jest's mock type
 const mockedUseUser = useUser as jest.Mock;

@@ -24,7 +24,7 @@ if [ -z "$ANON_KEY_VALUE" ] || [ -z "$SERVICE_KEY_VALUE" ]; then
   exit 1
 fi
 
-sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_ANON_KEY=).*$/\1$ANON_KEY_VALUE/" "$ENV_FILE"
+sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=).*$/\1$ANON_KEY_VALUE/" "$ENV_FILE"
 
 sed -i -E "s/^(SUPABASE_SERVICE_ROLE_KEY=).*$/\1$SERVICE_KEY_VALUE/" "$ENV_FILE"
 
