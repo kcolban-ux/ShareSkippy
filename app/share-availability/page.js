@@ -484,7 +484,7 @@ export default function ShareAvailability() {
   // if `authLoading` is false and we are still rendering.
 
   // Check if Supabase is configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -497,7 +497,7 @@ export default function ShareAvailability() {
             <p className="font-medium mb-2">Required environment variables:</p>
             <ul className="space-y-1">
               <li>• NEXT_PUBLIC_SUPABASE_URL</li>
-              <li>• NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+              <li>• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</li>
             </ul>
           </div>
         </div>
