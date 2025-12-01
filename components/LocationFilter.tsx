@@ -94,15 +94,15 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps):
     navigator.geolocation.getCurrentPosition(
       (position: GeolocationPosition) => {
         const { latitude, longitude } = position.coords;
-        const filter: LocationFilterConfig = {
+        const newFilter: LocationFilterConfig = {
           type: 'shared-location',
           lat: latitude,
           lng: longitude,
           radius: 10, // 10 miles for shared location
         };
-        setActiveFilter(filter);
+        setActiveFilter(newFilter);
         setFilterType('shared-location');
-        onFilterChange(filter);
+        onFilterChange(newFilter);
         setLoading(false);
       },
       (err: GeolocationPositionError) => {
@@ -145,16 +145,16 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps):
         return;
       }
 
-      const filter: LocationFilterConfig = {
+      const newFilter: LocationFilterConfig = {
         type: 'zip-city',
         lat: coords.lat,
         lng: coords.lng,
         radius: 5, // 5 miles for zip/city
         query: trimmedQuery, // Store the query for display
       };
-      setActiveFilter(filter);
+      setActiveFilter(newFilter);
       setFilterType('zip-city');
-      onFilterChange(filter);
+      onFilterChange(newFilter);
       setLoading(false);
     } catch (err: unknown) {
       console.error('Geocoding error:', err);
@@ -282,6 +282,5 @@ export default function LocationFilter({ onFilterChange }: LocationFilterProps):
       </div>
     </div>
   );
-  // #endregion
 }
 // #endregion
