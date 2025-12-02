@@ -134,8 +134,8 @@ interface AvailabilityPostType {
  */
 interface MessageModalState {
   isOpen: boolean;
-  recipient: ProfileType | null;
-  availabilityPost: AvailabilityPostType | null;
+  recipient: ProfileType | null; // Assuming recipient can also be null initially
+  availabilityPost: AvailabilityPostType | null; // MUST allow null
 }
 
 // #region: NETWORK API TYPE EXTENSIONS
@@ -312,7 +312,7 @@ export default function CommunityPage() {
    */
   const openMessageModal = (
     recipient: ProfileType,
-    availabilityPost: AvailabilityPostType
+    availabilityPost: AvailabilityPostType | null
   ): void => {
     setMessageModal({ isOpen: true, recipient, availabilityPost });
   };
@@ -1296,7 +1296,7 @@ export default function CommunityPage() {
             role="all-members"
             // Pass the function used to open the message modal
             // (We'll assume the onMessage handler in ProfileCard maps to openMessageModal)
-            onMessage={(profile) => openMessageModal(profile, null)}
+            onMessage={(profile: ProfileType) => openMessageModal(profile, null)}
             // Pass the currently selected location filter state
             locationFilter={locationFilter}
           />
