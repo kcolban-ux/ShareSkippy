@@ -13,8 +13,8 @@ export async function GET(request) {
 
     console.log('Profiles API called with params:', { cursor, limit });
 
-    // Build the main query for eligible profiles
-    // We'll use a different approach to exclude users with active availability
+    // 1. Fetch all eligible profiles from the database.
+    // The query remains a full fetch to avoid PostgREST URL length error (PGRST100)
     let query = supabase
       .from('profiles')
       .select(
@@ -36,7 +36,6 @@ export async function GET(request) {
       .neq('bio', '')
       .in('role', ['dog_owner', 'petpal', 'both']);
 
-    // Use a more efficient approach: get all profiles first, then filter out those with active availability
     const { data: profiles, error } = await query;
 
     if (error) {
@@ -46,7 +45,7 @@ export async function GET(request) {
 
     console.log('Raw profiles fetched:', profiles?.length || 0);
 
-    // Now get users with active availability posts to exclude them
+    // 2. Get users with active availability posts to exclude them
     const { data: activeAvailabilityUsers, error: availabilityError } = await supabase
       .from('availability')
       .select('owner_id')
@@ -59,7 +58,7 @@ export async function GET(request) {
 
     const excludedUserIds = new Set(activeAvailabilityUsers?.map((item) => item.owner_id) || []);
 
-    // Filter out profiles with active availability
+    // 3. Filter, decorate, and sort (all in-memory due to performance workaround)
     const filteredProfiles = profiles.filter((profile) => !excludedUserIds.has(profile.id));
 
     console.log(
@@ -67,19 +66,18 @@ export async function GET(request) {
       filteredProfiles.length
     );
 
-    // Process the data to match the required format
     const processedProfiles = filteredProfiles.map((profile) => {
-      // Calculate last_online_at from user_activity or profiles.updated_at
-      let lastOnlineAt = profile.updated_at;
+      let lastOnlineAt = profile.updated_at; // Default to updated_at
 
       if (profile.user_activity && profile.user_activity.length > 0) {
-        // Get the most recent activity
-        const mostRecentActivity = profile.user_activity.sort(
-          (a, b) => new Date(b.at) - new Date(a.at)
-        )[0];
-        if (mostRecentActivity && mostRecentActivity.at) {
-          lastOnlineAt = mostRecentActivity.at;
-        }
+        // OPTIMIZATION: Use reduce to find the latest time, which is much faster than sorting the array
+        const latestActivityTime = profile.user_activity.reduce((latestTime, currentActivity) => {
+          const currentActivityTime = new Date(currentActivity.at).getTime();
+          const latestTimeValue = new Date(latestTime).getTime();
+
+          return currentActivityTime > latestTimeValue ? currentActivity.at : latestTime;
+        }, lastOnlineAt);
+        lastOnlineAt = latestActivityTime;
       }
 
       // Truncate bio to ~140 characters
@@ -99,7 +97,7 @@ export async function GET(request) {
         bio_excerpt: bioExcerpt,
         display_lat: profile.display_lat,
         display_lng: profile.display_lng,
-        last_online_at: lastOnlineAt
+        last_online_at: lastOnlineAt,
       };
     });
 

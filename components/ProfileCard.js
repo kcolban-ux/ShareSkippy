@@ -4,6 +4,13 @@ import Image from 'next/image';
 export default function ProfileCard({ profile, onMessage }) {
   const { id, first_name, photo_url, city, neighborhood, role, bio_excerpt } = profile;
 
+  // Define the known bad URL to exclude it from rendering
+  const BAD_GOOGLE_PLACEHOLDER =
+    'https://lh3.googleusercontent.com/a/ACg8ocJZ0BYzNHyWJjoZhAeFj7DhRonYz66MUrsU6eWucl5xOSjNcHuO=s96-c';
+
+  // New conditional check: is the URL valid AND not the known bad placeholder?
+  const isValidImageUrl = photo_url && photo_url !== BAD_GOOGLE_PLACEHOLDER;
+
   const getRoleIcon = (role) => {
     switch (role) {
       case 'dog_owner':
@@ -21,12 +28,17 @@ export default function ProfileCard({ profile, onMessage }) {
     <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200">
       {/* Profile Header */}
       <div className="flex items-center space-x-3 mb-4">
-        {photo_url ? (
+        {/* FIX: Only render Image if the URL is valid and not the bad placeholder */}
+        {isValidImageUrl ? (
           <Image
             src={photo_url}
             alt={first_name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover"
             onError={(e) => {
+              // This onError will now only fire for genuinely expired or blocked URLs,
+              // but will be completely skipped for the placeholder URL.
               console.error('Profile image failed to load:', photo_url);
               e.target.style.display = 'none';
               e.target.nextElementSibling.style.display = 'flex';
@@ -36,7 +48,8 @@ export default function ProfileCard({ profile, onMessage }) {
         ) : null}
         <div
           data-testid="fallback-icon-container"
-          className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
+          // FIX: The fallback is only hidden if we successfully rendered an image
+          className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${isValidImageUrl ? 'hidden' : ''}`}
         >
           <span className="text-xl">{getRoleIcon(role)}</span>
         </div>

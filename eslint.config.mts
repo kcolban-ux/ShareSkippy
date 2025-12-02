@@ -11,10 +11,12 @@ export default defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    // FIX: Only apply the projectService setting to TypeScript files (.ts, .tsx)
+    // This prevents the "not found by the project service" error on plain .js files.
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parserOptions: {
         projectService: true,
-        project: "@typescript-eslint/parser",
       },
     },
   },
