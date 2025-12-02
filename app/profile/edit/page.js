@@ -644,15 +644,6 @@ export default function ProfileEditPage() {
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
                 </DynamicAutoComplete>
-                <input
-                  type="text"
-                  name="street_address"
-                  id="street_address"
-                  value={profile.street_address}
-                  onChange={handleInputChange}
-                  placeholder="123 Main Street"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                />
               </div>
 
               <div>
