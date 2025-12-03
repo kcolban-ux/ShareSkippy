@@ -639,6 +639,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        {/* new community stories */}
 
         {/* Closing CTA Section */}
         <section className="py-20 bg-linear-to-br from-blue-600 to-indigo-600">
