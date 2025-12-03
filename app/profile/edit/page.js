@@ -8,6 +8,7 @@ import { useUser } from '@/libs/supabase/hooks';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
 import PhotoUpload from '@/components/ui/PhotoUpload';
+import MapboxAddressInput from '@/components/mapbox/MapboxAddressInput'
 import dynamic from 'next/dynamic';
 
 const initialProfileState = {
@@ -44,7 +45,7 @@ const DynamicAutoComplete = dynamic(
   { ssr: false }
 );
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || '';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 // --- COMPONENT START ---
 
@@ -55,6 +56,7 @@ export default function ProfileEditPage() {
   const [saving, setSaving] = useState(false);
   const [verifyingAddress, setVerifyingAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
+  const [mapboxError, setMapboxError] = useState(false);
 
   // Use the sessionStorage-based profile draft hook
   const { profile, setProfile, loadDraft, clearDraft, hasDraft, draftSource } =
@@ -632,10 +634,10 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
-                <DynamicAutoComplete accessToken={MAPBOX_TOKEN}>
+                {MAPBOX_TOKEN === 'your-mapbox-access-token' ? (
                   <input
                     type="text"
-                    name="street_address"npm
+                    name="street_address"
                     id="street_address"
                     value={profile.street_address}
                     onChange={handleInputChange}
@@ -643,7 +645,20 @@ export default function ProfileEditPage() {
                     autoComplete="address-line1"
                     className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                   />
-                </DynamicAutoComplete>
+                ) : (
+                  <DynamicAutoComplete accessToken={MAPBOX_TOKEN}>
+                    <input
+                      type="text"
+                      name="street_address"
+                      id="street_address"
+                      value={profile.street_address}
+                      onChange={handleInputChange}
+                      placeholder="123 Main Street"
+                      autoComplete="address-line1"
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    />
+                  </DynamicAutoComplete>
+                )}
               </div>
 
               <div>
