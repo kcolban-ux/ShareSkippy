@@ -109,6 +109,7 @@ export default function ProfileEditPage() {
   const [saving, setSaving] = useState(false);
   const [verifyingAddress, setVerifyingAddress] = useState(false);
   const [addressVerified, setAddressVerified] = useState(false);
+  const [mapboxError, setMapboxError] = useState(false);
 
   // Type safety applied here: profile state and setProfile must adhere to ProfileState
   const { profile, setProfile, loadDraft, clearDraft, hasDraft, draftSource } =
@@ -763,7 +764,7 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
-                <DynamicAutoComplete accessToken={MAPBOX_TOKEN}>
+                {MAPBOX_TOKEN === 'your-mapbox-access-token' ? (
                   <input
                     type="text"
                     name="street_address"npm
