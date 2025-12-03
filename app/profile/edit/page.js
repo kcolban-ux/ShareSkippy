@@ -8,7 +8,6 @@ import { useUser } from '@/libs/supabase/hooks';
 import { useProfileDraft } from '@/hooks/useProfileDraft';
 import { formatLocation } from '@/libs/utils';
 import PhotoUpload from '@/components/ui/PhotoUpload';
-import MapboxAddressInput from '@/components/mapbox/MapboxAddressInput'
 import dynamic from 'next/dynamic';
 
 const initialProfileState = {
