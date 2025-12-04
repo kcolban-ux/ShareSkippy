@@ -4,11 +4,22 @@ export default function ChatMessages({ messages = [] }) {
       {messages.map((msg, index) => (
         <div
           key={index}
-          className={`p-2 rounded-md max-w-xs ${
-            msg.from === "You" ? "bg-blue-500 text-white ml-auto" : "bg-gray-200 dark:bg-gray-700 text-black"
+          className={`p-2 rounded-md max-w-xs flex flex-col ${
+            msg.from === "You"
+              ? "bg-blue-500 text-white ml-auto"
+              : "bg-gray-200 dark:bg-gray-700 text-black"
           }`}
         >
-          {msg.text}
+          <span>{msg.text}</span>
+          {msg.time && (
+            <span
+              className={`text-xs mt-1 ${
+                msg.from === "You" ? "self-end text-gray-200" : "self-start text-gray-500"
+              }`}
+            >
+              {msg.time}
+            </span>
+          )}
         </div>
       ))}
     </div>
