@@ -274,26 +274,48 @@ export default function MessagesPage(): ReactElement {
     try {
       setSending(true);
 
+      //create temp message
+      const tempMessage: Message = {
+        id: `temp-${Date.now()}`,
+        sender_id: user!.id,
+        recipient_id: selectedConversation.otherParticipant.id,
+        content: newMessage.trim(),
+        created_at: new Date().toISOString(),
+        availability_id: selectedConversation.availability_id,
+        conversation_id: selectedConversation.id,
+      };
+
+      //update it to the chatbox for sender
+      setMessages((prev) => [...prev, tempMessage]);
+      setNewMessage('');
+
+      //send to backend
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
-          content: newMessage.trim(),
+          content: tempMessage.content,
         }),
       });
 
       if (!response.ok) {
+        //remove the tempMessage
+        setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
+
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to send message');
       }
 
-      // Refresh conversations to update the 'last_message_at' for the sidebar.
-      setNewMessage('');
+      //if success, replace the tempMessage with real one
+      const { message: realMessage } = await response.json();
+      setMessages((prev) => prev.map((m) => (m.id === tempMessage.id ? realMessage : m)));
+
       await fetchConversations();
     } catch (error) {
       console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again');
     } finally {
       setSending(false);
     }
