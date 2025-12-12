@@ -4,7 +4,19 @@ import { getCookieOptions } from '@/libs/cookieOptions';
 
 // #region TYPES
 type SupabaseKeyType = 'anon' | 'service_role';
-type CookieOptions = Parameters<Awaited<ReturnType<typeof cookies>>['set']>[2];
+/**
+ * Represents the options for setting a cookie.
+ * This interface matches the expected shape for cookie options in Next.js and Supabase.
+ */
+interface CookieOptions {
+  domain?: string;
+  expires?: Date;
+  httpOnly?: boolean;
+  maxAge?: number;
+  path?: string;
+  sameSite?: 'strict' | 'lax' | 'none';
+  secure?: boolean;
+}
 // #endregion TYPES
 
 /**
