@@ -16,7 +16,13 @@ const AppLayout = ({ children }) => {
   const pathname = usePathname();
 
   // Don't show header/footer on auth pages
-  const isAuthPage = pathname === '/signin' || pathname.startsWith('/signin');
+  const isAuthPage =
+    pathname === '/signin' ||
+    pathname.startsWith('/signin') ||
+    pathname === '/sign-up' ||
+    pathname.startsWith('/sign-up') ||
+    pathname === '/sign-in' ||
+    pathname.startsWith('/sign-in');
 
   const handleReviewClick = useCallback((review) => {
     setSelectedReview(review);
