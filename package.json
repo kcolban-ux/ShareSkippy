@@ -53,7 +53,7 @@
     "eslint-plugin-jest": "^29.2.1",
     "form-data": "^4.0.5",
     "google-auth-library": "^10.5.0",
-    "next": "^16.0.8",
+    "next": "^16.1.0",
     "nextjs-toploader": "^3.9.17",
     "nodemailer": "^6.9.13",
     "prop-types": "^15.8.1",
