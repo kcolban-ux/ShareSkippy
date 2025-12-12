@@ -2,22 +2,7 @@ import { createServerClient, type CookieMethodsServer } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getCookieOptions } from '@/libs/cookieOptions';
 
-// #region TYPES
 type SupabaseKeyType = 'anon' | 'service_role';
-/**
- * Represents the options for setting a cookie.
- * This interface matches the expected shape for cookie options in Next.js and Supabase.
- */
-interface CookieOptions {
-  domain?: string;
-  expires?: Date;
-  httpOnly?: boolean;
-  maxAge?: number;
-  path?: string;
-  sameSite?: 'strict' | 'lax' | 'none';
-  secure?: boolean;
-}
-// #endregion TYPES
 
 /**
  * @async
@@ -38,7 +23,7 @@ export async function createClient(type: SupabaseKeyType = 'anon') {
     getAll() {
       return cookieStore.getAll();
     },
-    setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+    setAll(cookiesToSet) {
       try {
         cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
       } catch {
