@@ -99,7 +99,7 @@ export async function GET(request) {
         bio_excerpt: bioExcerpt,
         display_lat: profile.display_lat,
         display_lng: profile.display_lng,
-        last_online_at: lastOnlineAt
+        last_online_at: lastOnlineAt,
       };
     });
 
