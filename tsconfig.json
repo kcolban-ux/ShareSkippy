@@ -49,7 +49,8 @@
     "app/share-availability/page.js",
     "app/profile/page.js",
     "app/api/community/profiles/route.js",
-    "components/ProfilesList.js"
+    "components/ProfilesList.js",
+    "components/ui/OptimizedImage.js"
   ],
   "exclude": ["node_modules", ".next"]
 }

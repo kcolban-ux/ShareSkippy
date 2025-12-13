@@ -17,7 +17,7 @@ export async function createClient(type: SupabaseKeyType = 'anon') {
   const supabaseKey =
     type === 'service_role'
       ? process.env.SUPABASE_SERVICE_ROLE_KEY!
-      : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      : process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
   const cookieMethods: CookieMethodsServer = {
     getAll() {
