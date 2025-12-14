@@ -28,12 +28,8 @@ BEGIN
       CASE 
         WHEN c.participant1_id = NEW.sender_id THEN c.participant2_id
         ELSE c.participant1_id
-      END,
-      CASE 
-        WHEN c.participant1_id = NEW.sender_id THEN c.participant2_id
-        ELSE c.participant1_id
       END
-    INTO other_participant_id, other_participant_id
+    INTO other_participant_id
     FROM conversations c
     WHERE c.id = NEW.conversation_id;
     
