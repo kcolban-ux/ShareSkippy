@@ -94,12 +94,6 @@ const initialProfileState: Readonly<ProfileState> = {
   zip_code: '',
 };
 
-// disable server-side rendering to prevent prerendering error
-const DynamicAutoComplete = dynamic(
-  () => import("@mapbox/search-js-react").then((mod) => mod.AddressAutofill),
-  { ssr: false }
-);
-
 // --- COMPONENT START ---
 
 export default function ProfileEditPage() {
@@ -764,18 +758,6 @@ export default function ProfileEditPage() {
                 >
                   Street Address
                 </label>
-                {MAPBOX_TOKEN === 'your-mapbox-access-token' ? (
-                  <input
-                    type="text"
-                    name="street_address"npm
-                    id="street_address"
-                    value={profile.street_address}
-                    onChange={handleInputChange}
-                    placeholder="123 Main Street"
-                    autoComplete="address-line1"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                  />
-                </DynamicAutoComplete>
                 <input
                   type="text"
                   name="street_address"
