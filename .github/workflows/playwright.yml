@@ -47,8 +47,8 @@ jobs:
         run: npm run build
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Seed data and run Playwright tests
+        run: npm run test:e2e:ci
       - uses: actions/upload-artifact@v5
         if: ${{ !cancelled() }}
         with:
