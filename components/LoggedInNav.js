@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import logo from '@/app/icon.png';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import config from '@/config';
@@ -41,6 +41,14 @@ const LoggedInNav = () => {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { signOut } = useUser();
+
+  const handleNavigation = useCallback((event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    setIsOpen(false);
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -118,6 +126,8 @@ const LoggedInNav = () => {
                 pathname === item.href ? 'bg-white/20 text-white' : ''
               }`}
               title={item.label}
+              onClick={handleNavigation}
+              data-testid={item.href === '/profile' ? 'nav-profile-link' : undefined}
             >
               {item.label}
             </Link>
@@ -192,6 +202,8 @@ const LoggedInNav = () => {
                       pathname === item.href ? 'bg-white/20 text-white' : ''
                     }`}
                     title={item.label}
+                    onClick={handleNavigation}
+                    data-testid={item.href === '/profile' ? 'nav-profile-link-mobile' : undefined}
                   >
                     {item.label}
                   </Link>
