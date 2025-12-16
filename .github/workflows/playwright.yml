@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
-          node-version: lts/*
+          node-version: '22.x'
       - name: Set Playwright browser cache path
         run: echo "PLAYWRIGHT_BROWSERS_PATH=${RUNNER_TEMP}/playwright-browsers" >> $GITHUB_ENV
       - uses: actions/cache@v4
