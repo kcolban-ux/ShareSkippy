@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
-import logo from '@/app/icon.png';
+import logo from '@/public/icon.png';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import config from '@/config';
 

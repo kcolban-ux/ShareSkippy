@@ -46,7 +46,7 @@ jest.mock('@/config', () => ({
 }));
 
 // Mock static asset import
-jest.mock('@/app/icon.png', () => ({
+jest.mock('@/public/icon.png', () => ({
   __esModule: true,
   default: 'test-logo.png',
 }));

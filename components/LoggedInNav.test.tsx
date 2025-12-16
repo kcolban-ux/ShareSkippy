@@ -26,7 +26,7 @@ jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
 }));
 
-jest.mock('@/app/icon.png', () => ({
+jest.mock('@/public/icon.png', () => ({
   default: {
     src: '/mock-icon.png',
     height: 32,
