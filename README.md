@@ -75,8 +75,10 @@ ShareSkippy makes it easy for dog owners to find trusted community members who c
 - `task setup:env:supabase:populate`: refresh Supabase keys from `npx supabase status -o env` (Windows uses PowerShell, macOS/Linux run the shell script).
 - `task services:start` / `task services:stop`: manually control the local Supabase stack.
 - `task db:reset`: reset the database if migrations are out of sync.
-- `npm run lint`, `npm run test`, `npm run build`: validation tools the project runs in CI.
-- `npm run test:e2e`: seeds the test dataset and runs Playwright; only required when the database has not already been seeded (local dev tasks such as `task dev` already seed once per workflow).
+- `npm run lint`, `npm run build`: validation tools the project runs in CI.
+- `npm run unit`: run the Jest unit/integration suite quickly without seeding.
+- `npm run test`: run the full suite (`npm run unit` plus `npm run e2e`).
+- `npm run e2e`: seeds the test dataset and runs Playwright; only required when the database has not already been seeded (local dev tasks such as `task dev` already seed once per workflow).
 
 ## Cron job helper
 
