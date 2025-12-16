@@ -1,5 +1,4 @@
 import { defineConfig } from '@playwright/test';
-import { defineConfig } from '@playwright/test';
 
 /**
  * Provides Playwright test settings for ShareSkippy's end-to-end suite.
@@ -9,7 +8,6 @@ import { defineConfig } from '@playwright/test';
  * reuse an existing dev server when available.
  */
 export default defineConfig({
-  testDir: './tests/e2e',
   testDir: './tests/e2e',
   timeout: 30_000,
   expect: {
