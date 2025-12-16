@@ -1,25 +1,41 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import { getCookieOptions } from '@/libs/cookieOptions';
-import { ensureEnvDefaults } from '@/libs/loadEnv.mjs';
+import type { NextRequest } from 'next/server';
+import type { NextResponse as NextResponseType } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SerializeOptions } from 'cookie';
 
-ensureEnvDefaults();
+/**
+ * Represents a cookie to be set, including its name, value, and options.
+ */
+interface CookieToSet {
+  name: string;
+  value: string;
+  options?: SerializeOptions;
+}
 
-export async function proxy(request) {
-  let response = NextResponse.next({
+/**
+ * Proxies the request, initializing Supabase server client and handling cookies.
+ *
+ * @param request - The incoming Next.js request.
+ * @returns The Next.js response.
+ */
+export async function proxy(request: NextRequest): Promise<NextResponseType> {
+  let response: NextResponseType = NextResponse.next({
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  const supabase: SupabaseClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookieOptions: getCookieOptions(),
       cookies: {
-        getAll() {
+        getAll(): { name: string; value: string }[] {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]): void {
           // Set cookies on the request (for Server Components)
           for (const { name, value } of cookiesToSet) {
             request.cookies.set(name, value);
@@ -49,5 +65,5 @@ export const config = {
     './node_modules/@supabase/realtime-js/**',
     './node_modules/@supabase/supabase-js/**',
   ],
-  matcher: [String.raw`/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)`],
+  matcher: [`/((?!_next/static|_next/image|favicon.ico|.*.(?:svg|png|jpg|jpeg|gif|webp)$).*)`],
 };
