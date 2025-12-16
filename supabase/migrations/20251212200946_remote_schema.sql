@@ -11,6 +11,9 @@ on conflict (id) do nothing;
 
 
 
+  drop policy if exists "Anyone can view dog photos"
+    on "storage"."objects";
+
   create policy "Anyone can view dog photos"
   on "storage"."objects"
   as permissive
@@ -19,6 +22,9 @@ on conflict (id) do nothing;
 using ((bucket_id = 'dog-photos'::text));
 
 
+
+  drop policy if exists "Anyone can view profile photos"
+    on "storage"."objects";
 
   create policy "Anyone can view profile photos"
   on "storage"."objects"
@@ -29,6 +35,9 @@ using ((bucket_id = 'profile-photos'::text));
 
 
 
+  drop policy if exists "Users can delete their own dog photos"
+    on "storage"."objects";
+
   create policy "Users can delete their own dog photos"
   on "storage"."objects"
   as permissive
@@ -37,6 +46,9 @@ using ((bucket_id = 'profile-photos'::text));
 using (((bucket_id = 'dog-photos'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
 
 
+
+  drop policy if exists "Users can delete their own profile photos"
+    on "storage"."objects";
 
   create policy "Users can delete their own profile photos"
   on "storage"."objects"
@@ -47,6 +59,9 @@ using (((bucket_id = 'profile-photos'::text) AND ((auth.uid())::text = (storage.
 
 
 
+  drop policy if exists "Users can update their own profile photos"
+    on "storage"."objects";
+
   create policy "Users can update their own profile photos"
   on "storage"."objects"
   as permissive
@@ -56,6 +71,9 @@ using (((bucket_id = 'profile-photos'::text) AND ((auth.uid())::text = (storage.
 
 
 
+  drop policy if exists "Users can upload dog photos"
+    on "storage"."objects";
+
   create policy "Users can upload dog photos"
   on "storage"."objects"
   as permissive
@@ -64,6 +82,9 @@ using (((bucket_id = 'profile-photos'::text) AND ((auth.uid())::text = (storage.
 with check (((bucket_id = 'dog-photos'::text) AND ((auth.uid())::text = (storage.foldername(name))[1])));
 
 
+
+  drop policy if exists "Users can upload profile photos"
+    on "storage"."objects";
 
   create policy "Users can upload profile photos"
   on "storage"."objects"
