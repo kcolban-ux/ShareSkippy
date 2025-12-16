@@ -134,8 +134,8 @@ interface AvailabilityPostType {
  */
 interface MessageModalState {
   isOpen: boolean;
-  recipient: ProfileType | null; // Assuming recipient can also be null initially
-  availabilityPost: AvailabilityPostType | null; // MUST allow null
+  recipient: ProfileType | null;
+  availabilityPost: AvailabilityPostType | null;
 }
 
 // #region: NETWORK API TYPE EXTENSIONS
@@ -181,7 +181,6 @@ export default function CommunityPage() {
   );
   const [myAvailabilityPosts, setMyAvailabilityPosts] = useState<AvailabilityPostType[]>([]);
 
-  // UPDATED: Default tab changed to dog-availability for better visibility
   const [activeTab, setActiveTab] = useState<string>('dog-availability');
 
   // Explicitly typed message modal state
@@ -312,7 +311,7 @@ export default function CommunityPage() {
    */
   const openMessageModal = (
     recipient: ProfileType,
-    availabilityPost: AvailabilityPostType | null
+    availabilityPost: AvailabilityPostType
   ): void => {
     setMessageModal({ isOpen: true, recipient, availabilityPost });
   };
@@ -375,69 +374,6 @@ export default function CommunityPage() {
   };
   // #endregion: HELPER FUNCTIONS
 
-  // #region: PERFORMANCE FIX - BULK FETCHING LOGIC
-  /**
-   * @function bulkFetchDogs
-   * @description Collects all unique dog IDs from a list of posts and fetches them in a single batch query.
-   * This is a massive performance improvement over the previous N+1 query loop.
-   * @param {AvailabilityPostType[]} posts - The list of availability posts.
-   * @returns {Promise<Map<string, DogType>>} A map of dog ID to DogType object.
-   */
-  const bulkFetchDogs = async (posts: AvailabilityPostType[]): Promise<Map<string, DogType>> => {
-    if (!posts || posts.length === 0) return new Map();
-
-    const allDogIds = new Set<string>();
-    posts.forEach((post) => {
-      // Add the single dog_id
-      if (post.dog_id) allDogIds.add(post.dog_id);
-      // Add all IDs from the dog_ids array
-      if (post.dog_ids) post.dog_ids.forEach((id) => allDogIds.add(id));
-      // Note: We intentionally avoid a nested join in the main availability query to speed it up.
-    });
-
-    if (allDogIds.size === 0) return new Map();
-
-    const supabase = createClient();
-    // Execute a single query to fetch all unique dogs across all posts
-    const { data: allDogs, error: dogsError } = (await supabase
-      .from('dogs')
-      .select('id, name, breed, photo_url, size')
-      .in('id', Array.from(allDogIds))) as { data: DogType[] | null; error: unknown };
-
-    if (dogsError) {
-      console.error('Error fetching dogs in bulk:', dogsError);
-      return new Map();
-    }
-
-    const dogMap = new Map<string, DogType>();
-    allDogs?.forEach((dog) => dogMap.set(dog.id, dog));
-    return dogMap;
-  };
-
-  /**
-   * @function processPostsWithDogs
-   * @description Attaches bulk-fetched dog data to the relevant availability posts.
-   * @param {AvailabilityPostType[]} posts - The list of posts.
-   * @param {Map<string, DogType>} dogMap - The map of all fetched dogs.
-   * @returns {AvailabilityPostType[]} Posts with the allDogs field populated.
-   */
-  const processPostsWithDogs = (
-    posts: AvailabilityPostType[],
-    dogMap: Map<string, DogType>
-  ): AvailabilityPostType[] => {
-    return posts.map((post) => {
-      const dogIds: string[] = [...(post.dog_id ? [post.dog_id] : []), ...(post.dog_ids || [])];
-      // Map the IDs to the dogs from the bulk-fetched map
-      const allDogs = dogIds.map((id) => dogMap.get(id)).filter((dog): dog is DogType => !!dog); // Filter out null/undefined
-
-      return {
-        ...post,
-        allDogs,
-      };
-    });
-  };
-  // #endregion: PERFORMANCE FIX - BULK FETCHING LOGIC
-
   // #region: DATA FETCHING LOGIC
   /**
    * @function fetchAvailabilityData
@@ -450,8 +386,13 @@ export default function CommunityPage() {
     try {
       const supabase = createClient();
 
-      // REMOVED: The logic to add the _t cache-buster parameter to the URL via history.replaceState
-      // was removed here to keep the user-facing URL clean.
+      // ... (cache-busting and connection test logic is unchanged)
+      const cacheBuster = Date.now();
+      if (typeof globalThis !== 'undefined' && globalThis.location) {
+        const url = new URL(globalThis.location.href);
+        url.searchParams.set('_t', cacheBuster.toString());
+        globalThis.history.replaceState({}, '', url);
+      }
 
       // Simple query to test connection / initial data fetch
       const { error: allPostsError } = await supabase
@@ -469,31 +410,52 @@ export default function CommunityPage() {
         .select(
           `
           *,
-          owner:profiles!availability_owner_id_fkey ( id, first_name, last_name, profile_photo_url, neighborhood, city )
+          owner:profiles!availability_owner_id_fkey ( id, first_name, last_name, profile_photo_url, neighborhood, city ),
+          dog:dogs!availability_dog_id_fkey ( id, name, breed, photo_url, size )
           `
-        ) // Removed 'dog' join to keep the initial query lighter
+        )
         .eq('post_type', 'dog_available')
         .eq('status', 'active');
       if (currentUser) {
         dogQuery = dogQuery.neq('owner_id', currentUser.id);
       }
-
-      const { data: rawDogPosts, error: dogError } = (await dogQuery.order('created_at', {
+      // Cast the resulting data array to the expected type
+      const { data: dogPosts, error: dogError } = (await dogQuery.order('created_at', {
         ascending: false,
       })) as { data: AvailabilityPostType[] | null; error: unknown };
 
+      // Fetch all dogs logic for multi-dog posts
+      if (dogPosts) {
+        for (const post of dogPosts) {
+          let dogIds: string[] = [];
+          if (post.dog_id) dogIds.push(post.dog_id);
+          // Assuming dog_ids column is an array of strings (text[] in Postgres)
+          if (post.dog_ids && post.dog_ids.length > 0) dogIds = [...dogIds, ...post.dog_ids];
+          dogIds = [...new Set(dogIds)]; // Deduplicate
+
+          if (dogIds.length > 0) {
+            const { data: allDogs, error: dogsError } = (await supabase
+              .from('dogs')
+              .select('id, name, breed, photo_url, size')
+              .in('id', dogIds)) as { data: DogType[] | null; error: unknown };
+
+            if (!dogsError && allDogs) (post as AvailabilityPostType).allDogs = allDogs;
+            else {
+              console.error('Error fetching dogs for post:', post.id, dogsError);
+              (post as AvailabilityPostType).allDogs = [];
+            }
+          } else {
+            (post as AvailabilityPostType).allDogs = [];
+          }
+        }
+      }
       if (dogError) {
         console.error('Error fetching dog posts:', dogError);
         throw dogError;
       }
+      const postsWithDogs: AvailabilityPostType[] = dogPosts || [];
 
-      const postsToProcess = rawDogPosts || [];
-
-      // FIX: Replace N+1 query loop with bulk fetching
-      const communityDogMap = await bulkFetchDogs(postsToProcess);
-      const communityDogPosts = processPostsWithDogs(postsToProcess, communityDogMap);
-
-      setAllDogPosts(communityDogPosts);
+      setAllDogPosts(postsWithDogs);
 
       // 2. Fetch petpal availability posts
       let petpalQuery = supabase
@@ -523,8 +485,7 @@ export default function CommunityPage() {
 
       // 3. Fetch user's own availability posts
       if (currentUser) {
-        // Keep the dog join for single-dog legacy compatibility (dog:dogs) but rely on bulkFetchDogs for allDogs array
-        const { data: rawMyPosts, error: myError } = (await supabase
+        const { data: myPosts, error: myError } = (await supabase
           .from('availability')
           .select(
             `
@@ -538,18 +499,35 @@ export default function CommunityPage() {
           error: unknown;
         };
 
+        // Fetch all dogs for my posts
+        if (myPosts) {
+          for (const post of myPosts) {
+            let dogIds: string[] = [];
+            if (post.dog_id) dogIds.push(post.dog_id);
+            if (post.dog_ids && post.dog_ids.length > 0) dogIds = [...dogIds, ...post.dog_ids];
+            dogIds = [...new Set(dogIds)];
+
+            if (dogIds.length > 0) {
+              const { data: allDogs, error: dogsError } = (await supabase
+                .from('dogs')
+                .select('id, name, breed, photo_url, size')
+                .in('id', dogIds)) as { data: DogType[] | null; error: unknown };
+
+              if (!dogsError && allDogs) (post as AvailabilityPostType).allDogs = allDogs;
+              else {
+                console.error('Error fetching dogs for my post:', post.id, dogsError);
+                post.allDogs = [];
+              }
+            } else {
+              (post as AvailabilityPostType).allDogs = [];
+            }
+          }
+        }
         if (myError) {
           console.error('Error fetching user posts:', myError);
           throw myError;
         }
-
-        const myPostsToProcess = rawMyPosts || [];
-
-        // FIX: Replace N+1 query loop with bulk fetching
-        const myPostsDogMap = await bulkFetchDogs(myPostsToProcess);
-        const myProcessedPosts = processPostsWithDogs(myPostsToProcess, myPostsDogMap);
-
-        setMyAvailabilityPosts(myProcessedPosts);
+        setMyAvailabilityPosts(myPosts || []);
       }
     } catch (error) {
       console.error('Error fetching availability data:', error);
@@ -566,7 +544,7 @@ export default function CommunityPage() {
   const refreshData = async (): Promise<void> => {
     setRefreshing(true);
     try {
-      // Cache clearing logic (remains the same)
+      // Cache clearing logic
       if (typeof globalThis !== 'undefined') {
         if ('caches' in globalThis) {
           const cacheNames = await caches.keys();
@@ -717,7 +695,6 @@ export default function CommunityPage() {
                 icon: '🤝',
                 shortLabel: 'PetPals',
               },
-              // Removed 'community-members' tab
               {
                 id: 'my-availability',
                 label: 'My Availability',
@@ -742,7 +719,7 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        {/* Tab Content: Dog Availability */}
+        {/* Tab Content */}
         {activeTab === 'dog-availability' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
@@ -756,265 +733,71 @@ export default function CommunityPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {dogAvailabilityPosts.map((post: AvailabilityPostType) => {
-                // FIX: Ensure each unique dog is displayed only once
-                const allDogs = post.allDogs || [];
-                // Use a Map to filter for unique dogs based on their ID
-                const uniqueDogs = Array.from(
-                  new Map(allDogs.map((dog) => [dog.id, dog])).values()
-                );
-
-                return (
-                  <div
-                    key={post.id}
-                    // UPDATE: Card-level static highlight for general post visibility
-                    className="bg-white rounded-xl p-4 sm:p-6 shadow-lg ring-1 ring-blue-300 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                  >
-                    {/* Title */}
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                      {post.title}
-                    </h3>
-
-                    {/* Dog Information - Highlighted */}
-                    {uniqueDogs.length > 0 && (
-                      <div className="mb-4 p-3 rounded-xl bg-blue-50/70 border border-blue-200 shadow-inner">
-                        <h4 className="font-bold text-blue-800 mb-3">
-                          {uniqueDogs.length === 1 ? 'The Dog Available:' : 'The Dogs Available:'}
-                        </h4>
-                        {uniqueDogs.length === 1 ? (
-                          // Single dog display
-                          <div className="flex items-center space-x-3">
-                            {uniqueDogs[0].photo_url ? ( // <-- Use uniqueDogs
-                              <Image
-                                src={uniqueDogs[0].photo_url}
-                                alt={uniqueDogs[0].name}
-                                width={48}
-                                height={48}
-                                className="w-12 h-12 rounded-full object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                🐕
-                              </div>
-                            )}
-                            <div>
-                              <h4 className="font-medium">{uniqueDogs[0].name}</h4>
-                              <p className="text-sm text-gray-500">{uniqueDogs[0].breed}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          // Multiple dogs display
-                          // The inner heading is removed here as it's replaced by the wrapper's title
-                          <div>
-                            <div className="grid grid-cols-2 gap-2">
-                              {uniqueDogs.map(
-                                (
-                                  dog: DogType // <-- Use uniqueDogs
-                                ) => (
-                                  <div key={dog.id} className="flex items-center space-x-2">
-                                    {dog.photo_url ? (
-                                      <Image
-                                        src={dog.photo_url}
-                                        alt={dog.name}
-                                        width={32}
-                                        height={32}
-                                        className="w-8 h-8 rounded-full object-cover"
-                                        unoptimized
-                                      />
-                                    ) : (
-                                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">
-                                        🐕
-                                      </div>
-                                    )}
-                                    <div className="text-sm">
-                                      <div className="font-medium">{dog.name}</div>
-                                      <div className="text-xs text-gray-500">{dog.breed}</div>
-                                    </div>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Location Information */}
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-600">
-                        {post.use_profile_location && post.owner ? (
-                          <>
-                            {post.owner.neighborhood && <span>{post.owner.neighborhood}, </span>}
-                            {post.owner.city && <span>{post.owner.city}</span>}
-                          </>
-                        ) : (
-                          <>
-                            {post.custom_location_neighborhood && (
-                              <span>{post.custom_location_neighborhood}, </span>
-                            )}
-                            {post.custom_location_city && <span>{post.custom_location_city}</span>}
-                          </>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Available Schedule */}
-                    <div className="mb-4">
-                      {post.enabled_days && post.enabled_days.length > 0 && post.day_schedules && (
-                        <div className="text-sm text-gray-600 space-y-1">
-                          {formatAvailabilitySchedule(post.enabled_days, post.day_schedules).map(
-                            (schedule) => (
-                              <div key={schedule} className="flex items-center">
-                                <span className="mr-2">📅</span>
-                                <span>{schedule}</span>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Community Support Badge */}
-                    {post.need_extra_help && (
-                      <div className="mb-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                          <span className="mr-1">🤝</span>
-                          <span>Community Support</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Description */}
-                    {post.description && (
-                      <p className="text-gray-600 mb-4 line-clamp-3">{post.description}</p>
-                    )}
-
-                    {/* Urgency Badge */}
-                    {post.is_urgent && (
-                      <div className="flex items-center text-sm text-red-600 mb-4">
-                        <span className="mr-2">🚨</span>
-                        <span>Urgent</span>
-                      </div>
-                    )}
-
-                    {/* Pickup/Dropoff Information */}
-                    {(post.can_pick_up || post.can_drop_off || post.can_pick_up_drop_off) && (
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2">
-                          {post.can_pick_up_drop_off && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <span className="mr-1">🚗</span>
-                              <span>Can Pick Up & Drop Off</span>
-                            </span>
-                          )}
-                          {post.can_pick_up && !post.can_pick_up_drop_off && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              <span className="mr-1">📤</span>
-                              <span>Can Pick Up</span>
-                            </span>
-                          )}
-                          {post.can_drop_off && !post.can_pick_up_drop_off && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                              <span className="mr-1">📥</span>
-                              <span>Can Drop Off</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <Link
-                          href={`/community/availability/${post.id}`}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base text-center"
-                        >
-                          View Details
-                        </Link>
-
-                        {user && user.id !== post.owner_id && post.owner ? (
-                          <button
-                            // post.owner is cast to ProfileType in fetch and checked above
-                            onClick={() => openMessageModal(post.owner as ProfileType, post)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                          >
-                            Send Message
-                          </button>
-                        ) : (
-                          <div className="text-xs text-gray-400 px-2 py-1 bg-gray-100 rounded-sm text-center">
-                            {user ? 'Your post' : 'Not logged in'}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {dogAvailabilityPosts.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <div className="text-6xl mb-4">🐾</div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                    No Dogs Looking for Pals
-                  </h3>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4">
-                    Try adjusting your location filter, or check back soon!
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tab Content: PetPal Availability */}
-        {activeTab === 'petpal-availability' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">PetPals Available</h2>
-              <Link
-                href="/share-availability"
-                className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
-              >
-                Share Availability
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {petpalAvailabilityPosts.map((post: AvailabilityPostType) => (
+              {dogAvailabilityPosts.map((post: AvailabilityPostType) => (
                 <div
                   key={post.id}
-                  // UPDATE: Card-level static highlight for general post visibility
-                  className="bg-white rounded-xl p-4 sm:p-6 shadow-lg ring-1 ring-blue-300 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200"
                 >
                   {/* Title */}
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
                     {post.title}
                   </h3>
 
-                  {/* PetPal Profile */}
-                  {post.owner && (
-                    <div className="flex items-center space-x-3 mb-4">
-                      {post.owner.profile_photo_url ? (
-                        <Image
-                          src={post.owner.profile_photo_url}
-                          alt={post.owner.first_name || 'PetPal'}
-                          width={48}
-                          height={48}
-                          className="w-12 h-12 rounded-full object-cover"
-                          unoptimized
-                        />
+                  {/* Dog Information */}
+                  {post.allDogs && post.allDogs.length > 0 && (
+                    <div className="mb-4">
+                      {post.allDogs.length === 1 ? (
+                        // Single dog display
+                        <div className="flex items-center space-x-3">
+                          {post.allDogs[0].photo_url ? (
+                            <Image
+                              src={post.allDogs[0].photo_url}
+                              alt={post.allDogs[0].name}
+                              width={48}
+                              height={48}
+                              className="w-12 h-12 rounded-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                              🐕
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-medium">{post.allDogs[0].name}</h4>
+                            <p className="text-sm text-gray-500">{post.allDogs[0].breed}</p>
+                          </div>
+                        </div>
                       ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          🤝
+                        // Multiple dogs display
+                        <div>
+                          <h4 className="font-medium mb-2">Dogs Available:</h4>
+                          <div className="grid grid-cols-2 gap-2">
+                            {post.allDogs.map((dog: DogType) => (
+                              <div key={dog.id} className="flex items-center space-x-2">
+                                {dog.photo_url ? (
+                                  <Image
+                                    src={dog.photo_url}
+                                    alt={dog.name}
+                                    width={32}
+                                    height={32}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                    unoptimized
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">
+                                    🐕
+                                  </div>
+                                )}
+                                <div className="text-sm">
+                                  <div className="font-medium">{dog.name}</div>
+                                  <div className="text-xs text-gray-500">{dog.breed}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                      <div>
-                        <h4 className="font-medium">
-                          {post.owner.first_name || 'Community Member'}
-                        </h4>
-                        <p className="text-sm text-gray-500">Available PetPal</p>
-                      </div>
                     </div>
                   )}
 
@@ -1057,8 +840,8 @@ export default function CommunityPage() {
                   {post.need_extra_help && (
                     <div className="mb-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                        <span className="mr-1">🐕</span>
-                        <span>Needs Extra Help</span>
+                        <span className="mr-1">🤝</span>
+                        <span>Community Support</span>
                       </span>
                     </div>
                   )}
@@ -1072,7 +855,7 @@ export default function CommunityPage() {
                   {post.is_urgent && (
                     <div className="flex items-center text-sm text-red-600 mb-4">
                       <span className="mr-2">🚨</span>
-                      <span>Urgent Need</span>
+                      <span>Urgent</span>
                     </div>
                   )}
 
@@ -1083,7 +866,7 @@ export default function CommunityPage() {
                         {post.can_pick_up_drop_off && (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <span className="mr-1">🚗</span>
-                            <span>Can Transport</span>
+                            <span>Can Pick Up & Drop Off</span>
                           </span>
                         )}
                         {post.can_pick_up && !post.can_pick_up_drop_off && (
@@ -1113,6 +896,7 @@ export default function CommunityPage() {
 
                       {user && user.id !== post.owner_id && post.owner ? (
                         <button
+                          // post.owner is cast to ProfileType in fetch and checked above
                           onClick={() => openMessageModal(post.owner as ProfileType, post)}
                           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                         >
@@ -1128,28 +912,208 @@ export default function CommunityPage() {
                 </div>
               ))}
 
-              {petpalAvailabilityPosts.length === 0 && (
+              {dogAvailabilityPosts.length === 0 && (
                 <div className="col-span-full text-center py-12">
-                  <div className="text-6xl mb-4">📭</div>
+                  <div className="text-6xl mb-4">🐕</div>
                   <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-                    No PetPals Available
+                    No dogs available right now
                   </h3>
                   <p className="text-sm sm:text-base text-gray-600 mb-4">
-                    Try adjusting your location filter, or check back soon!
+                    Be the first to share your dog&apos;s availability!
                   </p>
+                  <Link
+                    href="/share-availability"
+                    className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base"
+                  >
+                    Share Availability
+                  </Link>
                 </div>
               )}
+            </div>
+
+            {/* Dog Owner Profiles Section */}
+            <div className="mt-8">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">🐕</span>
+                <span>Dog Owners in the Community</span>
+              </h3>
+              <ProfilesList
+                role="dog_owner"
+                onMessage={openMessageModal}
+                locationFilter={locationFilter}
+              />
             </div>
           </div>
         )}
 
-        {/* Tab Content: My Availability */}
-        {activeTab === 'my-availability' && (
+        {activeTab === 'petpal-availability' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                Your Availability Posts
+                PetPals Available to Help
               </h2>
+              <Link
+                href="/share-availability"
+                className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
+              >
+                Share Availability
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {petpalAvailabilityPosts.map((post: AvailabilityPostType) => (
+                <div
+                  key={post.id}
+                  className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200"
+                >
+                  {/* Title */}
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+                    {post.title}
+                  </h3>
+
+                  {/* PetPal Information */}
+                  <div className="flex items-center space-x-3 mb-4">
+                    {post.owner?.profile_photo_url ? (
+                      <Image
+                        src={post.owner.profile_photo_url}
+                        alt={`${post.owner.first_name} ${post.owner.last_name}`}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-linear-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center">
+                        🤝
+                      </div>
+                    )}
+                    <div>
+                      <h4 className="font-medium">
+                        {post.owner?.first_name} {post.owner?.last_name}
+                      </h4>
+                      <p className="text-sm text-gray-500">PetPal</p>
+                    </div>
+                  </div>
+
+                  {/* Location Information */}
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">
+                      {post.use_profile_location && post.owner ? (
+                        <>
+                          {post.owner.neighborhood && <span>{post.owner.neighborhood}, </span>}
+                          {post.owner.city && <span>{post.owner.city}</span>}
+                        </>
+                      ) : (
+                        <>
+                          {post.custom_location_neighborhood && (
+                            <span>{post.custom_location_neighborhood}, </span>
+                          )}
+                          {post.custom_location_city && <span>{post.custom_location_city}</span>}
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Available Schedule */}
+                  <div className="mb-4">
+                    {post.enabled_days && post.enabled_days.length > 0 && post.day_schedules && (
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {formatAvailabilitySchedule(post.enabled_days, post.day_schedules).map(
+                          (schedule) => (
+                            <div key={schedule} className="flex items-center">
+                              <span className="mr-2">📅</span>
+                              <span>{schedule}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Community Support Badge */}
+                  {post.need_extra_help && (
+                    <div className="mb-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        <span className="mr-1">🤝</span>
+                        <span>Community Support</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  {post.description && (
+                    <p className="text-gray-600 mb-4 line-clamp-3">{post.description}</p>
+                  )}
+
+                  {/* Transportation Options */}
+                  <div className="space-y-2 mb-4">
+                    {post.can_pick_up_drop_off && (
+                      <div className="flex items-center text-sm text-green-600">
+                        <span className="mr-2">🚗</span>
+                        <span>Can pick up/drop off</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                      <Link
+                        href={`/community/availability/${post.id}`}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base text-center"
+                      >
+                        View Details
+                      </Link>
+                      {user && user.id !== post.owner_id && post.owner && (
+                        <button
+                          // post.owner is cast to ProfileType in fetch and checked above
+                          onClick={() => openMessageModal(post.owner as ProfileType, post)}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                        >
+                          Send Message
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {petpalAvailabilityPosts.length === 0 && (
+                <div className="col-span-full text-center py-12">
+                  <div className="text-6xl mb-4">🤝</div>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                    No PetPals available right now
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-600 mb-4">
+                    Be the first to offer your help!
+                  </p>
+                  <Link
+                    href="/share-availability"
+                    className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base"
+                  >
+                    Share Availability
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* PetPal Profiles Section */}
+            <div className="mt-8">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">🤝</span>
+                <span>PetPals in the Community</span>
+              </h3>
+              <ProfilesList
+                role="petpal"
+                onMessage={openMessageModal}
+                locationFilter={locationFilter}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'my-availability' && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">My Availability Posts</h2>
               <Link
                 href="/share-availability"
                 className="bg-linear-to-r from-blue-600 to-purple-600 text-white px-4 sm:px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm sm:text-base w-full sm:w-auto text-center"
@@ -1163,64 +1127,95 @@ export default function CommunityPage() {
                 {myAvailabilityPosts.map((post: AvailabilityPostType) => (
                   <div
                     key={post.id}
-                    className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200"
+                    className="bg-white rounded-xl p-4 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-200"
                   >
+                    {/* Title and Status */}
                     <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                        {post.title}
+                      </h3>
+                      <div className="flex flex-col items-end">
+                        <p
+                          className={`text-sm ${post.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}
+                        >
+                          {post.status === 'active' ? 'Active' : 'Inactive'}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          Created: {formatDate(post.created_at)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Dog Information */}
+                    {post.allDogs && post.allDogs.length > 0 && (
+                      <div className="mb-4">
+                        {post.allDogs.length === 1 ? (
+                          // Single dog display
+                          <div className="flex items-center space-x-3">
+                            {post.allDogs[0].photo_url ? (
+                              <Image
+                                src={post.allDogs[0].photo_url}
+                                alt={post.allDogs[0].name}
+                                width={48}
+                                height={48}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                🐕
+                              </div>
+                            )}
+                            <div>
+                              <h4 className="font-medium">{post.allDogs[0].name}</h4>
+                              <p className="text-sm text-gray-500">{post.allDogs[0].breed}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          // Multiple dogs display
+                          <div>
+                            <h4 className="font-medium mb-2">Dogs Available:</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              {post.allDogs.map((dog: DogType) => (
+                                <div key={dog.id} className="flex items-center space-x-2">
+                                  {dog.photo_url ? (
+                                    <Image
+                                      src={dog.photo_url}
+                                      alt={dog.name}
+                                      width={32}
+                                      height={32}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">
+                                      🐕
+                                    </div>
+                                  )}
+                                  <div className="text-sm">
+                                    <div className="font-medium">{dog.name}</div>
+                                    <div className="text-xs text-gray-500">{dog.breed}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Post Type Badge */}
+                    <div className="mb-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           post.post_type === 'dog_available'
                             ? 'bg-blue-100 text-blue-800'
-                            : 'bg-purple-100 text-purple-800'
+                            : 'bg-green-100 text-green-800'
                         }`}
                       >
                         {post.post_type === 'dog_available'
-                          ? '🐕 Dog Available'
+                          ? 'Dog Available'
                           : '🤝 PetPal Available'}
                       </span>
-                      <p className="text-xs text-gray-500">{formatDate(post.created_at)}</p>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-                      {post.title}
-                    </h3>
-
-                    {/* Dog Information (if dog post) - Highlighted */}
-                    {post.post_type === 'dog_available' &&
-                      post.allDogs &&
-                      post.allDogs.length > 0 && (
-                        <div className="mb-4 p-3 rounded-xl bg-blue-50/70 border border-blue-200 shadow-inner">
-                          <h4 className="font-bold text-blue-800 mb-3">
-                            {post.allDogs.length === 1
-                              ? 'The Dog Available:'
-                              : 'The Dogs Available:'}
-                          </h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            {post.allDogs.map((dog: DogType) => (
-                              <div key={dog.id} className="flex items-center space-x-2">
-                                {dog.photo_url ? (
-                                  <Image
-                                    src={dog.photo_url}
-                                    alt={dog.name}
-                                    width={32}
-                                    height={32}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                    unoptimized
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs">
-                                    🐕
-                                  </div>
-                                )}
-                                <div className="text-sm">
-                                  <div className="font-medium">{dog.name}</div>
-                                  <div className="text-xs text-gray-500">{dog.breed}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
 
                     {/* Available Schedule */}
                     <div className="mb-4">
@@ -1228,7 +1223,7 @@ export default function CommunityPage() {
                         <div className="text-sm text-gray-600 space-y-1">
                           {formatAvailabilitySchedule(post.enabled_days, post.day_schedules).map(
                             (schedule) => (
-                              <div key={schedule} className="flex items-center">
+                              <div key={post.id} className="flex items-center">
                                 <span className="mr-2">📅</span>
                                 <span>{schedule}</span>
                               </div>
@@ -1238,23 +1233,55 @@ export default function CommunityPage() {
                       )}
                     </div>
 
+                    {/* Community Support Badge */}
+                    {post.need_extra_help && (
+                      <div className="mb-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          <span className="mr-1">🤝</span>
+                          Community Support
+                        </span>
+                      </div>
+                    )}
+
                     {/* Description */}
                     {post.description && (
                       <p className="text-gray-600 mb-4 line-clamp-3">{post.description}</p>
                     )}
 
+                    {/* Badges */}
+                    <div className="space-y-2 mb-4">
+                      {post.is_urgent && (
+                        <div className="flex items-center text-sm text-red-600">
+                          <span className="mr-2">🚨</span>
+                          Urgent
+                        </div>
+                      )}
+                      {post.can_pick_up_drop_off && (
+                        <div className="flex items-center text-sm text-green-600">
+                          <span className="mr-2">🚗</span>
+                          Can pick up/drop off
+                        </div>
+                      )}
+                    </div>
+
                     <div className="mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                      <div className="flex flex-col space-y-2">
                         <Link
                           href={`/community/availability/${post.id}`}
-                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base text-center"
+                          className="bg-blue-600 text-white px-3 py-2 rounded-sm text-sm hover:bg-blue-700 transition-colors text-center"
                         >
                           View Details
                         </Link>
-                        <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                          <Link
+                            href={`/community/availability/${post.id}/edit`}
+                            className="bg-gray-600 text-white px-3 py-2 rounded-sm text-sm hover:bg-gray-700 transition-colors text-center flex-1"
+                          >
+                            Edit
+                          </Link>
                           <button
                             onClick={() => deletePost(post.id)}
-                            className="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm sm:text-base disabled:opacity-50"
+                            className={`bg-red-600 text-white px-3 py-2 rounded-sm text-sm hover:bg-red-700 transition-colors flex-1 ${deletingPost === post.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={deletingPost === post.id}
                           >
                             {deletingPost === post.id ? 'Hiding...' : 'Hide Post'}
@@ -1284,23 +1311,6 @@ export default function CommunityPage() {
             )}
           </div>
         )}
-
-        {/* Community Members Section - Placed after all tab content */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
-            🫂 Dog Owners & PetPals in the Community
-          </h2>
-          {/* ProfilesList uses the optimized backend route and displays the filtered list */}
-          <ProfilesList
-            // This list should show all general members, regardless of their role
-            role="all-members"
-            // Pass the function used to open the message modal
-            // (We'll assume the onMessage handler in ProfileCard maps to openMessageModal)
-            onMessage={(profile: ProfileType) => openMessageModal(profile, null)}
-            // Pass the currently selected location filter state
-            locationFilter={locationFilter}
-          />
-        </div>
 
         {/* Message Modal */}
         <MessageModal

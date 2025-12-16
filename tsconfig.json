@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -10,12 +14,17 @@
     "esModuleInterop": true,
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
-    "types": ["jest", "node"],
+    "types": [
+      "jest",
+      "node"
+    ],
     "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "plugins": [
       {
@@ -47,9 +56,10 @@
     "**/*.ts",
     "**/*.tsx",
     "app/share-availability/page.js",
-    "app/profile/page.js",
-    "app/api/community/profiles/route.js",
-    "components/ProfilesList.js"
+    "app/profile/page.js"
   ],
-  "exclude": ["node_modules", ".next"]
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
 }
