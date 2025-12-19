@@ -16,6 +16,7 @@ export async function GET(request) {
     let lastOnlineAt = null;
     let lastId = null;
 
+    // Decode the cursor (Format: ISOString|UUID)
     if (cursor && cursor.includes('|')) {
       const parts = cursor.split('|');
       lastOnlineAt = new Date(parts[0]).toISOString();
@@ -24,11 +25,12 @@ export async function GET(request) {
 
     const supabase = await createClient();
 
+    // Call the fixed SQL function via RPC
     const { data: profiles, error } = await supabase.rpc('get_paginated_profiles', {
       p_last_id: lastId,
       p_last_online_at: lastOnlineAt,
       p_lat: lat,
-      p_limit: limit + 1,
+      p_limit: limit + 1, // Fetch one extra to see if there is a next page
       p_lng: lng,
       p_radius: radius,
       p_role: role,
@@ -45,14 +47,15 @@ export async function GET(request) {
     let nextCursor = null;
     if (hasNextPage) {
       const last = resultProfiles[resultProfiles.length - 1];
+      // Construct the cursor for the next fetch
       nextCursor = `${new Date(last.last_online_at).toISOString()}|${last.id}`;
     }
 
     return NextResponse.json({
       items: resultProfiles.map((p) => ({
         ...p,
-        photo_url: p.profile_photo_url,
-        bio_excerpt: p.bio?.substring(0, 140) + (p.bio?.length > 140 ? '...' : ''),
+        photo_url: p.profile_photo_url, // Alias for frontend consistency
+        bio_excerpt: p.bio ? p.bio.substring(0, 140) + (p.bio.length > 140 ? '...' : '') : '',
       })),
       nextCursor,
     });

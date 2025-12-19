@@ -36,6 +36,7 @@ BEGIN
             p.display_lat::double precision AS display_lat,
             p.display_lng::double precision AS display_lng,
             p.updated_at::timestamp WITHOUT TIME ZONE AS updated_at,
+            -- Determine last activity
             GREATEST(
                 p.updated_at,
                 COALESCE(
@@ -43,13 +44,10 @@ BEGIN
                     p.updated_at
                 )
             )::timestamp WITHOUT TIME ZONE AS calculated_online_at,
+            -- Haversine formula for distance
             CASE
-                WHEN p_lat IS NOT NULL
-                 AND p_lng IS NOT NULL
-                 AND p.display_lat IS NOT NULL
-                 AND p.display_lng IS NOT NULL
-                THEN
-                    3959 * acos(
+                WHEN p_lat IS NOT NULL AND p_lng IS NOT NULL AND p.display_lat IS NOT NULL AND p.display_lng IS NOT NULL
+                THEN 3959 * acos(
                         cos(radians(p_lat)) * cos(radians(p.display_lat)) *
                         cos(radians(p.display_lng) - radians(p_lng)) +
                         sin(radians(p_lat)) * sin(radians(p.display_lat))
@@ -58,32 +56,20 @@ BEGIN
             END AS distance_miles
         FROM profiles p
     )
-    SELECT DISTINCT ON (d.id)
-        d.id,
-        d.first_name,
-        d.profile_photo_url,
-        d.city,
-        d.neighborhood,
-        d.role,
-        d.bio,
-        d.display_lat,
-        d.display_lng,
-        d.updated_at,
-        d.calculated_online_at AS last_online_at
+    SELECT d.id, d.first_name, d.profile_photo_url, d.city, d.neighborhood, d.role, d.bio, d.display_lat, d.display_lng, d.updated_at, d.calculated_online_at
     FROM distance_calc d
     WHERE
-        d.bio IS NOT NULL
-        AND d.bio <> ''
+        d.bio IS NOT NULL AND d.bio <> '' -- Must have a bio
         AND (p_role IS NULL OR p_role = 'all-members' OR d.role = p_role OR d.role = 'both')
         AND (p_lat IS NULL OR (d.distance_miles IS NOT NULL AND d.distance_miles <= p_radius))
+        -- Cursor logic: fetch items strictly "after" the last one seen
         AND (
             p_last_online_at IS NULL
             OR d.calculated_online_at < p_last_online_at
             OR (d.calculated_online_at = p_last_online_at AND d.id > p_last_id)
         )
-    ORDER BY
-        d.id,
-        d.calculated_online_at DESC
+    -- Crucial: Order MUST match the cursor logic for stable pagination
+    ORDER BY d.calculated_online_at DESC, d.id ASC
     LIMIT p_limit;
 END;
 $$;

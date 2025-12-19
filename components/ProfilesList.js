@@ -12,7 +12,9 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
 
   const fetchProfiles = useCallback(
     async (cursor = null, isReset = false) => {
+      if (loading && !isReset) return; // Allow reset even if "loading" state is stuck
       setLoading(true);
+
       try {
         const params = new URLSearchParams({ limit: '24' });
         if (cursor) params.append('cursor', cursor);
@@ -30,7 +32,7 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         setProfiles((prev) => {
           if (isReset) return newItems;
 
-          // ✅ DEDUPE BY ID (CRITICAL FIX)
+          // ✅ DEDUPE BY ID: Prevents key collisions if a user moves between pages
           const map = new Map(prev.map((p) => [p.id, p]));
           newItems.forEach((p) => map.set(p.id, p));
           return Array.from(map.values());
@@ -44,19 +46,22 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         setLoading(false);
       }
     },
-    [role, locationFilter]
+    [role, locationFilter, loading]
   );
 
-  // Reset on filter change
+  // Reset list when filters change
   useEffect(() => {
-    setHasMore(true);
+    setProfiles([]);
     setNextCursor(null);
+    setHasMore(true);
     fetchProfiles(null, true);
+    // Added fetchProfiles to dependency array to fix eslint react-hooks/exhaustive-deps
   }, [role, locationFilter, fetchProfiles]);
 
-  // Infinite scroll
+  // Infinite Scroll Sentinel
   useEffect(() => {
-    if (!sentinelRef.current) return;
+    const currentSentinel = sentinelRef.current;
+    if (!currentSentinel) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -64,10 +69,10 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
           fetchProfiles(nextCursor);
         }
       },
-      { threshold: 0.5 }
+      { threshold: 0.1 }
     );
 
-    observer.observe(sentinelRef.current);
+    observer.observe(currentSentinel);
     return () => observer.disconnect();
   }, [nextCursor, hasMore, loading, fetchProfiles]);
 
@@ -79,8 +84,17 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         ))}
       </div>
 
-      <div ref={sentinelRef} className="h-10 w-full flex justify-center">
-        {loading && <p className="text-gray-500">Loading more community members...</p>}
+      {/* This element triggers the next fetch when it enters the viewport */}
+      <div ref={sentinelRef} className="h-20 w-full flex items-center justify-center">
+        {loading && (
+          <div className="animate-pulse text-gray-500 font-medium">Loading more neighbors...</div>
+        )}
+        {/* Fixed: Replaced ' with &apos; to satisfy eslint react/no-unescaped-entities */}
+        {!hasMore && profiles.length > 0 && (
+          <p className="text-gray-400 text-sm italic">
+            You&apos;ve reached the end of the community.
+          </p>
+        )}
       </div>
     </div>
   );
