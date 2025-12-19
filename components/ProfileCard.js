@@ -2,37 +2,24 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 // List of common patterns found in provider placeholder URLs
-// This is less fragile than a single hardcoded URL, but still client-side.
-const BAD_URL_PATTERNS = [
-  // Common Google placeholder URLs:
-  'googleusercontent.com/profile/picture/0', // Matches the original, but as a pattern
-  '/profile/picture/0',
-  // Add other known bad patterns (e.g., from other providers) here:
-  // 'facebook.com/images/default_profile',
-  // 's3.amazonaws.com/placeholders/default',
-];
+const BAD_URL_PATTERNS = ['googleusercontent.com/profile/picture/0', '/profile/picture/0'];
 
 export default function ProfileCard({ profile, onMessage }) {
   const { id, first_name, photo_url, city, neighborhood, role, bio_excerpt } = profile;
 
-  // ---------------------------------------------------------------------
-  // NEW CONDITIONAL CHECK:
   // Check if photo_url is truthy AND does NOT contain any known bad patterns.
-  // This is a more robust client-side fix than hardcoding a single URL.
   const isPlaceholderUrl =
     photo_url && BAD_URL_PATTERNS.some((pattern) => photo_url.includes(pattern));
 
   const isValidImageUrl = photo_url && !isPlaceholderUrl;
-  // ---------------------------------------------------------------------
 
   const getRoleIcon = (role) => {
     switch (role) {
       case 'dog_owner':
         return '🐕';
       case 'petpal':
-        return '🤝';
       case 'both':
-        return '🐕‍🦺';
+        return '🤝';
       default:
         return '👤';
     }
@@ -42,11 +29,13 @@ export default function ProfileCard({ profile, onMessage }) {
     <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200">
       {/* Profile Header */}
       <div className="flex items-center space-x-3 mb-4">
-        {/* FIX: Only render Image if the URL is valid and not a known placeholder pattern */}
+        {/* FIX: Use isValidImageUrl check and add width/height props */}
         {isValidImageUrl ? (
           <Image
             src={photo_url}
             alt={first_name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover"
             onError={(e) => {
               // On genuine failure, hide the image and show the fallback icon container.
