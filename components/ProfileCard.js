@@ -18,8 +18,9 @@ export default function ProfileCard({ profile, onMessage }) {
       case 'dog_owner':
         return '🐕';
       case 'petpal':
-      case 'both':
         return '🤝';
+      case 'both':
+        return '🐕‍🦺';
       default:
         return '👤';
     }
