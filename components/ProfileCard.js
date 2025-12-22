@@ -1,8 +1,17 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+// List of common patterns found in provider placeholder URLs
+const BAD_URL_PATTERNS = ['googleusercontent.com/profile/picture/0', '/profile/picture/0'];
+
 export default function ProfileCard({ profile, onMessage }) {
   const { id, first_name, photo_url, city, neighborhood, role, bio_excerpt } = profile;
+
+  // Check if photo_url is truthy AND does NOT contain any known bad patterns.
+  const isPlaceholderUrl =
+    photo_url && BAD_URL_PATTERNS.some((pattern) => photo_url.includes(pattern));
+
+  const isValidImageUrl = photo_url && !isPlaceholderUrl;
 
   const getRoleIcon = (role) => {
     switch (role) {
@@ -21,12 +30,16 @@ export default function ProfileCard({ profile, onMessage }) {
     <div className="bg-white rounded-xl p-4 sm:p-6 shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200">
       {/* Profile Header */}
       <div className="flex items-center space-x-3 mb-4">
-        {photo_url ? (
+        {/* FIX: Use isValidImageUrl check and add width/height props */}
+        {isValidImageUrl ? (
           <Image
             src={photo_url}
             alt={first_name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover"
             onError={(e) => {
+              // On genuine failure, hide the image and show the fallback icon container.
               console.error('Profile image failed to load:', photo_url);
               e.target.style.display = 'none';
               e.target.nextElementSibling.style.display = 'flex';
@@ -36,7 +49,8 @@ export default function ProfileCard({ profile, onMessage }) {
         ) : null}
         <div
           data-testid="fallback-icon-container"
-          className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${photo_url ? 'hidden' : ''}`}
+          // FIX: The fallback is now shown if the URL is missing OR if it matches a known placeholder pattern
+          className={`w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center ${isValidImageUrl ? 'hidden' : ''}`}
         >
           <span className="text-xl">{getRoleIcon(role)}</span>
         </div>
