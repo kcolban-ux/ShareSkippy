@@ -52,6 +52,8 @@ task db:reset
 - Wait for at least one maintainer review before merging.
 - Testing the preview deployment before merge is encouraged.
 - Production deployments are restricted to the repository owner after approval.
+- Keep PRs small and focused on a single change.
+- PR titles must follow Conventional Commits using one of the allowed types (`feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`), for example: `fix: prevent null profile crash`.
 
 ## Support resources
 
