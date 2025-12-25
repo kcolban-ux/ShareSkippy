@@ -98,7 +98,9 @@
     "stylelint-config-standard": "^39.0.1",
     "stylelint-config-tailwindcss": "^1.0.0",
     "supabase": "^2.67.1",
-    "tailwindcss": "^4.1.16"
+    "tailwindcss": "^4.1.16",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "babel": {
     "presets": [

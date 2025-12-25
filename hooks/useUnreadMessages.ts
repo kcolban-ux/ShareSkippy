@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/libs/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 interface NotificationState {
   totalUnread: number;
