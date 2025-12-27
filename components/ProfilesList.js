@@ -6,14 +6,16 @@ import ProfileCard from './ProfileCard';
 export default function ProfilesList({ role, onMessage, locationFilter }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [nextCursor, setNextCursor] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef(null);
 
   const fetchProfiles = useCallback(
     async (cursor = null, isReset = false) => {
-      if (loading && !isReset) return; // Allow reset even if "loading" state is stuck
+      // Logic fix: No longer depends on 'loading' in dependency array to avoid loops
       setLoading(true);
+      setError(null);
 
       try {
         const params = new URLSearchParams({ limit: '24' });
@@ -26,13 +28,13 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         }
 
         const res = await fetch(`/api/community/profiles?${params}`);
+        if (!res.ok) throw new Error('Failed to fetch profiles');
+
         const data = await res.json();
         const newItems = data.items || [];
 
         setProfiles((prev) => {
           if (isReset) return newItems;
-
-          // ✅ DEDUPE BY ID: Prevents key collisions if a user moves between pages
           const map = new Map(prev.map((p) => [p.id, p]));
           newItems.forEach((p) => map.set(p.id, p));
           return Array.from(map.values());
@@ -42,29 +44,22 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         setHasMore(Boolean(data.nextCursor));
       } catch (err) {
         console.error('Fetch error:', err);
+        setError('Could not load profiles. Please try again.');
       } finally {
         setLoading(false);
       }
     },
-    [role, locationFilter, loading]
+    [role, locationFilter] // Removed 'loading' to break the loop
   );
 
-  // Reset list when filters change
   useEffect(() => {
-    setProfiles([]);
-    setNextCursor(null);
-    setHasMore(true);
     fetchProfiles(null, true);
-    // Added fetchProfiles to dependency array to fix eslint react-hooks/exhaustive-deps
-  }, [role, locationFilter, fetchProfiles]);
+  }, [fetchProfiles]);
 
-  // Infinite Scroll Sentinel
   useEffect(() => {
-    const currentSentinel = sentinelRef.current;
-    if (!currentSentinel) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // Only trigger if not already loading
         if (entry.isIntersecting && hasMore && !loading) {
           fetchProfiles(nextCursor);
         }
@@ -72,9 +67,23 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
       { threshold: 0.1 }
     );
 
-    observer.observe(currentSentinel);
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [nextCursor, hasMore, loading, fetchProfiles]);
+
+  if (error && profiles.length === 0) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-xl border border-red-100">
+        <p className="text-red-600 font-medium mb-4">{error}</p>
+        <button
+          onClick={() => fetchProfiles(null, true)}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -84,18 +93,26 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         ))}
       </div>
 
-      {/* This element triggers the next fetch when it enters the viewport */}
-      <div ref={sentinelRef} className="h-20 w-full flex items-center justify-center">
-        {loading && (
-          <div className="animate-pulse text-gray-500 font-medium">Loading more neighbors...</div>
-        )}
-        {/* Fixed: Replaced ' with &apos; to satisfy eslint react/no-unescaped-entities */}
-        {!hasMore && profiles.length > 0 && (
-          <p className="text-gray-400 text-sm italic">
-            You&apos;ve reached the end of the community.
-          </p>
-        )}
-      </div>
+      {/* Sentinel: Only render if we have profiles or are loading to avoid false triggers */}
+      {(hasMore || loading) && profiles.length > 0 && (
+        <div ref={sentinelRef} className="h-20 w-full flex items-center justify-center">
+          {loading && (
+            <div className="animate-pulse text-gray-500 font-medium">Loading more neighbors...</div>
+          )}
+        </div>
+      )}
+
+      {!hasMore && profiles.length > 0 && (
+        <p className="text-center text-gray-400 text-sm italic py-8">
+          You&apos;ve reached the end of the community.
+        </p>
+      )}
+
+      {!loading && profiles.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500">No profiles found matching your filters.</p>
+        </div>
+      )}
     </div>
   );
 }

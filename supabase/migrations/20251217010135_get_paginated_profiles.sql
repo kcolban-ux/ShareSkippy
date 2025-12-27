@@ -1,3 +1,11 @@
+/**
+ * RECOMENDED INDEXES FOR OPTIMAL PERFORMANCE:
+ * 1. CREATE INDEX idx_profiles_pagination ON profiles (updated_at DESC, id ASC);
+ * 2. CREATE INDEX idx_profiles_role ON profiles (role) WHERE bio IS NOT NULL AND bio <> '';
+ * 3. CREATE INDEX idx_user_activity_recent ON user_activity (user_id, at DESC);
+ * 4. (Optional) If using PostGIS: CREATE INDEX idx_profiles_geo ON profiles USING GIST (geography(ST_MakePoint(display_lng, display_lat)));
+ */
+
 CREATE OR REPLACE FUNCTION get_paginated_profiles(
     p_last_id UUID DEFAULT NULL,
     p_last_online_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NULL,
@@ -21,10 +29,25 @@ RETURNS TABLE (
     last_online_at TIMESTAMP WITHOUT TIME ZONE
 )
 LANGUAGE plpgsql
+SECURITY DEFINER -- Ensures function runs with owner privileges to access tables
+SET search_path = public
 AS $$
 BEGIN
+    -- Security check: Ensure the caller is authenticated via Supabase Auth
+    IF auth.uid() IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
     RETURN QUERY
-    WITH distance_calc AS (
+    WITH recent_activity AS (
+        -- Performance Fix: Group activity first to avoid correlated subquery N+1 issue
+        SELECT 
+            user_id, 
+            MAX(at) as max_at 
+        FROM user_activity 
+        GROUP BY user_id
+    ),
+    distance_calc AS (
         SELECT
             p.id,
             p.first_name,
@@ -36,39 +59,49 @@ BEGIN
             p.display_lat::double precision AS display_lat,
             p.display_lng::double precision AS display_lng,
             p.updated_at::timestamp WITHOUT TIME ZONE AS updated_at,
-            -- Determine last activity
+            -- Determine last activity using JOIN instead of subquery
             GREATEST(
                 p.updated_at,
-                COALESCE(
-                    (SELECT MAX(ua.at) FROM user_activity ua WHERE ua.user_id = p.id),
-                    p.updated_at
-                )
+                COALESCE(ra.max_at, p.updated_at)
             )::timestamp WITHOUT TIME ZONE AS calculated_online_at,
-            -- Haversine formula for distance
+            -- Floating-point safety: LEAST/GREATEST prevents NaN from acos()
             CASE
                 WHEN p_lat IS NOT NULL AND p_lng IS NOT NULL AND p.display_lat IS NOT NULL AND p.display_lng IS NOT NULL
                 THEN 3959 * acos(
+                    LEAST(1, GREATEST(-1,
                         cos(radians(p_lat)) * cos(radians(p.display_lat)) *
                         cos(radians(p.display_lng) - radians(p_lng)) +
                         sin(radians(p_lat)) * sin(radians(p.display_lat))
-                    )
+                    ))
+                )
                 ELSE NULL
             END AS distance_miles
         FROM profiles p
+        LEFT JOIN recent_activity ra ON ra.user_id = p.id
     )
-    SELECT d.id, d.first_name, d.profile_photo_url, d.city, d.neighborhood, d.role, d.bio, d.display_lat, d.display_lng, d.updated_at, d.calculated_online_at
+    SELECT 
+        d.id, 
+        d.first_name, 
+        d.profile_photo_url, 
+        d.city, 
+        d.neighborhood, 
+        d.role, 
+        d.bio, 
+        d.display_lat, 
+        d.display_lng, 
+        d.updated_at, 
+        d.calculated_online_at
     FROM distance_calc d
     WHERE
-        d.bio IS NOT NULL AND d.bio <> '' -- Must have a bio
+        d.bio IS NOT NULL AND d.bio <> '' 
         AND (p_role IS NULL OR p_role = 'all-members' OR d.role = p_role OR d.role = 'both')
         AND (p_lat IS NULL OR (d.distance_miles IS NOT NULL AND d.distance_miles <= p_radius))
-        -- Cursor logic: fetch items strictly "after" the last one seen
+        -- Stable Keyset Pagination Logic
         AND (
             p_last_online_at IS NULL
             OR d.calculated_online_at < p_last_online_at
             OR (d.calculated_online_at = p_last_online_at AND d.id > p_last_id)
         )
-    -- Crucial: Order MUST match the cursor logic for stable pagination
     ORDER BY d.calculated_online_at DESC, d.id ASC
     LIMIT p_limit;
 END;

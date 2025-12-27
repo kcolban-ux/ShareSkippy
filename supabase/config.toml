@@ -148,7 +148,7 @@ password_requirements = ""
 enabled = true
 client_id = "env(NEXT_PUBLIC_GOOGLE_CLIENT_ID)"
 secret = "env(GOOGLE_CLIENT_SECRET)"
-redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+redirect_uri = "env(SUPABASE_AUTH_CALLBACK_URL)"
 skip_nonce_check = true
 
 [auth.rate_limit]

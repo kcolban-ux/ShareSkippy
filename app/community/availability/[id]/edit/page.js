@@ -814,8 +814,8 @@ export default function EditAvailability() {
                     src={availability.owner.profile_photo_url}
                     alt={`${availability.owner.first_name} ${availability.owner.last_name}`}
                     className="w-20 h-20 rounded-full object-cover shadow-md mx-auto mb-4"
-                    width={48}
-                    height={48}
+                    width={80}
+                    height={80}
                     unoptimized
                   />
                 ) : (
