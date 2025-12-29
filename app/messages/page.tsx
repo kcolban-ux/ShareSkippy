@@ -274,26 +274,43 @@ export default function MessagesPage(): ReactElement {
     try {
       setSending(true);
 
+      //create temp message
+      const tempMessage: Message = {
+        id: `temp-${Date.now()}`,
+        sender_id: user!.id,
+        recipient_id: selectedConversation.otherParticipant.id,
+        content: newMessage.trim(),
+        created_at: new Date().toISOString(),
+        availability_id: selectedConversation.availability_id,
+        conversation_id: selectedConversation.id,
+      };
+
+      //update it to the chatbox for sender
+      setMessages((prev) => [...prev, tempMessage]);
+      setNewMessage('');
+
+      //send to backend
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           recipient_id: selectedConversation.otherParticipant.id,
           availability_id: selectedConversation.availability_id,
-          content: newMessage.trim(),
+          content: tempMessage.content,
         }),
       });
 
       if (!response.ok) {
+        //remove the tempMessage
+        setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to send message');
       }
 
-      // Refresh conversations to update the 'last_message_at' for the sidebar.
-      setNewMessage('');
       await fetchConversations();
     } catch (error) {
       console.error('Error sending message:', error);
+      alert('Failed to send message. Please try again');
     } finally {
       setSending(false);
     }
@@ -410,10 +427,22 @@ export default function MessagesPage(): ReactElement {
 
           if (matchesParticipants) {
             setMessages((prev: Message[]) => {
+              //delete mapped tempMessage
+              const withoutTemps = prev.filter((x) => {
+                const isTemp = x.id.startsWith('temp-');
+                if (!isTemp) return true;
+
+                return !(
+                  x.sender_id === m.sender_id &&
+                  x.recipient_id === m.recipient_id &&
+                  x.content === m.content
+                );
+              });
+
               // Avoid duplicates
-              if (prev.some((x) => x.id === m.id)) return prev;
+              if (withoutTemps.some((x) => x.id === m.id)) return withoutTemps;
               // Add new message and re-sort
-              return [...prev, m].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+              return [...withoutTemps, m].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
             });
           }
         }
