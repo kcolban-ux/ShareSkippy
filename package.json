@@ -93,7 +93,7 @@
     "stylelint": "^16.26.1",
     "stylelint-config-standard": "^39.0.1",
     "stylelint-config-tailwindcss": "^1.0.0",
-    "supabase": "^2.67.3",
+    "supabase": "^2.70.5",
     "tailwindcss": "^4.1.16"
   },
   "babel": {
