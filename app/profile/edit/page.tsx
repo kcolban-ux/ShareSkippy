@@ -93,8 +93,13 @@ const initialProfileState: Readonly<ProfileState> = {
   state: '',
   zip_code: '',
 };
+// #endregion Types
 
-// --- COMPONENT START ---
+// #region Component
+/**
+ * @component
+ * @description Allows the authenticated user to create or edit their profile information.
+ */
 
 export default function ProfileEditPage() {
   const router = useRouter();
