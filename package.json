@@ -59,7 +59,7 @@
     "react-dom": "^19.2.3",
     "react-hot-toast": "^2.4.1",
     "react-tooltip": "^5.26.3",
-    "resend": "^4.0.1",
+    "resend": "^6.6.0",
     "stripe": "^13.11.0",
     "zod": "^4.2.1"
   },
