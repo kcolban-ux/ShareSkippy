@@ -22,10 +22,12 @@ import {
   SyntheticEvent,
 } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { supabase } from '@/libs/supabase';
 import MessageModal from '@/components/MessageModal';
 import MeetingModal from '@/components/MeetingModal';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // Assumed path
+import { formatLocation } from '@/libs/utils';
 
 // --- Supabase Types ---
 import { User } from '@supabase/supabase-js';
@@ -40,6 +42,10 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   profile_photo_url: string | null;
+  role?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
 }
 
 /**
@@ -219,13 +225,21 @@ export default function MessagesPage(): ReactElement {
             id,
             first_name,
             last_name,
-            profile_photo_url
+            profile_photo_url,
+            role,
+            neighborhood,
+            city,
+            state
           ),
           participant2:profiles!conversations_participant2_id_fkey (
             id,
             first_name,
             last_name,
-            profile_photo_url
+            profile_photo_url,
+            role,
+            neighborhood,
+            city,
+            state
           ),
           availability:availability!conversations_availability_id_fkey (
             id,
@@ -243,6 +257,9 @@ export default function MessagesPage(): ReactElement {
       const processedConversations = (data as RawConversation[]).map((conv): Conversation => {
         const otherParticipant =
           conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
+        //const first = otherParticipant.first_name?.trim() || '';
+        //const last = otherParticipant.last_name?.trim() || '';
+        //const displayName = [first, last].filter(Boolean).join(' ') || 'Community Member';
         return {
           ...conv,
           otherParticipant,
@@ -476,6 +493,22 @@ export default function MessagesPage(): ReactElement {
 
   // #region Helpers
   /**
+   * @description Maps profile roles to readable label.
+   */
+  const getRoleLabel = (role?: string | null): string => {
+    switch (role) {
+      case 'dog_owner':
+        return 'Dog Owner';
+      case 'petpal':
+        return 'PetPal';
+      case 'both':
+        return 'Dog Owner & PetPal';
+      default:
+        return 'Community Member';
+    }
+  };
+
+  /**
    * @description Formats a date string into a simple time (e.g., "10:30 AM").
    */
   const formatTime = (dateString: string): string => {
@@ -669,23 +702,64 @@ export default function MessagesPage(): ReactElement {
                       <h3 className="font-semibold text-gray-900 text-lg">
                         {selectedConversation.displayName}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        {selectedConversation.availability?.post_type === 'dog_available'
-                          ? 'Dog Owner'
-                          : 'PetPal'}
+                      <p className="text-sm text-gray-600">
+                        {selectedConversation.otherParticipant?.role
+                          ? getRoleLabel(selectedConversation.otherParticipant.role)
+                          : selectedConversation.availability?.post_type === 'dog_available'
+                            ? 'Dog Owner'
+                            : 'PetPal'}
                       </p>
+                      {(selectedConversation.otherParticipant?.neighborhood ||
+                        selectedConversation.otherParticipant?.city ||
+                        selectedConversation.otherParticipant?.state) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {(() => {
+                            const loc = formatLocation({
+                              neighborhood: selectedConversation.otherParticipant?.neighborhood,
+                              city: selectedConversation.otherParticipant?.city,
+                              state: selectedConversation.otherParticipant?.state,
+                            });
+
+                            if (!loc) return null;
+                            return [
+                              loc.neighborhood ? loc.neighborhood : null,
+                              loc.city ? loc.city : null,
+                              loc.state ? loc.state : null,
+                            ]
+                              .filter(Boolean)
+                              .join(', ');
+                          })()}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                     <div className="text-sm text-gray-500 truncate">
                       {selectedConversation.availability?.title}
                     </div>
-                    <button
-                      onClick={openMeetingModal}
-                      className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap font-medium"
-                    >
-                      📅 Schedule Meeting
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/profile/${selectedConversation.otherParticipant.id}`}
+                        className="px-3 py-2 bg-gray-100 text-gray-800 text-sm rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap font-medium"
+                      >
+                        👤 View Profile
+                      </Link>
+                      {(selectedConversation.availability?.id ||
+                        selectedConversation.availability_id) && (
+                        <Link
+                          href={`/community/availability/${selectedConversation.availability?.id || selectedConversation.availability_id}`}
+                          className="px-3 py-2 bg-gray-100 text-gray-800 text-sm rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap font-medium"
+                        >
+                          📌 View Post
+                        </Link>
+                      )}
+                      <button
+                        onClick={openMeetingModal}
+                        className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap font-medium"
+                      >
+                        📅 Schedule Meeting
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
