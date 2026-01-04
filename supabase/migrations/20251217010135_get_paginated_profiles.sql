@@ -5,6 +5,19 @@
  * 3. CREATE INDEX idx_user_activity_recent ON user_activity (user_id, at DESC);
  * 4. (Optional) If using PostGIS: CREATE INDEX idx_profiles_geo ON profiles USING GIST (geography(ST_MakePoint(display_lng, display_lat)));
  */
+-- ADD PRIVACY COLUMN
+ALTER TABLE profiles 
+ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN DEFAULT true;
+
+-- CREATE RATE LIMIT LOGGING TABLE
+CREATE TABLE IF NOT EXISTS profile_access_log (
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    accessed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (user_id, accessed_at)
+);
+
+-- Index for rate limit performance
+CREATE INDEX IF NOT EXISTS idx_profile_access_time ON profile_access_log (user_id, accessed_at);
 
 CREATE OR REPLACE FUNCTION get_paginated_profiles(
     p_last_id UUID DEFAULT NULL,
@@ -38,6 +51,14 @@ BEGIN
         RAISE EXCEPTION 'Not authenticated';
     END IF;
 
+    IF (SELECT COUNT(*) FROM profile_access_log 
+        WHERE user_id = auth.uid() 
+        AND accessed_at > NOW() - INTERVAL '1 minute') > 20 THEN
+        RAISE EXCEPTION 'Rate limit exceeded. Please try again in a minute.';
+    END IF;
+
+    INSERT INTO profile_access_log (user_id) VALUES (auth.uid());
+
     RETURN QUERY
     WITH recent_activity AS (
         -- Performance Fix: Group activity first to avoid correlated subquery N+1 issue
@@ -56,6 +77,7 @@ BEGIN
             p.neighborhood,
             p.role,
             p.bio,
+            p.is_discoverable,
             p.display_lat::double precision AS display_lat,
             p.display_lng::double precision AS display_lng,
             p.updated_at::timestamp WITHOUT TIME ZONE AS updated_at,
@@ -93,7 +115,8 @@ BEGIN
         d.calculated_online_at
     FROM distance_calc d
     WHERE
-        d.bio IS NOT NULL AND d.bio <> '' 
+        d.bio IS NOT NULL AND d.bio <> ''
+        AND d.is_discoverable = true
         AND (p_role IS NULL OR p_role = 'all-members' OR d.role = p_role OR d.role = 'both')
         AND (p_lat IS NULL OR (d.distance_miles IS NOT NULL AND d.distance_miles <= p_radius))
         -- Stable Keyset Pagination Logic

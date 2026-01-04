@@ -13,7 +13,6 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
 
   const fetchProfiles = useCallback(
     async (cursor = null, isReset = false) => {
-      // Logic fix: No longer depends on 'loading' in dependency array to avoid loops
       setLoading(true);
       setError(null);
 
@@ -49,7 +48,7 @@ export default function ProfilesList({ role, onMessage, locationFilter }) {
         setLoading(false);
       }
     },
-    [role, locationFilter] // Removed 'loading' to break the loop
+    [role, locationFilter]
   );
 
   useEffect(() => {
