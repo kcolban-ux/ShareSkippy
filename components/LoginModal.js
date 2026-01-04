@@ -85,7 +85,7 @@ export default function LoginModal({ isOpen, onClose }) {
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome to ShareSkippy</h2>
           <p className="text-gray-600">
-            Sign in to connect with dogs and neighbors in your community
+            Sign in or sign up to connect with dogs and neighbors in your community.
           </p>
         </div>
 
