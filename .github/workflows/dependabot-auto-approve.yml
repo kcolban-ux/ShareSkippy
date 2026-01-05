@@ -113,7 +113,7 @@ jobs:
               exit 0
             fi
 
-            if [[ "$DEP_TYPE" == "development" ]] || [[ "$ECOSYSTEM" == "github-actions" ]]; then
+            if [[ "$DEP_TYPE" == "development" ]] || [[ "$ECOSYSTEM" == "github_actions" ]]; then
               echo "eligible=true" >> $GITHUB_OUTPUT
               exit 0
             fi
@@ -123,14 +123,14 @@ jobs:
 
       - name: Approve PR
         if: steps.path-check.outputs.eligible == 'true' && steps.decision.outcome == 'success' && steps.decision.outputs.eligible == 'true'
-        run: gh pr review --approve "$PR_URL"
+        run: gh pr review --approve "$PR_URL" || echo "Already approved"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable Auto-merge
         if: steps.path-check.outputs.eligible == 'true' && steps.decision.outcome == 'success' && steps.decision.outputs.eligible == 'true'
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: gh pr merge --auto --squash "$PR_URL" || echo "Auto-merge already enabled"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
