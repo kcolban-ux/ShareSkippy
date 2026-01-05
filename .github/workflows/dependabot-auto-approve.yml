@@ -110,7 +110,7 @@ jobs:
             if [[ -z "$DEP_TYPE" ]] || [[ -z "$ECOSYSTEM" ]]; then
               echo "Error: Required metadata for minor update validation (dependency-type/ecosystem) is missing."
               echo "eligible=false" >> $GITHUB_OUTPUT
-              exit 1
+              exit 0
             fi
 
             if [[ "$DEP_TYPE" == "development" ]] || [[ "$ECOSYSTEM" == "github-actions" ]]; then
