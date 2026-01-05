@@ -3,6 +3,9 @@
 
 const rateLimitMap = new Map();
 
+// Helper to get current time (respects Jest fake timers)
+const getCurrentTime = () => Date.now();
+
 export const rateLimit = (options = {}) => {
   const {
     windowMs = 15 * 60 * 1000, // 15 minutes
@@ -20,7 +23,7 @@ export const rateLimit = (options = {}) => {
 
   return (request) => {
     const key = keyGenerator(request);
-    const now = Date.now();
+    const now = getCurrentTime();
     const windowStart = now - windowMs;
 
     // Get or create rate limit data for this key
