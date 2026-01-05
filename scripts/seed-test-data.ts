@@ -22,13 +22,6 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
-if (process.env.CI && (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1'))) {
-  console.error(
-    'CI detected but supabase URL points to localhost; please configure SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL secrets to a reachable Supabase instance.'
-  );
-  process.exit(1);
-}
-
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
