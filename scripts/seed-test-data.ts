@@ -168,6 +168,15 @@ async function main() {
   try {
     await main();
   } catch (error) {
+    // Check if it's a connection error
+    if (error && typeof error === 'object' && 'cause' in error) {
+      const cause = error.cause as unknown;
+      if (cause && typeof cause === 'object' && 'code' in cause && cause.code === 'ECONNREFUSED') {
+        console.error('\n❌ Cannot connect to Supabase at', supabaseUrl);
+        console.error('💡 Please start Supabase first: npx supabase start\n');
+        process.exit(1);
+      }
+    }
     console.error('Playwright seed failed:', error);
     process.exit(1);
   }
