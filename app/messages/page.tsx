@@ -257,9 +257,6 @@ export default function MessagesPage(): ReactElement {
       const processedConversations = (data as RawConversation[]).map((conv): Conversation => {
         const otherParticipant =
           conv.participant1_id === user.id ? conv.participant2 : conv.participant1;
-        //const first = otherParticipant.first_name?.trim() || '';
-        //const last = otherParticipant.last_name?.trim() || '';
-        //const displayName = [first, last].filter(Boolean).join(' ') || 'Community Member';
         return {
           ...conv,
           otherParticipant,
