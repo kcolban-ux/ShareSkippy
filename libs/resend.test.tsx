@@ -1,6 +1,20 @@
-// 1. Mock external dependencies (Jest hoisting)
+/**
+ * @file Email module test suite.
+ * @description Comprehensive testing for the Resend integration, covering rate limiting,
+ * content validation, and error handling.
+ */
+
+// #region 1. External Mocks & Environment Setup
+/**
+ * Mock external dependencies.
+ * @note Jest hoists jest.mock calls to the top of the file.
+ */
 jest.mock('resend');
-// Mock the 'default' export for ESM/CJS interop
+
+/**
+ * Mock configuration module.
+ * @description Ensures ESM/CJS interop and provides static values for assertions.
+ */
 jest.mock('../config', () => ({
   __esModule: true,
   default: {
@@ -11,27 +25,41 @@ jest.mock('../config', () => ({
   },
 }));
 
-// Set environment variable required by the module's top level
+/**
+ * @env RESEND_API_KEY
+ * Required for the module's top-level initialization.
+ */
 process.env.RESEND_API_KEY = 'mock_api_key';
+// #endregion
 
-// These will be assigned in beforeEach after modules are reset
-// Note: We keep the type import here, but the value is loaded dynamically.
+// #region 2. Type Definitions
+/**
+ * @typedef {typeof import('./resend')} ResendModule
+ * Represents the dynamically loaded module under test.
+ */
 type ResendModule = typeof import('./resend');
-type ConfigType = {
+
+/**
+ * @interface ConfigType
+ * Defines the shape of the application's email configuration.
+ */
+interface ConfigType {
   resend: {
     fromAdmin: string;
     supportEmail: string;
   };
-};
+}
+// #endregion
 
+// #region 3. Global Test State & Spies
 let resendModule: ResendModule;
-let Resend: jest.Mocked<typeof import('resend').Resend>; // Use typed mock
+let Resend: jest.Mocked<typeof import('resend').Resend>;
 let config: ConfigType;
 
-// Mock utilities
 const mockResendSend = jest.fn();
 const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+// #endregion
 
 describe('sendEmail', () => {
   const mockParams = {
@@ -41,35 +69,39 @@ describe('sendEmail', () => {
     html: '<h1>Welcome!</h1>',
   };
 
+  // #region 4. Lifecycle & Dependency Injection
   beforeEach(async () => {
-    // ⬅️ Must be async to use await import()
-    // 1. Reset module cache to clear state (like lastEmailTime)
+    /**
+     * Reset module registry and fake timers to ensure test isolation.
+     * Prevents internal state (like rate limiting timestamps) from leaking between tests.
+     */
     jest.resetModules();
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2025-01-01T10:00:00Z'));
 
-    // 2. Clear mock call history from previous tests
     mockResendSend.mockClear();
     consoleWarnSpy.mockClear();
     consoleErrorSpy.mockClear();
 
-    // 3. Re-import the mocked Resend class using dynamic import()
+    /**
+     * Dynamic Module Loading.
+     * Re-imports the mocked Resend class and the module under test after resetting the registry.
+     */
     const resendModuleImport = await import('resend');
-    Resend = resendModuleImport.Resend as jest.Mocked<typeof import('resend').Resend>;
+    Resend = resendModuleImport.Resend as unknown as jest.Mocked<typeof import('resend').Resend>;
 
-    // 4. Re-apply the mock implementation for the class constructor
-    // This must happen *after* resetModules but *before* the module under test is imported.
+    /**
+     * Constructor Mocking.
+     * Defines the structure of the Resend client returned by the constructor.
+     */
     (Resend as jest.Mock).mockImplementation(() => ({
       emails: {
         send: mockResendSend,
       },
     }));
 
-    // 5. Set default success response for tests
     mockResendSend.mockResolvedValue({ data: { id: 'email-id-123' }, error: null });
 
-    // 6. Now, re-import the module under test and its config.
-    // Use dynamic import() for both, accessing the default export for config.
     const configModule = await import('../config.js');
     config = configModule.default as unknown as ConfigType;
     resendModule = await import('./resend.js');
@@ -80,8 +112,9 @@ describe('sendEmail', () => {
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
+  // #endregion
 
-  // --- Core Functionality ---
+  // #region 5. Core Functionality
   describe('Core Sending', () => {
     it('should successfully call resend.emails.send with correct data', async () => {
       await resendModule.sendEmail(mockParams);
@@ -89,7 +122,6 @@ describe('sendEmail', () => {
       expect(mockResendSend).toHaveBeenCalledTimes(1);
       const emailData = mockResendSend.mock.calls[0][0];
 
-      // This comparison now works because 'config' is correctly loaded
       expect(emailData.from).toBe(config.resend.fromAdmin);
       expect(emailData.to).toBe(mockParams.to);
       expect(emailData.subject).toBe(mockParams.subject);
@@ -123,20 +155,21 @@ describe('sendEmail', () => {
       expect(emailData.replyTo).toBe(replyToEmail);
     });
   });
+  // #endregion
 
-  // --- Error Handling ---
+  // #region 6. Error Handling
   describe('Error Handling', () => {
     it('should throw an error and log the message on Resend failure', async () => {
       const resendError = new Error('Invalid API Key');
       mockResendSend.mockResolvedValue({ data: null, error: resendError });
 
       await expect(resendModule.sendEmail(mockParams)).rejects.toThrow(resendError);
-
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error sending email:', resendError.message);
     });
   });
+  // #endregion
 
-  // --- Deliverability/Validation ---
+  // #region 7. Deliverability & Content Validation
   describe('Content Validation (validateEmailContent)', () => {
     it('should warn for subject line being too long (>50 chars)', async () => {
       const longSubject = 'A very long subject line that exceeds fifty characters by a wide margin';
@@ -184,8 +217,9 @@ describe('sendEmail', () => {
       ]);
     });
   });
+  // #endregion
 
-  // --- Rate Limiting ---
+  // #region 8. Rate Limiting Logic
   describe('Rate Limiting (waitForRateLimit)', () => {
     it('should execute the first email immediately', async () => {
       await resendModule.sendEmail(mockParams);
@@ -198,13 +232,11 @@ describe('sendEmail', () => {
 
       const secondEmailPromise = resendModule.sendEmail(mockParams);
 
-      expect(mockResendSend).toHaveBeenCalledTimes(1); // Still waiting
+      expect(mockResendSend).toHaveBeenCalledTimes(1); // Pending execution
 
-      // Advance to just before the timer fires
       jest.advanceTimersByTime(399); // T=499ms
-      expect(mockResendSend).toHaveBeenCalledTimes(1); // Still waiting
+      expect(mockResendSend).toHaveBeenCalledTimes(1); // Still pending
 
-      // Advance past the timer
       jest.advanceTimersByTime(1); // T=500ms
 
       await secondEmailPromise;
@@ -213,12 +245,11 @@ describe('sendEmail', () => {
 
     it('should execute immediately if more than MIN_EMAIL_INTERVAL has passed', async () => {
       await resendModule.sendEmail(mockParams); // T=0ms
-
       jest.advanceTimersByTime(600); // T=600ms
-
-      await resendModule.sendEmail(mockParams); // Should run immediately
+      await resendModule.sendEmail(mockParams);
 
       expect(mockResendSend).toHaveBeenCalledTimes(2);
     });
   });
+  // #endregion
 });

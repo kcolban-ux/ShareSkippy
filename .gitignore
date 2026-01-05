@@ -46,3 +46,4 @@ public/sitemap-0.xml
 # temp
 supabase/.temp
 .vercel
+.vs/

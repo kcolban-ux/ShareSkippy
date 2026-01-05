@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 ENV_FILE=".env.local"
 
 command -v npx >/dev/null 2>&1 || { echo >&2 "Error: npx is required but not found. Please run 'npm install'."; exit 1; }
