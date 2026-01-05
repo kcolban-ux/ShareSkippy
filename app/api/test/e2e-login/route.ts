@@ -7,6 +7,23 @@ const AUTH_SECRET = process.env.E2E_AUTH_SECRET;
 const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL ?? 'playwright@shareskippy.local';
 const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD ?? 'Playwright123!';
 
+/**
+ * E2E test login endpoint for Playwright tests.
+ *
+ * This endpoint authenticates a test user and sets up the session cookie.
+ * It is protected by:
+ * - Environment check: disabled in production
+ * - Secret authentication: requires E2E_AUTH_SECRET
+ * - Redirect validation: prevents open redirect vulnerabilities
+ *
+ * @param request - The Next.js request object.
+ * @returns A redirect response to the specified path on success, or an error JSON response.
+ *
+ * @remarks
+ * Query parameters:
+ * - `secret` (required): Must match E2E_AUTH_SECRET environment variable
+ * - `redirect` (optional): Relative path to redirect after login (default: "/")
+ */
 export async function GET(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
