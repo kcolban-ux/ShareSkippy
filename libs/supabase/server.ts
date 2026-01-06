@@ -35,12 +35,12 @@ export async function createClient(type: SupabaseKeyType = 'anon') {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet: CookieToSet[]) {
-        try {
-          for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options);
+        for (const { name, value, options } of cookiesToSet) {
+          try {
+            cookieStore.set({ name, value, ...(options ?? {}) });
+          } catch (err) {
+            console.error('Failed to set cookie in server createClient:', err);
           }
-        } catch {
-          // Safe to ignore in Server Components/Middleware if session refresh is handled.
         }
       },
     },

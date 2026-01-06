@@ -33,8 +33,20 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url);
-  const providedSecret = url.searchParams.get('secret');
+  // Prefer Authorization header for passing secrets (safer than query string),
+  // but fall back to the `secret` query param for compatibility.
+  const authHeader = request.headers.get('authorization') ?? request.headers.get('Authorization');
+  let providedSecret: string | null = null;
+  if (authHeader) {
+    // Accept both `Bearer <token>` and raw token values
+    const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+    providedSecret = bearerMatch ? bearerMatch[1] : authHeader;
+  }
+
   const redirectParam = url.searchParams.get('redirect') ?? '/';
+  if (!providedSecret) {
+    providedSecret = url.searchParams.get('secret');
+  }
 
   // Validate redirect to prevent open redirect vulnerability
   const isValidRedirect = redirectParam.startsWith('/') && !redirectParam.startsWith('//');
@@ -47,15 +59,63 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
+  const signInResult = await supabase.auth.signInWithPassword({
     email: TEST_USER_EMAIL,
     password: TEST_USER_PASSWORD,
   });
 
-  if (error) {
-    console.error('E2E login failed:', error);
+  if (signInResult.error) {
+    console.error('E2E login failed:', signInResult.error);
     return NextResponse.redirect(new URL('/signin?error=login_failed', url.origin));
   }
 
-  return NextResponse.redirect(new URL(redirectParam, url.origin));
+  // Prefer the session returned by the sign-in call; fall back to getSession().
+  let session = (signInResult.data as unknown as { session?: unknown })?.session ?? null;
+
+  // Fetch the session and either return it as JSON (for programmatic clients)
+  // or set cookies on a redirect response. Returning JSON is useful for
+  // Playwright-based tests which can set cookies directly via the driver.
+  try {
+    if (!session) {
+      const sessionRes = await supabase.auth.getSession();
+      session = sessionRes.data.session;
+    }
+
+    // If the caller requests the session JSON (via header), return it.
+    const wantJson = (request.headers.get('x-e2e-return-session') || '').toLowerCase() === '1';
+    if (wantJson) {
+      return NextResponse.json({ session });
+    }
+
+    const redirectResponse = NextResponse.redirect(new URL(redirectParam, url.origin));
+
+    const s = session as { access_token: string; refresh_token?: string };
+    if (session && s.access_token) {
+      const secure = url.protocol === 'https:';
+      redirectResponse.cookies.set({
+        name: 'sb-access-token',
+        value: s.access_token,
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        secure,
+      });
+
+      if (s.refresh_token) {
+        redirectResponse.cookies.set({
+          name: 'sb-refresh-token',
+          value: s.refresh_token,
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure,
+        });
+      }
+    }
+
+    return redirectResponse;
+  } catch (err) {
+    console.error('Failed to fetch session in E2E login route:', err);
+    return NextResponse.redirect(new URL(redirectParam, url.origin));
+  }
 }

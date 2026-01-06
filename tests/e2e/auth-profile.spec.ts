@@ -9,7 +9,43 @@ if (!E2E_SECRET) {
 
 test.describe('Authenticated profile flow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/api/test/e2e-login?secret=${E2E_SECRET}&redirect=/community`);
+    // Request the session JSON from the test login endpoint and set
+    // the Supabase auth cookies directly in the browser context. This
+    // avoids relying on server-side cookie plumbing which can vary
+    // between runtimes.
+    const request = await page.request.get(`/api/test/e2e-login?redirect=/community`, {
+      headers: {
+        Authorization: `Bearer ${E2E_SECRET}`,
+        'x-e2e-return-session': '1',
+      },
+    });
+
+    const body = await request.json();
+    const session = body?.session;
+
+    if (session && session.access_token) {
+      // Attach cookies for the app origin so server-side code sees them.
+      await page.context().addCookies([
+        {
+          name: 'sb-access-token',
+          value: String(session.access_token),
+          domain: '127.0.0.1',
+          path: '/',
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+        {
+          name: 'sb-refresh-token',
+          value: String(session.refresh_token || ''),
+          domain: '127.0.0.1',
+          path: '/',
+          httpOnly: true,
+          sameSite: 'Lax',
+        },
+      ]);
+    }
+
+    await page.goto('/community');
     await expect(page).toHaveURL(/\/community/);
   });
 
