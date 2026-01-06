@@ -17,7 +17,7 @@ test.describe('Landing page', () => {
     await page.evaluate(() =>
       window.scrollTo({
         top: document.body.scrollHeight,
-        behavior: 'instant',
+        behavior: 'auto',
       })
     );
     const footer = page.getByRole('contentinfo');
