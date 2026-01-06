@@ -53,33 +53,6 @@ export default function ShareAvailability() {
   const draggingRef = useRef(false); // ref instead of state
   const dragModeRef = useRef(true);
 
-  const toggleSlot = (dayKey, time) => {
-    setAvailability((prev) => {
-      const daySlots = prev[dayKey] || [];
-      const isSelected = daySlots.includes(time);
-
-      if (
-        (draggingRef.current && dragModeRef.current && !isSelected) ||
-        (draggingRef.current && !dragModeRef.current && isSelected)
-      ) {
-        const newSlots = dragModeRef.current
-          ? [...daySlots, time]
-          : daySlots.filter((t) => t !== time);
-        return { ...prev, [dayKey]: newSlots };
-      }
-
-      if (!draggingRef.current) {
-        if (isSelected) {
-          return { ...prev, [dayKey]: daySlots.filter((t) => t !== time) };
-        } else {
-          return { ...prev, [dayKey]: [...daySlots, time] };
-        }
-      }
-
-      return prev;
-    });
-  };
-
 
 const isValidTimeInterval = (time) => {
   if (!time) return false;
