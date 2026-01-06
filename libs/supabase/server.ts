@@ -35,13 +35,21 @@ export async function createClient(type: SupabaseKeyType = 'anon') {
         return cookieStore.getAll();
       },
       setAll(cookiesToSet: CookieToSet[]) {
+        const errors: unknown[] = [];
+
         for (const { name, value, options } of cookiesToSet) {
           try {
             cookieStore.set(name, value, options);
           } catch (err) {
-            // Log but do not rethrow to keep server flows resilient.
+            // Log the specific error for debugging purposes.
             console.error('Failed to set cookie in server createClient:', err);
+            errors.push(err);
           }
+        }
+
+        if (errors.length > 0) {
+          // Surface a generic error so callers can detect that cookie setting failed.
+          throw new Error('Failed to set one or more cookies in server createClient');
         }
       },
     },
