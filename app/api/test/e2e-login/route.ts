@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/libs/supabase/server';
+import type { Session } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Prefer the session returned by the sign-in call; fall back to getSession().
-  let session = (signInResult.data as unknown as { session?: unknown })?.session ?? null;
+  let session: Session | null = (signInResult.data?.session as Session) ?? null;
 
   // Fetch the session and either return it as JSON (for programmatic clients)
   // or set cookies on a redirect response. Returning JSON is useful for
