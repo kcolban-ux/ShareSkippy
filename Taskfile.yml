@@ -50,7 +50,7 @@ tasks:
         platforms: [windows]
       - cmd: chmod +x scripts/populate-env-keys.sh
         platforms: [linux, darwin]
-      - cmd: scripts/scripts/populate-env-keys.sh {{.ENV_FILE}}
+      - cmd: scripts/populate-env-keys.sh {{.ENV_FILE}}
         platforms: [linux, darwin]
 
   setup:env:resend_info:
