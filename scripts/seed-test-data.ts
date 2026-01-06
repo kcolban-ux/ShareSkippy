@@ -110,7 +110,7 @@ async function seedUser() {
     email: e2eUser.email,
     first_name: e2eUser.metadata.first_name,
     last_name: e2eUser.metadata.last_name,
-    role: 'owner',
+    role: 'dog_owner',
   };
 
   const { error: profileError } = await supabase.from('profiles').upsert(profilePayload, {
