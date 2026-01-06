@@ -16,10 +16,21 @@ interface CookieToSet {
 }
 
 /**
- * Proxies the request, initializing Supabase server client and handling cookies.
+ * Middleware helper that "proxies" an incoming request by creating a Supabase server client
+ * bound to that request/response cycle and synchronizing authentication cookies.
  *
- * @param request - The incoming Next.js request.
- * @returns The Next.js response.
+ * In this context, "proxies" means that the original request is passed through unchanged to
+ * the rest of the Next.js routing pipeline, but is enriched with a Supabase client that can
+ * read auth state from the incoming cookies and write back any updated cookies.
+ *
+ * Cookie handling is required because Supabase authentication is stored in cookies. This
+ * function reads auth cookies from the {@link NextRequest}, makes them available to the
+ * Supabase client, and then applies any cookie changes both to the request (for Server
+ * Components) and to the {@link NextResponse} so that the browser receives updated auth
+ * cookies.
+ *
+ * @param request - The incoming Next.js request being processed by middleware.
+ * @returns The Next.js response that continues the request chain with updated cookies applied.
  */
 export async function proxy(request: NextRequest): Promise<NextResponseType> {
   let response: NextResponseType = NextResponse.next({
