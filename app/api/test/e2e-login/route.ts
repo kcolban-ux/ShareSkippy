@@ -89,27 +89,32 @@ export async function GET(request: NextRequest) {
 
     const redirectResponse = NextResponse.redirect(new URL(redirectParam, url.origin));
 
-    const s = session as { access_token: string; refresh_token?: string };
-    if (session && s.access_token) {
-      const secure = url.protocol === 'https:';
-      redirectResponse.cookies.set({
-        name: 'sb-access-token',
-        value: s.access_token,
-        httpOnly: true,
-        path: '/',
-        sameSite: 'lax',
-        secure,
-      });
+    if (session && typeof session === 'object') {
+      const sessionRecord = session as Record<string, unknown>;
+      const accessToken = sessionRecord.access_token;
+      const refreshToken = sessionRecord.refresh_token;
 
-      if (s.refresh_token) {
+      if (typeof accessToken === 'string') {
+        const secure = url.protocol === 'https:';
         redirectResponse.cookies.set({
-          name: 'sb-refresh-token',
-          value: s.refresh_token,
+          name: 'sb-access-token',
+          value: accessToken,
           httpOnly: true,
           path: '/',
           sameSite: 'lax',
           secure,
         });
+
+        if (typeof refreshToken === 'string') {
+          redirectResponse.cookies.set({
+            name: 'sb-refresh-token',
+            value: refreshToken,
+            httpOnly: true,
+            path: '/',
+            sameSite: 'lax',
+            secure,
+          });
+        }
       }
     }
 
