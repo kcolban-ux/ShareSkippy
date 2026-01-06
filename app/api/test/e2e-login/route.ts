@@ -91,9 +91,8 @@ export async function GET(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(new URL(redirectParam, url.origin));
 
     if (session && typeof session === 'object') {
-      const sessionRecord = session as Record<string, unknown>;
-      const accessToken = sessionRecord.access_token;
-      const refreshToken = sessionRecord.refresh_token;
+      const accessToken = session.access_token;
+      const refreshToken = session.refresh_token;
 
       if (typeof accessToken === 'string') {
         const secure = url.protocol === 'https:';
