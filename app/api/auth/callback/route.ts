@@ -183,6 +183,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const requestUrl = new URL(req.url);
   const code: string | null = requestUrl.searchParams.get('code');
   const error: string | null = requestUrl.searchParams.get('error');
+  const errorDescription: string | null = requestUrl.searchParams.get('error_description');
 
   // 1. Handle OAuth Errors (Guard Clause)
   if (error) {
