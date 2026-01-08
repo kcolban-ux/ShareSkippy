@@ -1,33 +1,33 @@
 # ==============================================================================
 # WORKFLOW: Dependabot Automerge
 # ==============================================================================
-# 
+#
 # PURPOSE:
-#   Automatically approves and enables auto-merge for low-risk Dependabot PRs 
+#   Automatically approves and enables auto-merge for low-risk Dependabot PRs
 #   to reduce maintenance overhead and PR clutter.
-# 
+#
 # SECURITY MODEL (pull_request_target):
-#   - Uses 'pull_request_target' to allow the workflow to access repository 
-#     secrets and write permissions (required for 'gh pr review' and 
+#   - Uses 'pull_request_target' to allow the workflow to access repository
+#     secrets and write permissions (required for 'gh pr review' and
 #     'gh pr merge').
-#   - Safety: This trigger always runs the workflow code from the base branch 
+#   - Safety: This trigger always runs the workflow code from the base branch
 #     (main), preventing malicious PRs from altering the merge logic.
-# 
+#
 # ELIGIBILITY CRITERIA:
 #   - Patches: All patch updates (semver-patch) are automatically approved.
-#   - Minor Updates: Approved only for 'devDependencies' and 'github-actions' 
+#   - Minor Updates: Approved only for 'devDependencies' and 'github-actions'
 #     to prevent breaking changes in core framework logic or UI components.
-#   - File Safety: Restricted to modifying only package.json, package-lock.json, 
+#   - File Safety: Restricted to modifying only package.json, package-lock.json,
 #     or .github/workflows/*.yml.
-# 
+#
 # SECURITY CONSIDERATIONS:
 #   - Filter: Strictly restricted to 'dependabot[bot]' via 'if' condition.
-#   - Path Validation: Ensures that updates don't touch application code, 
+#   - Path Validation: Ensures that updates don't touch application code,
 #     Supabase migrations, or sensitive logic.
-#   - Metadata Validation: Includes explicit error handling for missing or 
-#     unexpected metadata from the 'fetch-metadata' action to avoid 
+#   - Metadata Validation: Includes explicit error handling for missing or
+#     unexpected metadata from the 'fetch-metadata' action to avoid
 #     undefined behavior or unauthorized merges.
-#   - Validation: Relies on required status checks (CI build/integration tests) 
+#   - Validation: Relies on required status checks (CI build/integration tests)
 #     defined in branch protection rules to block broken updates.
 # ==============================================================================
 
@@ -35,7 +35,7 @@ name: Dependabot Automerge
 
 on: pull_request_target
 
-permissions: 
+permissions:
   pull-requests: write
   contents: write
 
@@ -48,7 +48,7 @@ jobs:
         id: metadata
         uses: dependabot/fetch-metadata@300ce8ecb06a0ee68a73f5f4f6d03c034c623e53
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          github-token: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: Validate Changed Files
         id: path-check
@@ -56,7 +56,7 @@ jobs:
         run: |
           # Fetch the list of changed files in the PR using the GitHub CLI
           CHANGED_FILES=$(gh pr view "$PR_URL" --json files --template '{{range .files}}{{.path}}{{"\n"}}{{end}}')
-          
+
           if [[ -z "$CHANGED_FILES" ]]; then
             echo "Error: Could not retrieve the list of changed files."
             echo "eligible=false" >> $GITHUB_OUTPUT
@@ -77,7 +77,7 @@ jobs:
               exit 0
             fi
           done <<< "$CHANGED_FILES"
-          
+
           echo "eligible=true" >> $GITHUB_OUTPUT
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
@@ -118,7 +118,7 @@ jobs:
               exit 0
             fi
           fi
-          
+
           echo "eligible=false" >> $GITHUB_OUTPUT
 
       - name: Approve PR

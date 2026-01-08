@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo } from "react"; // Removed useState
-import { useRouter } from "next/navigation";
-import { useUser } from "@/components/providers/SupabaseUserProvider";
-import config from "@/config";
-import type { User } from "@supabase/supabase-js";
+import { useEffect, useMemo } from 'react'; // Removed useState
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
+import config from '@/config';
+import type { User } from '@supabase/supabase-js';
 
 // Define the return type for the hook
 interface ProtectedRouteResult {
