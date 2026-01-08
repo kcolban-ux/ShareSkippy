@@ -151,7 +151,8 @@ export async function scheduleMeetingReminder({
     throw new Error(`Failed to schedule meeting reminder: ${error.message}`);
   }
 
-  console.log(`Meeting reminder scheduled for user ${userId} at ${reminderTime.toISOString()}`);
+  const safeUserId = String(userId).replace(/[\r\n]/g, '');
+  console.log(`Meeting reminder scheduled for user ${safeUserId} at ${reminderTime.toISOString()}`);
 }
 
 /**
