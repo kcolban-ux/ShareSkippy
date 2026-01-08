@@ -11,6 +11,7 @@
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "types": ["jest", "node"],
+    "typeRoots": ["./node_modules/@types"],
     "isolatedModules": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
