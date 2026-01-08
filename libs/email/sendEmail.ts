@@ -56,7 +56,9 @@ export async function sendEmail({
         .single();
 
       if (existingEvent) {
-        console.log(`Email ${emailType} already sent to user ${userId}, skipping`);
+        const safeEmailType = String(emailType).replace(/[\r\n]/g, '');
+        const safeUserId = String(userId).replace(/[\r\n]/g, '');
+        console.log(`Email ${safeEmailType} already sent to user ${safeUserId}, skipping`);
 
         // Return the existing event
         const { data: event } = await supabase
