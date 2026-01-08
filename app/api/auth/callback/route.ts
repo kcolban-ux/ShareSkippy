@@ -168,6 +168,14 @@ async function processCodeExchangeAndProfileUpdate(
 }
 // #endregion HELPER_FUNCTIONS
 
+/**
+ * @description Sanitize user-controlled strings before logging to avoid log injection.
+ */
+function sanitizeForLog(value: string | null): string {
+  if (value == null) return '';
+  return value.replace(/[\r\n]/g, ' ');
+}
+
 // #region HANDLER
 /**
  * @async
@@ -182,13 +190,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // 1. Handle OAuth Errors (Guard Clause)
   if (error) {
-    const safeError = error.replace(/[\r\n]/g, ' ');
-    const safeErrorDescription =
-      errorDescription !== null ? errorDescription.replace(/[\r\n]/g, ' ') : null;
+    const safeError = sanitizeForLog(error);
+    const safeErrorDescription = sanitizeForLog(errorDescription);
 
     console.error('OAuth error:', safeError, safeErrorDescription);
     return NextResponse.redirect(
-      new URL('/signin?error=' + encodeURIComponent(error), requestUrl.origin)
+      new URL('/signin?error=' + encodeURIComponent(safeError), requestUrl.origin)
     );
   }
 
