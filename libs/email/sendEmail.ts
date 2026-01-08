@@ -32,7 +32,14 @@ export interface EmailEvent {
 }
 
 /**
- * Centralized email sending function with idempotency and logging
+ * Send an email with idempotency and event tracking.
+ *
+ * Creates an `email_events` row, attempts delivery via Resend, updates the
+ * event status, and returns the event record. For single-shot types (e.g.
+ * `welcome`) the function checks for an existing event to avoid duplicates.
+ *
+ * @param params - Parameters for sending the email
+ * @returns The persisted `EmailEvent`
  */
 export async function sendEmail({
   userId,
@@ -46,7 +53,6 @@ export async function sendEmail({
   const supabase = await createClient();
 
   try {
-    // Check for idempotency - prevent duplicate sends for single-shot emails
     if (['welcome', 'nurture_day3'].includes(emailType)) {
       const { data: existingEvent } = await supabase
         .from('email_events')
@@ -71,7 +77,6 @@ export async function sendEmail({
       }
     }
 
-    // Load template if not provided
     let finalSubject = subject;
     let finalHtml = html;
     let finalText = text;
@@ -83,7 +88,6 @@ export async function sendEmail({
       finalText = template.text;
     }
 
-    // Ensure we have required content
     if (!finalSubject) {
       throw new Error(`Subject is required for email type: ${emailType}`);
     }
@@ -91,15 +95,12 @@ export async function sendEmail({
       throw new Error(`HTML or text content is required for email type: ${emailType}`);
     }
 
-    // Ensure we have at least one content type
     if (!finalHtml) {
       finalHtml = finalText || '';
     }
     if (!finalText) {
       finalText = finalHtml || '';
     }
-
-    // Create email event record
     const { data: emailEvent, error: eventError } = await supabase
       .from('email_events')
       .insert({
@@ -113,12 +114,9 @@ export async function sendEmail({
       .select()
       .single();
 
-    if (eventError) {
-      throw new Error(`Failed to create email event: ${eventError.message}`);
-    }
+    if (eventError) throw new Error(`Failed to create email event: ${eventError.message}`);
 
     try {
-      // Send email via Resend
       const resendResult = await resendSendEmail({
         to,
         subject: finalSubject,
@@ -129,7 +127,6 @@ export async function sendEmail({
       const resendData = resendResult as ResendSendResult;
       const externalMessageId = resendData.id;
 
-      // Update event with success
       const { error: updateError } = await supabase
         .from('email_events')
         .update({
@@ -138,9 +135,7 @@ export async function sendEmail({
         })
         .eq('id', emailEvent.id);
 
-      if (updateError) {
-        console.error('Failed to update email event:', updateError);
-      }
+      if (updateError) console.error('Failed to update email event:', updateError);
 
       return {
         ...emailEvent,
@@ -157,11 +152,8 @@ export async function sendEmail({
         })
         .eq('id', emailEvent.id);
 
-      if (updateError) {
-        console.error('Failed to update email event with error:', updateError);
-      }
+      if (updateError) console.error('Failed to update email event with error:', updateError);
 
-      // Log failure (avoid echoing user-provided values). Include internal event id for tracing.
       console.error('Email send failed', {
         eventId: emailEvent?.id ?? null,
         emailType,
@@ -177,7 +169,12 @@ export async function sendEmail({
 }
 
 /**
- * Schedule an email to be sent at a specific time
+ * Schedule an email to be sent at a specific time.
+ *
+ * @param params.userId - Recipient user id
+ * @param params.emailType - One of the supported email types
+ * @param params.runAfter - When to run the job
+ * @param params.payload - Optional template payload
  */
 export async function scheduleEmail({
   userId,
@@ -205,15 +202,15 @@ export async function scheduleEmail({
     payload,
   });
 
-  if (error) {
-    throw new Error(`Failed to schedule email: ${error.message}`);
-  }
+  if (error) throw new Error(`Failed to schedule email: ${error.message}`);
 
-  console.log(`Email ${emailType} scheduled for user ${userId} at ${runAfter.toISOString()}`);
+  console.info(`Scheduled ${emailType} for user ${userId} at ${runAfter.toISOString()}`);
 }
 
 /**
- * Record user activity for re-engagement logic
+ * Record a user activity event used by engagement logic.
+ *
+ * Non-critical: failures are logged but do not throw.
  */
 export async function recordUserActivity({
   userId,
@@ -232,14 +229,15 @@ export async function recordUserActivity({
     metadata,
   });
 
-  if (error) {
-    console.error('Failed to record user activity:', error);
-    // Don't throw - this is not critical
-  }
+  if (error) console.error('Failed to record user activity:', error);
 }
 
 /**
- * Get user's last activity for a specific event
+ * Return the user's most recent timestamp for a named activity event, or null.
+ *
+ * @param userId - User identifier
+ * @param event - Activity name
+ * @returns Date of last activity or null
  */
 export async function getUserLastActivity(userId: string, event: string): Promise<Date | null> {
   const supabase = await createClient();
@@ -257,19 +255,24 @@ export async function getUserLastActivity(userId: string, event: string): Promis
 }
 
 /**
- * Check if user should receive re-engagement email
+ * Determine whether a re-engagement email should be sent to the user.
+ *
+ * Rules:
+ * - User must have been inactive >= 7 days
+ * - No reengage email sent in the previous 21 days
+ *
+ * @param userId - User identifier
+ * @returns True when a reengage email should be sent
  */
 export async function shouldSendReengageEmail(userId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  // Check if user has been inactive for 7+ days
   const lastLogin = await getUserLastActivity(userId, 'login');
   if (!lastLogin) return false;
 
   const daysSinceLogin = Math.floor((Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
   if (daysSinceLogin < 7) return false;
 
-  // Check if re-engagement email was sent in the last 21 days
   const { data: recentReengage } = await supabase
     .from('email_events')
     .select('created_at')
