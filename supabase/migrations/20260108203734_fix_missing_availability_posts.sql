@@ -34,10 +34,19 @@ DROP POLICY IF EXISTS "Users can view dogs in active availability posts" ON dogs
 DROP POLICY IF EXISTS "Public dogs are viewable by everyone" ON dogs;
 DROP POLICY IF EXISTS "Dogs are viewable if they belong to a post" ON dogs;
 
--- Simple policy: if the dog exists, let it be joined to a post
--- RLS on 'availability' will still protect the context
-CREATE POLICY "Dogs are viewable by everyone" ON dogs
-  FOR SELECT USING (true);
+-- Policy: users can see their own dogs, or dogs that appear in active availability posts
+-- This maintains privacy for unrelated dogs while keeping joins performant.
+CREATE POLICY "Users can view their own dogs or dogs in active posts" ON dogs
+  FOR SELECT USING (
+    auth.uid() = owner_id
+    OR EXISTS (
+      SELECT 1
+      FROM availability a
+      JOIN availability_dogs ad ON ad.availability_id = a.id
+      WHERE ad.dog_id = dogs.id
+        AND a.status = 'active'
+    )
+  );
 
 
 -- 3. FIX AVAILABILITY
