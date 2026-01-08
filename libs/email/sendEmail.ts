@@ -161,11 +161,10 @@ export async function sendEmail({
         console.error('Failed to update email event with error:', updateError);
       }
 
-      // Log failure
-      console.error(`Email ${emailType} failed to send to ${to} (user: ${userId})`, {
+      // Log failure (avoid echoing user-provided values). Include internal event id for tracing.
+      console.error('Email send failed', {
+        eventId: emailEvent?.id ?? null,
         emailType,
-        userId,
-        to,
         error: sendError instanceof Error ? sendError.message : 'Unknown error',
       });
 
