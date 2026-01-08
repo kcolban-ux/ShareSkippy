@@ -456,6 +456,8 @@ export default function CommunityPage() {
       const postsWithDogs: AvailabilityPostType[] = dogPosts || [];
 
       setAllDogPosts(postsWithDogs);
+      // Set displayed posts directly to ensure they render even if useEffect doesn't trigger
+      setDogAvailabilityPosts(postsWithDogs);
 
       // 2. Fetch petpal availability posts
       let petpalQuery = supabase
@@ -482,6 +484,8 @@ export default function CommunityPage() {
       const postsWithData: AvailabilityPostType[] = petpalPosts || [];
 
       setAllPetpalPosts(postsWithData);
+      // Set displayed posts directly to ensure they render even if useEffect doesn't trigger
+      setPetpalAvailabilityPosts(postsWithData);
 
       // 3. Fetch user's own availability posts
       if (currentUser) {
