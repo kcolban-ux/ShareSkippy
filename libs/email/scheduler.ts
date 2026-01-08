@@ -193,7 +193,8 @@ export async function scheduleNurtureEmail(userId: string): Promise<void> {
 
   if (error) throw new Error(`Failed to schedule nurture email: ${error.message}`);
 
-  console.info('Scheduled nurture email', { runAfter: nurtureTime.toISOString() });
+  const safeUserId = String(userId).replace(/[\r\n]/g, '');
+  console.info('Scheduled nurture email', { userId: safeUserId, runAfter: nurtureTime.toISOString() });
 }
 
 /**
