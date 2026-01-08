@@ -7,8 +7,6 @@
 DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 DROP POLICY IF EXISTS "Authenticated users can view basic profile info for messaging" ON profiles;
 DROP POLICY IF EXISTS "Allow anonymous read access to profiles" ON profiles;
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
-DROP POLICY IF EXISTS "Authenticated users can view all profiles" ON profiles;
 
 -- Create a clean, restricted read policy for profiles
 -- Allow:
