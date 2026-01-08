@@ -1,7 +1,6 @@
 import { createClient } from './server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { getCookieOptions } from '@/libs/cookieOptions';
 
 // #region Mocks and Setup
 // ========================================================================= //
@@ -21,28 +20,11 @@ jest.mock('@supabase/ssr', () => ({
 }));
 
 /**
- * Mock the cookieOptions module.
- */
-jest.mock('@/libs/cookieOptions', () => ({
-  getCookieOptions: jest.fn(),
-}));
-
-/**
  * Mock cookie store for testing.
  */
 const mockCookieStore = {
   getAll: jest.fn(),
   set: jest.fn(),
-};
-
-/**
- * Mock cookie options.
- */
-const mockCookieOptions = {
-  domain: '.shareskippy.com',
-  path: '/',
-  sameSite: 'lax' as const,
-  secure: true,
 };
 
 /**
@@ -59,7 +41,7 @@ const mockSupabaseClient = {
  */
 const originalEnv = {
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 };
 
@@ -81,12 +63,11 @@ beforeEach(() => {
 
   // Set up default mock implementations
   (cookies as jest.Mock).mockResolvedValue(mockCookieStore);
-  (getCookieOptions as jest.Mock).mockReturnValue(mockCookieOptions);
   (createServerClient as jest.Mock).mockReturnValue(mockSupabaseClient);
 
   // Set up environment variables
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 
   // Reset cookie store mocks
@@ -97,7 +78,8 @@ beforeEach(() => {
 afterEach(() => {
   // Restore original environment variables
   process.env.NEXT_PUBLIC_SUPABASE_URL = originalEnv.NEXT_PUBLIC_SUPABASE_URL;
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY =
+    originalEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   process.env.SUPABASE_SERVICE_ROLE_KEY = originalEnv.SUPABASE_SERVICE_ROLE_KEY;
 });
 
@@ -108,82 +90,18 @@ afterEach(() => {
 // ========================================================================= //
 
 describe('createClient', () => {
-  /**
-   * @test Tests that createClient uses the anon key by default.
-   */
-  it('should create a client with anon key by default', async () => {
+  it('should create a client with the publishable key by default', async () => {
     await createClient();
 
     expect(createServerClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
-      'test-anon-key',
+      'test-publishable-key',
       expect.objectContaining({
-        cookieOptions: mockCookieOptions,
         cookies: expect.any(Object),
       })
     );
   });
 
-  /**
-   * @test Tests that createClient uses the anon key when explicitly specified.
-   */
-  it('should create a client with anon key when type is "anon"', async () => {
-    await createClient('anon');
-
-    expect(createServerClient).toHaveBeenCalledWith(
-      'https://test.supabase.co',
-      'test-anon-key',
-      expect.objectContaining({
-        cookieOptions: mockCookieOptions,
-        cookies: expect.any(Object),
-      })
-    );
-  });
-
-  /**
-   * @test Tests that createClient uses the service_role key when specified.
-   */
-  it('should create a client with service_role key when type is "service_role"', async () => {
-    await createClient('service_role');
-
-    expect(createServerClient).toHaveBeenCalledWith(
-      'https://test.supabase.co',
-      'test-service-role-key',
-      expect.objectContaining({
-        cookieOptions: mockCookieOptions,
-        cookies: expect.any(Object),
-      })
-    );
-  });
-
-  /**
-   * @test Tests that cookie options from getCookieOptions are properly applied.
-   */
-  it('should apply cookie options from getCookieOptions', async () => {
-    const customCookieOptions = {
-      domain: undefined,
-      path: '/',
-      sameSite: 'lax' as const,
-      secure: false,
-    };
-
-    (getCookieOptions as jest.Mock).mockReturnValue(customCookieOptions);
-
-    await createClient();
-
-    expect(getCookieOptions).toHaveBeenCalled();
-    expect(createServerClient).toHaveBeenCalledWith(
-      'https://test.supabase.co',
-      'test-anon-key',
-      expect.objectContaining({
-        cookieOptions: customCookieOptions,
-      })
-    );
-  });
-
-  /**
-   * @test Tests that the cookie methods getAll function works correctly.
-   */
   it('should provide a getAll method that retrieves all cookies', async () => {
     const mockCookies = [
       { name: 'cookie1', value: 'value1' },
@@ -202,9 +120,6 @@ describe('createClient', () => {
     expect(mockCookieStore.getAll).toHaveBeenCalled();
   });
 
-  /**
-   * @test Tests that the cookie methods setAll function works correctly.
-   */
   it('should provide a setAll method that sets cookies with proper options', async () => {
     await createClient();
 
@@ -239,9 +154,6 @@ describe('createClient', () => {
     });
   });
 
-  /**
-   * @test Tests that errors in setAll are caught and handled silently.
-   */
   it('should handle errors in setAll gracefully without throwing', async () => {
     mockCookieStore.set.mockImplementation(() => {
       throw new Error('Cookie setting failed');
@@ -272,18 +184,12 @@ describe('createClient', () => {
     });
   });
 
-  /**
-   * @test Tests that the returned client is the expected Supabase client.
-   */
   it('should return the Supabase client created by createServerClient', async () => {
     const client = await createClient();
 
     expect(client).toBe(mockSupabaseClient);
   });
 
-  /**
-   * @test Tests that the cookies() function is properly awaited.
-   */
   it('should await the cookies() function', async () => {
     (cookies as jest.Mock).mockResolvedValue(mockCookieStore);
 

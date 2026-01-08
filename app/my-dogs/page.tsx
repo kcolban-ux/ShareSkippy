@@ -6,7 +6,7 @@ import { useState, ReactElement } from 'react';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // <-- Added
 import { useUserDogs, UserDog } from '@/hooks/useProfile';
 import { useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/libs/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 // #region Component
 export default function MyDogsPage(): ReactElement {
@@ -20,6 +20,7 @@ export default function MyDogsPage(): ReactElement {
 
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const supabase = createClient();
 
   const { data, isLoading: loading } = useUserDogs();
   // #endregion

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import MessageModal from '@/components/MessageModal';
 import ProfilesList from '@/components/ProfilesList';
 import LocationFilter from '@/components/LocationFilter';

@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 type SupabaseServerClient = Awaited<
-  ReturnType<typeof import('@/libs/supabase/server').createClient>
+  ReturnType<typeof import('@/lib/supabase/server').createClient>
 >;
 
 type LogoutRouteModule = typeof import('./route');

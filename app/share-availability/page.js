@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CommunitySupportSection from '@/components/CommunitySupportSection';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { formatLocation } from '@/libs/utils';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 

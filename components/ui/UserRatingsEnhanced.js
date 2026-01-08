@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 
 export default function UserRatingsEnhanced({ userId, userRole }) {

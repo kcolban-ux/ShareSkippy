@@ -2,15 +2,15 @@ import '@testing-library/jest-dom';
 import { describe, it, expect, jest, beforeEach, afterEach, beforeAll } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Session } from '@supabase/supabase-js';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 const mockCreateClient = jest.fn<() => ReturnType<typeof createClient>>();
 
-jest.mock('@/libs/supabase/client', () => ({
+jest.mock('@/lib/supabase/client', () => ({
   createClient: mockCreateClient,
 }));
 
-type BrowserClient = Awaited<ReturnType<typeof import('@/libs/supabase/client').createClient>>;
+type BrowserClient = Awaited<ReturnType<typeof import('@/lib/supabase/client').createClient>>;
 
 let SupabaseUserProvider: typeof import('./SupabaseUserProvider').SupabaseUserProvider;
 let useUserHook: typeof import('./SupabaseUserProvider').useUser;

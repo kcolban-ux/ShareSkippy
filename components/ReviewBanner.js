@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ReviewBanner({ onReviewClick }) {
   const [pendingReviews, setPendingReviews] = useState([]);

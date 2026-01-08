@@ -1,4 +1,4 @@
-import { createClient } from '@/libs/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { scheduleEmail, sendEmail } from './sendEmail';
 
 export interface ReengageResult {

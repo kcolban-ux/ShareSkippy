@@ -11,7 +11,7 @@ import {
   useMemo,
   useCallback,
 } from 'react';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 // 1. Define the Context Value Type
 interface UserContextType {

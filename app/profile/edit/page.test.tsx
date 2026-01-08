@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { useParams } from 'next/navigation';
 import React from 'react';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import PublicProfilePage from '../[id]/page';
 
 // -----------------------------------------------------------
@@ -115,7 +115,7 @@ const getMockSupabaseClient = (
 });
 
 // We cast the imported function to a mock function type for ease of use in tests
-jest.mock('@/libs/supabase/client', () => ({
+jest.mock('@/lib/supabase/client', () => ({
   createClient: jest.fn(),
 }));
 

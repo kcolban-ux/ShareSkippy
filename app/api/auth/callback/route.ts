@@ -1,11 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/libs/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { type Session, type User, type UserMetadata } from '@supabase/supabase-js';
 
-// Prevent this server function from being cached.
+// #region CONFIGURATION
+/**
+ * @description Force dynamic rendering to prevent caching of this server-side function.
+ */
 export const dynamic = 'force-dynamic';
+// #endregion CONFIGURATION
 
-// Profile shape for server-side logic. Replace with generated DB types if available.
+// #region TYPES
 interface Profile {
   id: string;
   first_name: string | null;

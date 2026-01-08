@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
-import { supabase } from '@/libs/supabase';
+import { useSupabaseAuth } from '@/lib/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
 import PhotoUpload from '@/components/ui/PhotoUpload';
 
 export default function EditDogPage() {
@@ -51,6 +51,8 @@ export default function EditDogPage() {
 
   const fetchDog = useCallback(async () => {
     if (!user || !id) return;
+
+    const supabase = createClient();
 
     try {
       setLoading(true);
@@ -138,6 +140,8 @@ export default function EditDogPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user || !id) return;
+
+    const supabase = createClient();
 
     try {
       setSaving(true);

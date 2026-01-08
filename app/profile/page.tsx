@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState, type JSX } from 'react';
 import DeleteAccountModal from '@/components/DeleteAccountModal';
 import DeletionRequestStatus from '@/components/DeletionRequestStatus';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import UserReviews from '@/components/UserReviews';
 import { formatLocation } from '@/libs/utils';

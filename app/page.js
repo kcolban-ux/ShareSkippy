@@ -1,5 +1,5 @@
 'use client';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { renderSchemaTags } from '@/libs/seo';

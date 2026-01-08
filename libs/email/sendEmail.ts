@@ -1,4 +1,4 @@
-import { createClient } from '@/libs/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { sendEmail as resendSendEmail } from '@/libs/resend';
 import { EmailPayload, loadEmailTemplate, ResendSendResult } from './templates';
 

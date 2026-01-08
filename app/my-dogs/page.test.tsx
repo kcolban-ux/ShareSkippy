@@ -10,7 +10,7 @@ import React from 'react';
 // import { SupabaseUserProvider } from '@/components/providers/SupabaseUserProvider'; // <-- REMOVED
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { useUserDogs } from '@/hooks/useProfile';
-import { supabase } from '@/libs/supabase';
+import { createClient } from '@/lib/supabase/client';
 import MyDogsPage from './page';
 
 // #region Mocks
@@ -23,17 +23,26 @@ jest.mock('@/hooks/useProfile', () => ({
   useUserDogs: jest.fn(),
 }));
 
-jest.mock('@/libs/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      delete: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          eq: jest.fn(() => Promise.resolve({ error: null })),
-        })),
-      })),
+jest.mock('@/lib/supabase/client', () => {
+  const fromMock = jest.fn();
+  const channelMock = jest.fn(() => ({
+    on: jest.fn(() => ({
+      subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })),
     })),
-  },
-}));
+  }));
+  const removeChannelMock = jest.fn();
+
+  const supabaseMock = {
+    from: fromMock,
+    channel: channelMock,
+    removeChannel: removeChannelMock,
+  };
+
+  return {
+    createClient: jest.fn(() => supabaseMock),
+    supabase: supabaseMock,
+  };
+});
 
 jest.mock('next/image', () => {
   const MockImage = (props: React.ComponentProps<'img'>) => {
@@ -179,7 +188,7 @@ describe('MyDogsPage', () => {
     const mockEq2 = jest.fn(() => Promise.resolve({ error: null }));
     const mockEq1 = jest.fn(() => ({ eq: mockEq2 }));
     const mockDelete = jest.fn(() => ({ eq: mockEq1 }));
-    (supabase.from as jest.Mock).mockReturnValue({ delete: mockDelete });
+    (createClient().from as jest.Mock).mockReturnValue({ delete: mockDelete });
 
     render(<MyDogsPage />, { wrapper: createWrapper() });
 
@@ -192,7 +201,7 @@ describe('MyDogsPage', () => {
 
     // Check Supabase was called correctly
     await waitFor(() => {
-      expect(supabase.from).toHaveBeenCalledWith('dogs');
+      expect(createClient().from).toHaveBeenCalledWith('dogs');
       expect(mockDelete).toHaveBeenCalled();
       expect(mockEq1).toHaveBeenCalledWith('id', 'dog1');
       expect(mockEq2).toHaveBeenCalledWith('owner_id', '123');
@@ -216,7 +225,7 @@ describe('MyDogsPage', () => {
     const mockEq2 = jest.fn(() => Promise.resolve({ error: mockError }));
     const mockEq1 = jest.fn(() => ({ eq: mockEq2 }));
     const mockDelete = jest.fn(() => ({ eq: mockEq1 }));
-    (supabase.from as jest.Mock).mockReturnValue({ delete: mockDelete });
+    (createClient().from as jest.Mock).mockReturnValue({ delete: mockDelete });
 
     render(<MyDogsPage />, { wrapper: createWrapper() });
 

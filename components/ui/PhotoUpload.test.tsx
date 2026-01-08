@@ -13,7 +13,7 @@ const mockGetPublicUrl = jest.fn();
 const mockRemove = jest.fn();
 const mockGetUser = jest.fn();
 
-jest.mock('@/libs/supabase/client', () => ({
+jest.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
       getUser: mockGetUser,

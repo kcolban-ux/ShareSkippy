@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { createServiceClient } from '@/libs/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import {
   sendEmail,
   scheduleEmail,
@@ -27,7 +27,7 @@ jest.mock('@/libs/resend', () => ({
 }));
 
 // Mock the Supabase client creation service
-jest.mock('@/libs/supabase/server', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),
 }));
 

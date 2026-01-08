@@ -22,7 +22,7 @@ import {
   SyntheticEvent,
 } from 'react';
 import Image from 'next/image';
-import { supabase } from '@/libs/supabase';
+import { createClient } from '@/lib/supabase/client';
 import MessageModal from '@/components/MessageModal';
 import MeetingModal from '@/components/MeetingModal';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute'; // Assumed path
@@ -174,6 +174,7 @@ export default function MessagesPage(): ReactElement {
   const fetchMessages = useCallback(
     async (conversationId: string): Promise<Message[]> => {
       if (!conversationId || !selectedConversation) return [];
+      const supabase = createClient();
 
       try {
         const { participant1_id, participant2_id } = selectedConversation;
@@ -206,6 +207,8 @@ export default function MessagesPage(): ReactElement {
    */
   const fetchConversations = useCallback(async (): Promise<void> => {
     if (!user) return;
+
+    const supabase = createClient();
 
     try {
       setLoading(true);
@@ -409,6 +412,7 @@ export default function MessagesPage(): ReactElement {
    */
   useEffect(() => {
     if (!selectedConversation || !user) return;
+    const supabase = createClient();
 
     const { participant1_id, participant2_id } = selectedConversation;
 
@@ -826,7 +830,7 @@ export default function MessagesPage(): ReactElement {
       <MeetingModal
         isOpen={meetingModal.isOpen}
         onClose={closeMeetingModal}
-        recipient={meetingModal.recipient}
+        recipient={meetingModal.recipient!}
         conversation={meetingModal.conversation}
         onMeetingCreated={handleMeetingCreated}
       />

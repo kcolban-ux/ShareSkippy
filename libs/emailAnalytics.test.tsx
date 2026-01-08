@@ -1,7 +1,7 @@
-jest.mock('./supabase/server');
-
-import { createClient } from './supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { EmailAnalytics } from './emailAnalytics';
+
+jest.mock('@/lib/supabase/server');
 
 // Mock the external dependency
 const mockSupabaseChain = {

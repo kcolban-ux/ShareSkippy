@@ -68,7 +68,7 @@ const mockSupabase = {
 };
 
 // 4. Mock createClient
-jest.mock('@/libs/supabase/client', () => ({
+jest.mock('@/lib/supabase/client', () => ({
   createClient: jest.fn(() => mockSupabase),
 }));
 
