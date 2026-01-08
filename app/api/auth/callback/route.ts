@@ -182,7 +182,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // 1. Handle OAuth Errors (Guard Clause)
   if (error) {
-    console.error('OAuth error:', error, errorDescription);
+    const safeError = error.replace(/[\r\n]/g, ' ');
+    const safeErrorDescription =
+      errorDescription !== null ? errorDescription.replace(/[\r\n]/g, ' ') : null;
+
+    console.error('OAuth error:', safeError, safeErrorDescription);
     return NextResponse.redirect(
       new URL('/signin?error=' + encodeURIComponent(error), requestUrl.origin)
     );
