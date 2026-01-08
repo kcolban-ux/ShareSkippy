@@ -1,9 +1,9 @@
-/** * @description Robust RLS fix to ensure availability posts and relations are visible.
- * @region Database Migration / Fix
- */
+-- @description Robust RLS fix to ensure availability posts and relations are visible.
+-- @region Database Migration / Fix
 
 -- 1. CLEAN UP PROFILES
 -- Drop existing restrictive/conflicting policies
+DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 DROP POLICY IF EXISTS "Authenticated users can view basic profile info for messaging" ON profiles;
 DROP POLICY IF EXISTS "Allow anonymous read access to profiles" ON profiles;
