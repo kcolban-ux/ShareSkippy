@@ -1,11 +1,5 @@
 // #region 📜 Imports
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
 // #endregion 📜 Imports
 
 // #region 🛡️ Types and Constants
@@ -49,11 +43,11 @@ export interface UseProfileDraftResult<TProfile> {
   /** True if a draft was successfully loaded or saved. */
   hasDraft: boolean;
   /** The source of the current draft data. */
-  draftSource: "session" | null;
+  draftSource: 'session' | null;
 }
 
-const DRAFT_KEY = "profileDraft";
-const DRAFT_VERSION = "2.0";
+const DRAFT_KEY = 'profileDraft';
+const DRAFT_VERSION = '2.0';
 
 // #endregion 🛡️ Types and Constants
 
@@ -67,7 +61,7 @@ const DRAFT_VERSION = "2.0";
  * @returns An object containing the draft state and management functions.
  */
 export const useProfileDraft = <TProfile extends object>(
-  initialProfile: TProfile,
+  initialProfile: TProfile
 ): UseProfileDraftResult<TProfile> => {
   const [profile, setProfile] = useState<TProfile>(initialProfile);
   const [hasDraft, setHasDraft] = useState(false);
@@ -87,25 +81,20 @@ export const useProfileDraft = <TProfile extends object>(
 
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftToStore));
-      console.log("💾 Draft saved to sessionStorage");
+      console.log('💾 Draft saved to sessionStorage');
     } catch (error: unknown) {
-      console.warn("❌ Failed to save to sessionStorage:", error);
+      console.warn('❌ Failed to save to sessionStorage:', error);
 
       // Check if it's a QuotaExceededError
-      if (
-        error instanceof DOMException && error.name === "QuotaExceededError"
-      ) {
-        console.warn("⚠️ Quota exceeded. Clearing storage and retrying...");
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('⚠️ Quota exceeded. Clearing storage and retrying...');
         try {
           // Clear and retry saving
           sessionStorage.clear();
           sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftToStore));
-          console.log("💾 Draft saved after clearing storage");
+          console.log('💾 Draft saved after clearing storage');
         } catch (retryError: unknown) {
-          console.error(
-            "❌ Failed to save even after clearing storage:",
-            retryError,
-          );
+          console.error('❌ Failed to save even after clearing storage:', retryError);
         }
       }
     }
@@ -121,7 +110,7 @@ export const useProfileDraft = <TProfile extends object>(
       const draft = sessionStorage.getItem(DRAFT_KEY);
       if (draft) {
         const parsed = JSON.parse(draft) as StoredDraft<TProfile>;
-        console.log("📂 Draft loaded from sessionStorage");
+        console.log('📂 Draft loaded from sessionStorage');
         setHasDraft(true);
 
         // Strip metadata before returning the profile data
@@ -131,12 +120,12 @@ export const useProfileDraft = <TProfile extends object>(
       }
       return null;
     } catch (error: unknown) {
-      console.warn("❌ Failed to load draft from sessionStorage:", error);
+      console.warn('❌ Failed to load draft from sessionStorage:', error);
       // Clear corrupted data
       try {
         sessionStorage.removeItem(DRAFT_KEY);
       } catch (clearError: unknown) {
-        console.warn("❌ Failed to clear corrupted draft:", clearError);
+        console.warn('❌ Failed to clear corrupted draft:', clearError);
       }
       return null;
     }
@@ -149,9 +138,9 @@ export const useProfileDraft = <TProfile extends object>(
     try {
       sessionStorage.removeItem(DRAFT_KEY);
       setHasDraft(false);
-      console.log("🗑️ Draft cleared from sessionStorage");
+      console.log('🗑️ Draft cleared from sessionStorage');
     } catch (error: unknown) {
-      console.warn("❌ Failed to clear draft:", error);
+      console.warn('❌ Failed to clear draft:', error);
     }
   }, []);
 
@@ -174,15 +163,15 @@ export const useProfileDraft = <TProfile extends object>(
 
           setProfile(profileData as TProfile);
           setHasDraft(true);
-          console.log("🔄 Draft synchronized from another tab");
+          console.log('🔄 Draft synchronized from another tab');
         } catch (error: unknown) {
-          console.warn("❌ Failed to sync draft from storage event:", error);
+          console.warn('❌ Failed to sync draft from storage event:', error);
         }
       }
     };
 
-    globalThis.addEventListener("storage", handleStorageChange);
-    return () => globalThis.removeEventListener("storage", handleStorageChange);
+    globalThis.addEventListener('storage', handleStorageChange);
+    return () => globalThis.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // #endregion 🔄 Synchronization Effect
@@ -196,17 +185,18 @@ export const useProfileDraft = <TProfile extends object>(
   const updateProfile = useCallback(
     (updater: ProfileUpdater<TProfile>) => {
       setProfile((prev) => {
-        const updated = typeof updater === "function"
-          // eslint-disable-next-line no-unused-vars
-          ? (updater as (prev: TProfile) => TProfile)(prev)
-          : updater;
+        const updated =
+          typeof updater === 'function'
+            ? // eslint-disable-next-line no-unused-vars
+              (updater as (prev: TProfile) => TProfile)(prev)
+            : updater;
 
         saveToSessionStorage(updated);
         setHasDraft(true); // Mark as having a draft on save
         return updated;
       });
     },
-    [saveToSessionStorage],
+    [saveToSessionStorage]
   );
 
   // #endregion 🚀 State Management
@@ -217,7 +207,7 @@ export const useProfileDraft = <TProfile extends object>(
     loadDraft: loadFromSessionStorage,
     clearDraft,
     hasDraft,
-    draftSource: hasDraft ? "session" : null,
+    draftSource: hasDraft ? 'session' : null,
   };
 };
 

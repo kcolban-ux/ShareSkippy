@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
   UseQueryResult,
-} from "@tanstack/react-query";
+} from '@tanstack/react-query';
 
 // #region Type Definitions
 
@@ -70,7 +70,7 @@ type UseSubmitReviewReturn = UseMutationResult<
  */
 export const useUserReviews = (
   userId: string | undefined,
-  showAll: boolean = false,
+  showAll: boolean = false
 ): UseUserReviewsReturn => {
   const defaultStats: ReviewStats = {
     averageRating: 0,
@@ -79,7 +79,7 @@ export const useUserReviews = (
   };
 
   return useQuery<UserReviewsResult, Error>({
-    queryKey: ["reviews", userId, showAll],
+    queryKey: ['reviews', userId, showAll],
     queryFn: async (): Promise<UserReviewsResult> => {
       if (!userId) {
         return { reviews: [], stats: defaultStats };
@@ -97,13 +97,10 @@ export const useUserReviews = (
       const [reviewsData, statsData]: [
         { reviews: Review[]; error?: string },
         ReviewStats & { error?: string },
-      ] = await Promise.all([
-        reviewsResponse.json(),
-        statsResponse.json(),
-      ]);
+      ] = await Promise.all([reviewsResponse.json(), statsResponse.json()]);
 
       if (!reviewsResponse.ok) {
-        throw new Error(reviewsData.error || "Failed to fetch reviews");
+        throw new Error(reviewsData.error || 'Failed to fetch reviews');
       }
 
       return {
@@ -127,23 +124,21 @@ export const useUserReviews = (
 export const useSubmitReview = (): UseSubmitReviewReturn => {
   const queryClient = useQueryClient();
 
-  const mutationFn: MutationFunction<
-    ReviewSubmissionResponse,
-    ReviewSubmissionData
-  > = async (reviewData) => {
-    const response = await fetch("/api/reviews", {
-      method: "POST",
+  const mutationFn: MutationFunction<ReviewSubmissionResponse, ReviewSubmissionData> = async (
+    reviewData
+  ) => {
+    const response = await fetch('/api/reviews', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(reviewData),
     });
 
-    const data: ReviewSubmissionResponse & { error?: string } = await response
-      .json();
+    const data: ReviewSubmissionResponse & { error?: string } = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Failed to submit review");
+      throw new Error(data.error || 'Failed to submit review');
     }
 
     return data;
@@ -155,7 +150,7 @@ export const useSubmitReview = (): UseSubmitReviewReturn => {
       // Invalidate all queries related to the reviewed user's ID
       // This forces a refetch of their reviews and stats on next render.
       queryClient.invalidateQueries({
-        queryKey: ["reviews", variables.reviewed_id],
+        queryKey: ['reviews', variables.reviewed_id],
       });
     },
   });

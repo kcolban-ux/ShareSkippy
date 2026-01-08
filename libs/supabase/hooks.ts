@@ -1,9 +1,9 @@
 // #region Imports
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { supabase } from "./index"; // Assuming './index' exports the initialized Supabase client instance
-import { AuthError, Session, Subscription, User } from "@supabase/supabase-js";
+import { useEffect, useState } from 'react';
+import { supabase } from './index'; // Assuming './index' exports the initialized Supabase client instance
+import { AuthError, Session, Subscription, User } from '@supabase/supabase-js';
 // #endregion Imports
 
 // #region Types
@@ -59,14 +59,13 @@ export function useUser(): UserHookReturn {
     // FIX: Explicitly type the subscription data structure
     const {
       data: { subscription },
-    }: { data: { subscription: Subscription } } = supabase.auth
-      .onAuthStateChange(
-        (_event: string, session: Session | null) => {
-          // FIX: Ensure session?.user is used safely
-          setUser(session?.user ?? null);
-          setLoading(false);
-        },
-      );
+    }: { data: { subscription: Subscription } } = supabase.auth.onAuthStateChange(
+      (_event: string, session: Session | null) => {
+        // FIX: Ensure session?.user is used safely
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
     // FIX: Ensure cleanup function unsubscribes
     return () => subscription.unsubscribe();
@@ -102,13 +101,12 @@ export function useSupabaseAuth(): SupabaseAuthHookReturn {
     // #region Auth State Change Subscription
     const {
       data: { subscription },
-    }: { data: { subscription: Subscription } } = supabase.auth
-      .onAuthStateChange(
-        (_event: string, session: Session | null) => {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        },
-      );
+    }: { data: { subscription: Subscription } } = supabase.auth.onAuthStateChange(
+      (_event: string, session: Session | null) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
     return () => subscription.unsubscribe();
     // #endregion Auth State Change Subscription

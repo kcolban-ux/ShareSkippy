@@ -1,4 +1,4 @@
-name: "ShareSkippy CodeQL Config - GitHub Actions"
+name: 'ShareSkippy CodeQL Config - GitHub Actions'
 
 # No paths-ignore needed for GitHub Actions workflow analysis
 # All workflow files should be analyzed

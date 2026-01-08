@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useUser } from "@/components/providers/SupabaseUserProvider";
-import { createClient } from "@/libs/supabase/client";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
+import { createClient } from '@/libs/supabase/client';
 
 // #region Interfaces
 /**
@@ -50,7 +50,7 @@ export interface UserDog {
  * Defines the allowed data structure for updating a user profile.
  * Excludes non-updatable fields like 'id' and 'email'.
  */
-export type UpdatableProfileData = Partial<Omit<UserProfile, "id" | "email">>;
+export type UpdatableProfileData = Partial<Omit<UserProfile, 'id' | 'email'>>;
 
 // #endregion Interfaces
 
@@ -62,18 +62,18 @@ export const useUserProfile = () => {
   const supabase = createClient();
 
   return useQuery<UserProfile | null, Error>({
-    queryKey: ["profile", user?.id],
+    queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
 
       const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
         .single();
 
       if (error) {
-        throw new Error(error.message || "Failed to fetch profile");
+        throw new Error(error.message || 'Failed to fetch profile');
       }
 
       return data as UserProfile | null;
@@ -89,18 +89,18 @@ export const useUserDogs = () => {
   const supabase = createClient();
 
   return useQuery<UserDog[], Error>({
-    queryKey: ["dogs", user?.id],
+    queryKey: ['dogs', user?.id],
     queryFn: async () => {
       if (!user) return [];
 
       const { data, error } = await supabase
-        .from("dogs")
-        .select("*")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
+        .from('dogs')
+        .select('*')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) {
-        throw new Error(error.message || "Failed to fetch dogs");
+        throw new Error(error.message || 'Failed to fetch dogs');
       }
 
       return (data as UserDog[]) || [];
@@ -122,23 +122,23 @@ export const useUpdateProfile = () => {
   // 3. Variables/Payload type (UpdatableProfileData)
   return useMutation<UserProfile, Error, UpdatableProfileData>({
     mutationFn: async (profileData) => {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update(profileData)
-        .eq("id", user.id)
+        .eq('id', user.id)
         .select()
         .single();
 
       if (error) {
-        throw new Error(error.message || "Failed to update profile");
+        throw new Error(error.message || 'Failed to update profile');
       }
 
       return data as UserProfile;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
     },
   });
 };

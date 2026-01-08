@@ -25,54 +25,54 @@ interface LocationFields {
  * Using a Set provides faster (O(1)) lookups compared to an array's .includes().
  */
 const stateAbbreviations: Set<string> = new Set([
-  "ca",
-  "ny",
-  "tx",
-  "fl",
-  "il",
-  "pa",
-  "oh",
-  "ga",
-  "nc",
-  "mi",
-  "nj",
-  "va",
-  "wa",
-  "az",
-  "ma",
-  "tn",
-  "in",
-  "mo",
-  "md",
-  "co",
-  "or",
-  "wi",
-  "mn",
-  "sc",
-  "al",
-  "la",
-  "ky",
-  "ar",
-  "ut",
-  "ia",
-  "nv",
-  "ct",
-  "ms",
-  "ks",
-  "ne",
-  "id",
-  "hi",
-  "nh",
-  "me",
-  "ri",
-  "mt",
-  "de",
-  "sd",
-  "nd",
-  "ak",
-  "vt",
-  "wy",
-  "wv",
+  'ca',
+  'ny',
+  'tx',
+  'fl',
+  'il',
+  'pa',
+  'oh',
+  'ga',
+  'nc',
+  'mi',
+  'nj',
+  'va',
+  'wa',
+  'az',
+  'ma',
+  'tn',
+  'in',
+  'mo',
+  'md',
+  'co',
+  'or',
+  'wi',
+  'mn',
+  'sc',
+  'al',
+  'la',
+  'ky',
+  'ar',
+  'ut',
+  'ia',
+  'nv',
+  'ct',
+  'ms',
+  'ks',
+  'ne',
+  'id',
+  'hi',
+  'nh',
+  'me',
+  'ri',
+  'mt',
+  'de',
+  'sd',
+  'nd',
+  'ak',
+  'vt',
+  'wy',
+  'wv',
 ]);
 
 // #endregion
@@ -85,7 +85,7 @@ const stateAbbreviations: Set<string> = new Set([
  * @returns {string} - A single string of merged class names.
  */
 export function cn(...classes: ClassValue[]): string {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 /**
@@ -93,9 +93,7 @@ export function cn(...classes: ClassValue[]): string {
  * @param {string | null | undefined} text - The text to capitalize.
  * @returns {string | null | undefined} - Properly capitalized text, or the original falsy value.
  */
-export function capitalizeLocation(
-  text: string | null | undefined,
-): string | null | undefined {
+export function capitalizeLocation(text: string | null | undefined): string | null | undefined {
   if (!text) {
     return text;
   }
@@ -108,38 +106,34 @@ export function capitalizeLocation(
   }
 
   // Split by spaces and capitalize each word
-  const words: string[] = lowerText.split(" ");
-  const specialWords = new Set(["of", "the", "and", "in", "at"]);
+  const words: string[] = lowerText.split(' ');
+  const specialWords = new Set(['of', 'the', 'and', 'in', 'at']);
 
   const capitalizeSegment = (segment: string) =>
     segment ? segment.charAt(0).toUpperCase() + segment.slice(1) : segment;
 
-  const capitalizedWords: string[] = words.map(
-    (word: string, index: number) => {
-      if (!word) return word;
+  const capitalizedWords: string[] = words.map((word: string, index: number) => {
+    if (!word) return word;
 
-      const segments = word.split("-");
-      const capitalizedSegments = segments.map(
-        (segment: string, segmentIndex: number) => {
-          if (segmentIndex === 0) {
-            return capitalizeSegment(segment);
-          }
-
-          return segment;
-        },
-      );
-      const normalizedWord = capitalizedSegments.join("-");
-
-      // Handle special articles/prepositions, but allow the first word to be capitalized
-      if (specialWords.has(word) && index > 0) {
-        return word;
+    const segments = word.split('-');
+    const capitalizedSegments = segments.map((segment: string, segmentIndex: number) => {
+      if (segmentIndex === 0) {
+        return capitalizeSegment(segment);
       }
 
-      return normalizedWord;
-    },
-  );
+      return segment;
+    });
+    const normalizedWord = capitalizedSegments.join('-');
 
-  return capitalizedWords.join(" ");
+    // Handle special articles/prepositions, but allow the first word to be capitalized
+    if (specialWords.has(word) && index > 0) {
+      return word;
+    }
+
+    return normalizedWord;
+  });
+
+  return capitalizedWords.join(' ');
 }
 
 /**
@@ -148,7 +142,7 @@ export function capitalizeLocation(
  * @returns {LocationFields | null | undefined} - Object with capitalized fields, or the original falsy value.
  */
 export function formatLocation(
-  location: LocationFields | null | undefined,
+  location: LocationFields | null | undefined
 ): LocationFields | null | undefined {
   if (!location) {
     return location;

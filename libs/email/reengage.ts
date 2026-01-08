@@ -1,5 +1,5 @@
-import { createClient } from "@/libs/supabase/server";
-import { scheduleEmail, sendEmail } from "./sendEmail";
+import { createClient } from '@/libs/supabase/server';
+import { scheduleEmail, sendEmail } from './sendEmail';
 
 export interface ReengageResult {
   processed: number;
@@ -19,13 +19,10 @@ export async function processReengageEmails(): Promise<ReengageResult> {
 
   try {
     // Check if the user_activity table exists
-    const { error: tableCheckError } = await supabase.from("user_activity")
-      .select("id").limit(1);
+    const { error: tableCheckError } = await supabase.from('user_activity').select('id').limit(1);
 
-    if (tableCheckError?.message.includes("Could not find the table")) {
-      console.log(
-        "User activity table does not exist yet. Skipping re-engagement processing.",
-      );
+    if (tableCheckError?.message.includes('Could not find the table')) {
+      console.log('User activity table does not exist yet. Skipping re-engagement processing.');
       return { processed: 0, sent: 0, skipped: 0, errors: [] };
     }
     // Get users who haven't logged in for 7+ days
@@ -33,24 +30,24 @@ export async function processReengageEmails(): Promise<ReengageResult> {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const { data: inactiveUsers, error: usersError } = await supabase
-      .from("profiles")
+      .from('profiles')
       .select(
         `
         id, email, first_name, last_name, created_at,
         user_activity!inner(at)
-      `,
+      `
       )
-      .lt("user_activity.at", sevenDaysAgo.toISOString())
-      .eq("user_activity.event", "login")
-      .not("email", "is", null)
-      .not("email", "eq", "");
+      .lt('user_activity.at', sevenDaysAgo.toISOString())
+      .eq('user_activity.event', 'login')
+      .not('email', 'is', null)
+      .not('email', 'eq', '');
 
     if (usersError) {
       throw new Error(`Failed to fetch inactive users: ${usersError.message}`);
     }
 
     if (!inactiveUsers || inactiveUsers.length === 0) {
-      console.log("No inactive users found for re-engagement");
+      console.log('No inactive users found for re-engagement');
       return { processed: 0, sent: 0, skipped: 0, errors: [] };
     }
 
@@ -64,9 +61,7 @@ export async function processReengageEmails(): Promise<ReengageResult> {
 
         if (!shouldSend) {
           skipped++;
-          console.log(
-            `Skipping re-engagement email for user ${user.id} - already sent recently`,
-          );
+          console.log(`Skipping re-engagement email for user ${user.id} - already sent recently`);
           continue;
         }
 
@@ -74,9 +69,9 @@ export async function processReengageEmails(): Promise<ReengageResult> {
         await sendEmail({
           userId: user.id,
           to: user.email,
-          emailType: "reengage",
+          emailType: 'reengage',
           payload: {
-            userName: user.first_name || "",
+            userName: user.first_name || '',
             userEmail: user.email,
           },
         });
@@ -84,13 +79,10 @@ export async function processReengageEmails(): Promise<ReengageResult> {
         sent++;
         console.log(`Sent re-engagement email to ${user.email}`);
       } catch (error) {
-        console.error(
-          `Error processing re-engagement for user ${user.id}:`,
-          error,
-        );
+        console.error(`Error processing re-engagement for user ${user.id}:`, error);
         errors.push({
           userId: user.id,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -102,7 +94,7 @@ export async function processReengageEmails(): Promise<ReengageResult> {
       errors,
     };
   } catch (error) {
-    console.error("Error in processReengageEmails:", error);
+    console.error('Error in processReengageEmails:', error);
     throw error;
   }
 }
@@ -118,12 +110,12 @@ async function shouldSendReengageEmail(userId: string): Promise<boolean> {
   twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21);
 
   const { data: recentReengage } = await supabase
-    .from("email_events")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("email_type", "reengage")
-    .eq("status", "sent")
-    .gte("created_at", twentyOneDaysAgo.toISOString())
+    .from('email_events')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('email_type', 'reengage')
+    .eq('status', 'sent')
+    .gte('created_at', twentyOneDaysAgo.toISOString())
     .single();
 
   return !recentReengage;
@@ -145,17 +137,17 @@ export async function getReengageCandidates(): Promise<
 
   // Get users with their last login activity
   const { data: users, error } = await supabase
-    .from("profiles")
+    .from('profiles')
     .select(
       `
       id, email, first_name, last_name,
       user_activity!inner(at)
-    `,
+    `
     )
-    .eq("user_activity.event", "login")
-    .not("email", "is", null)
-    .not("email", "eq", "")
-    .order("user_activity.at", { ascending: false });
+    .eq('user_activity.event', 'login')
+    .not('email', 'is', null)
+    .not('email', 'eq', '')
+    .order('user_activity.at', { ascending: false });
 
   if (error) {
     throw new Error(`Failed to fetch re-engage candidates: ${error.message}`);
@@ -180,18 +172,15 @@ export async function getReengageCandidates(): Promise<
         last_login: mostRecentActivity?.at,
         days_since_login: mostRecentActivity?.at
           ? Math.floor(
-            (Date.now() - new Date(mostRecentActivity.at).getTime()) /
-              (1000 * 60 * 60 * 24),
-          )
+              (Date.now() - new Date(mostRecentActivity.at).getTime()) / (1000 * 60 * 60 * 24)
+            )
           : 999, // If no activity, consider them very inactive
       });
     }
   }
 
   // Filter for users inactive for 7+ days
-  return Array.from(userMap.values()).filter((user) =>
-    user.days_since_login >= 7
-  );
+  return Array.from(userMap.values()).filter((user) => user.days_since_login >= 7);
 }
 
 /**
@@ -219,10 +208,10 @@ export async function scheduleReengageEmails(): Promise<{
         // Schedule re-engagement email for immediate sending
         await scheduleEmail({
           userId: user.id,
-          emailType: "reengage",
+          emailType: 'reengage',
           runAfter: new Date(),
           payload: {
-            userName: user.first_name || "",
+            userName: user.first_name || '',
             userEmail: user.email,
           },
         });
@@ -230,26 +219,24 @@ export async function scheduleReengageEmails(): Promise<{
         scheduled++;
         console.log(`Scheduled re-engagement email for user ${user.id}`);
       } catch (error) {
-        console.error(
-          `Error scheduling re-engagement for user ${user.id}:`,
-          error,
-        );
+        console.error(`Error scheduling re-engagement for user ${user.id}:`, error);
         errors.push({
           userId: user.id,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
     return { scheduled, errors };
   } catch (error) {
-    console.error("Error in scheduleReengageEmails:", error);
+    console.error('Error in scheduleReengageEmails:', error);
     throw error;
   }
 }
 
-export const __testExports = process.env.NODE_ENV === "test"
-  ? {
-    shouldSendReengageEmail,
-  }
-  : {};
+export const __testExports =
+  process.env.NODE_ENV === 'test'
+    ? {
+        shouldSendReengageEmail,
+      }
+    : {};

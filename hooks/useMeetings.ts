@@ -11,11 +11,11 @@ import {
   useQuery,
   useQueryClient,
   UseQueryResult,
-} from "@tanstack/react-query";
-import { useUser } from "@/components/providers/SupabaseUserProvider";
+} from '@tanstack/react-query';
+import { useUser } from '@/components/providers/SupabaseUserProvider';
 
 // --- Supabase Types ---
-import { User } from "@supabase/supabase-js";
+import { User } from '@supabase/supabase-js';
 // #endregion
 
 // #region Types
@@ -32,7 +32,7 @@ interface Profile {
 /**
  * @description Defines the possible states for a meeting.
  */
-type MeetingStatus = "pending" | "scheduled" | "cancelled" | "completed";
+type MeetingStatus = 'pending' | 'scheduled' | 'cancelled' | 'completed';
 
 /**
  * @description The main Meeting object structure.
@@ -83,25 +83,20 @@ type UpdateMeetingResponse = Meeting;
 export const useMeetings = (): UseQueryResult<MeetingsResponse, Error> => {
   const { user } = useUser() as { user: User | null };
 
-  return useQuery<
-    MeetingsResponse,
-    Error,
-    MeetingsResponse,
-    (string | undefined)[]
-  >({
-    queryKey: ["meetings", user?.id],
+  return useQuery<MeetingsResponse, Error, MeetingsResponse, (string | undefined)[]>({
+    queryKey: ['meetings', user?.id],
     queryFn: async (): Promise<MeetingsResponse> => {
       if (!user) return { meetings: [] };
 
       // First, update any meetings that should be marked as completed
-      await fetch("/api/meetings/update-status", { method: "POST" });
+      await fetch('/api/meetings/update-status', { method: 'POST' });
 
       // Then fetch the updated meetings
-      const response = await fetch("/api/meetings");
+      const response = await fetch('/api/meetings');
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch meetings");
+        throw new Error(data.error || 'Failed to fetch meetings');
       }
 
       return data as MeetingsResponse;
@@ -122,9 +117,9 @@ export const useMeetings = (): UseQueryResult<MeetingsResponse, Error> => {
 function isFatalError(message: string): boolean {
   // Complexity Cost: 1 (Fn) + 2 (||) = 3
   return (
-    message.includes("Unauthorized") ||
-    message.includes("Invalid") ||
-    message.includes("Cannot cancel")
+    message.includes('Unauthorized') ||
+    message.includes('Invalid') ||
+    message.includes('Cannot cancel')
   );
 }
 
@@ -134,35 +129,32 @@ function isFatalError(message: string): boolean {
  * @param {UpdateMeetingPayload} payload - The update parameters.
  * @returns {Promise<UpdateMeetingResponse>} The successful update response.
  */
-async function callUpdateMeetingAPI(
-  { meetingId, status, message }: UpdateMeetingPayload,
-): Promise<UpdateMeetingResponse> {
+async function callUpdateMeetingAPI({
+  meetingId,
+  status,
+  message,
+}: UpdateMeetingPayload): Promise<UpdateMeetingResponse> {
   // CC = 1 (Fn) + 1 (if) = 2
   try {
     const response = await fetch(`/api/meetings/${meetingId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, message }),
     });
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "Failed to update meeting status");
+      throw new Error(data.error || 'Failed to update meeting status');
     }
 
     return data as UpdateMeetingResponse;
   } catch (error: unknown) {
-    const currentError = error instanceof Error
-      ? error
-      : new Error(String(error));
+    const currentError = error instanceof Error ? error : new Error(String(error));
 
     // Specific network error check logic
-    if (
-      currentError.name === "TypeError" &&
-      currentError.message.includes("fetch")
-    ) {
+    if (currentError.name === 'TypeError' && currentError.message.includes('fetch')) {
       throw new Error(
-        "Network error: Unable to connect to server. Please check your internet connection and try again.",
+        'Network error: Unable to connect to server. Please check your internet connection and try again.'
       );
     }
 
@@ -178,20 +170,16 @@ async function callUpdateMeetingAPI(
  */
 async function retryMeetingUpdate(
   payload: UpdateMeetingPayload,
-  maxRetries: number = 3,
+  maxRetries: number = 3
 ): Promise<UpdateMeetingResponse> {
-  let lastError: Error = new Error(
-    "Meeting update failed due to unexpected error.",
-  );
+  let lastError: Error = new Error('Meeting update failed due to unexpected error.');
 
   // Cognitive Complexity: 4
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await callUpdateMeetingAPI(payload);
     } catch (error: unknown) {
-      const currentError = error instanceof Error
-        ? error
-        : new Error(String(error));
+      const currentError = error instanceof Error ? error : new Error(String(error));
       lastError = currentError;
 
       // 1. FATAL/NON-RETRIABLE CHECK
@@ -229,9 +217,7 @@ export const useUpdateMeetingStatus = (): UseMutationResult<
   const { user } = useUser() as { user: User | null };
 
   return useMutation<UpdateMeetingResponse, Error, UpdateMeetingPayload>({
-    mutationFn: async (
-      payload: UpdateMeetingPayload,
-    ): Promise<UpdateMeetingResponse> => {
+    mutationFn: async (payload: UpdateMeetingPayload): Promise<UpdateMeetingResponse> => {
       // Logging for transparency (can be removed if performance is critical)
       console.log(`Starting meeting update for ${payload.meetingId}.`);
 
@@ -243,7 +229,7 @@ export const useUpdateMeetingStatus = (): UseMutationResult<
     },
     onSuccess: () => {
       // Invalidate and refetch meetings
-      queryClient.invalidateQueries({ queryKey: ["meetings", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['meetings', user?.id] });
     },
   });
 };
