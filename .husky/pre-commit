@@ -1,10 +1,4 @@
-#!/usr/bin/env sh
-. "$(dirname "$0")/_/husky.sh"
-
 echo "Running lint-staged (auto-fix staged files)..."
 npx --no-install lint-staged
-
-echo "Checking formatting with Prettier..."
-npm run format -- --check .
 
 exit 0
