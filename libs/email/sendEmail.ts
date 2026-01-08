@@ -2,6 +2,15 @@ import { createClient } from '@/lib/supabase/server';
 import { sendEmail as resendSendEmail } from '@/libs/resend';
 import { EmailPayload, loadEmailTemplate, ResendSendResult } from './templates';
 
+// Sanitize potentially user-controlled data before logging
+function sanitizeForLog(value: unknown): string {
+  if (typeof value !== 'string') {
+    return String(value ?? '');
+  }
+  // Remove CR and LF characters to prevent log injection via newlines
+  return value.replace(/[\r\n]+/g, '');
+}
+
 export interface SendEmailParams {
   userId: string;
   to: string;
@@ -159,11 +168,13 @@ export async function sendEmail({
         console.error('Failed to update email event with error:', updateError);
       }
 
-      // Log failure
-      console.error(`Email ${emailType} failed to send to ${to} (user: ${userId})`, {
+      // Log failure (sanitize potentially user-controlled values)
+      const safeUserId = sanitizeForLog(userId);
+      const safeTo = sanitizeForLog(to);
+      console.error(`Email ${emailType} failed to send to ${safeTo} (user: ${safeUserId})`, {
         emailType,
-        userId,
-        to,
+        userId: safeUserId,
+        to: safeTo,
         error: sendError instanceof Error ? sendError.message : 'Unknown error',
       });
 
