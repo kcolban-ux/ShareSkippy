@@ -142,6 +142,7 @@ export default function MessagesPage(): ReactElement {
   });
   const [showConversations, setShowConversations] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   /**
    * @description Ref to hold an AbortController for cancelling in-flight message fetches.
@@ -165,6 +166,19 @@ export default function MessagesPage(): ReactElement {
       ':'
     );
   }, [selectedConversation]);
+  /**
+   * @description Dynamically filters conversations based on the search query.
+   */
+  const filteredConversations = useMemo(() => {
+    if (!searchQuery.trim()) return conversations;
+
+    const lowerQuery = searchQuery.toLowerCase();
+    return conversations.filter(
+      (conv) =>
+        conv.displayName.toLowerCase().includes(lowerQuery) ||
+        (conv.availability?.title?.toLowerCase().includes(lowerQuery) ?? false)
+    );
+  }, [searchQuery, conversations]);
   // #endregion
 
   // #region Handlers
@@ -573,21 +587,61 @@ export default function MessagesPage(): ReactElement {
             </button>
           </div>
 
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search conversations..."
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           <div className="flex-1 min-h-0 overflow-y-auto ios-scroll">
             {loading && (
               <div className="p-6 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
               </div>
             )}
-            {!loading && conversations.length === 0 && (
+            {!loading && filteredConversations.length === 0 && (
               <div className="p-6 text-center text-gray-500">
-                <p>No conversations yet</p>
-                <p className="text-sm mt-2">Start messaging someone from the community!</p>
+                {searchQuery ? (
+                  <>
+                    <p>No conversations found</p>
+                    <p className="text-sm mt-2">Try a different search term</p>
+                  </>
+                ) : (
+                  <>
+                    <p>No conversations yet</p>
+                    <p className="text-sm mt-2">Start messaging someone from the community!</p>
+                  </>
+                )}
               </div>
             )}
             {!loading &&
-              conversations.length > 0 &&
-              conversations.map((conversation) => (
+              filteredConversations.length > 0 &&
+              filteredConversations.map((conversation) => (
                 <button
                   key={conversation.id}
                   onClick={() => {
