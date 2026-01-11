@@ -680,7 +680,7 @@ export default function ShareAvailability() {
 
   // Profile loading gate
   if (profileLoading) {
-    return <div>Loading profile...</div>;
+    return;
   }
   // The `if (!user) return null` check is no longer needed.
   // `useProtectedRoute` handles redirection and guarantees `user` exists
