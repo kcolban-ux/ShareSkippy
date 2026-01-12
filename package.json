@@ -76,7 +76,7 @@
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
-    "@types/react": "19.2.7",
+    "@types/react": "19.2.8",
     "daisyui": "^5.5.14",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
@@ -92,7 +92,7 @@
     "prettier": "^3.7.4",
     "stylelint": "^16.26.1",
     "stylelint-config-standard": "^39.0.1",
-    "stylelint-config-tailwindcss": "^1.0.0",
+    "stylelint-config-tailwindcss": "^1.0.1",
     "supabase": "^2.70.5",
     "tailwindcss": "^4.1.16",
     "ts-node": "^10.9.2"
