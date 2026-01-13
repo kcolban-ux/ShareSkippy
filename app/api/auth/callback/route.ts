@@ -165,10 +165,18 @@ async function processCodeExchangeAndProfileUpdate(
 
 /**
  * @description Sanitize user-controlled strings before logging to avoid log injection.
+ *
+ * Strips control characters (including newlines) and normalizes whitespace so that
+ * user-provided values cannot break log formatting or inject additional entries.
  */
 function sanitizeForLog(value: string | null): string {
   if (value == null) return '';
-  return value.replace(/[\r\n]/g, ' ');
+
+  // Remove ASCII control characters, including \r, \n, \t, etc.
+  const withoutControlChars = value.replace(/[\x00-\x1F\x7F]/g, ' ');
+
+  // Collapse consecutive whitespace to a single space and trim ends.
+  return withoutControlChars.replace(/\s+/g, ' ').trim();
 }
 
 // #region HANDLER
