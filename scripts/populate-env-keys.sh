@@ -14,7 +14,6 @@ extract_key_value() {
     tr -d '[:space:]"'
 }
 
-ANON_KEY_VALUE=$(extract_key_value "ANON_KEY")
 SERVICE_KEY_VALUE=$(extract_key_value "SERVICE_ROLE_KEY")
 PUBLISHABLE_KEY_VALUE=$(extract_key_value "PUBLISHABLE_KEY")
 
@@ -24,11 +23,8 @@ if [ -z "$PUBLISHABLE_KEY_VALUE" ] || [ -z "$SERVICE_KEY_VALUE" ]; then
   exit 1
 fi
 
-# Update the publishable key (replaces legacy anon var if present)
+# Update the publishable key
 sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=).*$/\1$PUBLISHABLE_KEY_VALUE/" "$ENV_FILE"
-
-# Backwards compatibility: replace NEXT_PUBLIC_SUPABASE_ANON_KEY with the publishable key if present
-sed -i -E "s/^(NEXT_PUBLIC_SUPABASE_ANON_KEY=).*$/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY_VALUE/" "$ENV_FILE" || true
 
 sed -i -E "s/^(SUPABASE_SERVICE_ROLE_KEY=).*$/\1$SERVICE_KEY_VALUE/" "$ENV_FILE"
 
