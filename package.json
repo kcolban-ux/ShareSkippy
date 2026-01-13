@@ -52,6 +52,7 @@
     "@vercel/analytics": "^1.6.1",
     "crisp-sdk-web": "^1.0.27",
     "eslint-plugin-jest": "^29.11.1",
+    "lucide-react": "^0.562.0",
     "next": "^16.1.1",
     "nextjs-toploader": "^3.9.17",
     "prop-types": "^15.8.1",
