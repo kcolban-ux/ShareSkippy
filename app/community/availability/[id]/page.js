@@ -472,6 +472,8 @@ export default function AvailabilityDetailPage() {
                           src={availability.allDogs[0].photo_url}
                           alt={availability.allDogs[0].name}
                           className="w-24 h-24 rounded-full object-cover shadow-md"
+                          width={96}
+                          height={96}
                           unoptimized
                         />
                       ) : (
@@ -659,6 +661,8 @@ export default function AvailabilityDetailPage() {
                               src={dog.photo_url}
                               alt={dog.name}
                               className="w-16 h-16 rounded-full object-cover shadow-md"
+                              width={64}
+                              height={64}
                               unoptimized
                             />
                           ) : (
@@ -846,6 +850,9 @@ export default function AvailabilityDetailPage() {
                     src={availability.owner.profile_photo_url}
                     alt={`${availability.owner.first_name} ${availability.owner.last_name}`}
                     className="w-20 h-20 rounded-full object-cover shadow-md mx-auto mb-4"
+                    width={80}
+                    height={80}
+                    unoptimized
                   />
                 ) : (
                   <div className="w-20 h-20 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-2xl shadow-md mx-auto mb-4">

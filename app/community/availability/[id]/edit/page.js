@@ -814,6 +814,9 @@ export default function EditAvailability() {
                     src={availability.owner.profile_photo_url}
                     alt={`${availability.owner.first_name} ${availability.owner.last_name}`}
                     className="w-20 h-20 rounded-full object-cover shadow-md mx-auto mb-4"
+                    width={80}
+                    height={80}
+                    unoptimized
                   />
                 ) : (
                   <div className="w-20 h-20 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-2xl shadow-md mx-auto mb-4">

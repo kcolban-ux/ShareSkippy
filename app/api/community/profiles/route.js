@@ -3,157 +3,103 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/community/profiles
+ * Fetches a paginated list of community profiles with optional filtering by role and location.
+ * * @param {string} cursor - Format: "ISOString|UUID" (Last seen online_at and ID)
+ * @param {number} limit - Number of records to fetch (Max: 100)
+ * @param {string} role - Filter by role ('dog_owner', 'petpal', 'both', or 'all-members')
+ * @param {number} lat - Latitude for proximity search
+ * @param {number} lng - Longitude for proximity search
+ * @param {number} radius - Search radius in miles
+ * @returns {NextResponse} JSON with items and nextCursor
+ */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const cursor = searchParams.get('cursor');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '24'), 60);
+
+    // 1. Parameter Parsing & Validation
+    const MAX_LIMIT = 100;
+    const MAX_RADIUS = 500;
+
+    const limit = Math.min(parseInt(searchParams.get('limit') || '24', 10), MAX_LIMIT);
+    const role = searchParams.get('role');
+    const lat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')) : null;
+    const lng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')) : null;
+    const radius = searchParams.get('radius') ? parseInt(searchParams.get('radius'), 10) : null;
+    const cursor = searchParams.get('cursor') || '';
+
+    // Validation checks
+    if (isNaN(limit) || limit < 1)
+      return NextResponse.json({ message: 'Invalid limit' }, { status: 400 });
+    if (lat !== null && (isNaN(lat) || lat < -90 || lat > 90))
+      return NextResponse.json({ message: 'Invalid latitude' }, { status: 400 });
+    if (lng !== null && (isNaN(lng) || lng < -180 || lng > 180))
+      return NextResponse.json({ message: 'Invalid longitude' }, { status: 400 });
+    if (radius !== null && (isNaN(radius) || radius < 0 || radius > MAX_RADIUS))
+      return NextResponse.json({ message: 'Invalid radius' }, { status: 400 });
+
+    let lastOnlineAt = null;
+    let lastId = null;
+
+    // 2. Cursor Decoding with Error Handling
+    if (cursor && cursor.includes('|')) {
+      const [datePart, idPart] = cursor.split('|');
+      const parsedDate = new Date(datePart);
+      if (!isNaN(parsedDate.getTime())) {
+        lastOnlineAt = parsedDate.toISOString();
+        lastId = idPart;
+      }
+    }
 
     const supabase = await createClient();
 
-    console.log('Profiles API called with params:', { cursor, limit });
-
-    // Build the main query for eligible profiles
-    // We'll use a different approach to exclude users with active availability
-    let query = supabase
-      .from('profiles')
-      .select(
-        `
-        id,
-        first_name,
-        profile_photo_url,
-        city,
-        neighborhood,
-        role,
-        bio,
-        display_lat,
-        display_lng,
-        updated_at,
-        user_activity(at)
-      `
-      )
-      .not('bio', 'is', null)
-      .neq('bio', '')
-      .in('role', ['dog_owner', 'petpal', 'both']);
-
-    // Use a more efficient approach: get all profiles first, then filter out those with active availability
-    const { data: profiles, error } = await query;
+    // 3. Database Interaction
+    const { data: profiles, error } = await supabase.rpc('get_paginated_profiles', {
+      p_last_id: lastId,
+      p_last_online_at: lastOnlineAt,
+      p_lat: lat,
+      p_limit: limit + 1,
+      p_lng: lng,
+      p_radius: radius,
+      p_role: role,
+    });
 
     if (error) {
-      console.error('Error fetching profiles:', error);
-      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 });
+      console.error('RPC Error:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    console.log('Raw profiles fetched:', profiles?.length || 0);
+    // 4. Safe Response Processing
+    const safeProfiles = profiles ?? [];
+    const hasNextPage = safeProfiles.length > limit;
+    const resultProfiles = hasNextPage ? safeProfiles.slice(0, limit) : safeProfiles;
 
-    // Now get users with active availability posts to exclude them
-    const { data: activeAvailabilityUsers, error: availabilityError } = await supabase
-      .from('availability')
-      .select('owner_id')
-      .eq('status', 'active');
-
-    if (availabilityError) {
-      console.error('Error fetching active availability users:', availabilityError);
-      return NextResponse.json({ error: 'Failed to fetch availability data' }, { status: 500 });
-    }
-
-    const excludedUserIds = new Set(activeAvailabilityUsers?.map((item) => item.owner_id) || []);
-
-    // Filter out profiles with active availability
-    const filteredProfiles = profiles.filter((profile) => !excludedUserIds.has(profile.id));
-
-    console.log(
-      'Filtered profiles (after excluding active availability):',
-      filteredProfiles.length
-    );
-
-    // Process the data to match the required format
-    const processedProfiles = filteredProfiles.map((profile) => {
-      // Calculate last_online_at from user_activity or profiles.updated_at
-      let lastOnlineAt = profile.updated_at;
-
-      if (profile.user_activity && profile.user_activity.length > 0) {
-        // Get the most recent activity
-        const mostRecentActivity = profile.user_activity.sort(
-          (a, b) => new Date(b.at) - new Date(a.at)
-        )[0];
-        if (mostRecentActivity && mostRecentActivity.at) {
-          lastOnlineAt = mostRecentActivity.at;
-        }
-      }
-
-      // Truncate bio to ~140 characters
-      const bioExcerpt = profile.bio
-        ? profile.bio.length > 140
-          ? profile.bio.substring(0, 140) + '...'
-          : profile.bio
-        : '';
-
-      return {
-        id: profile.id,
-        first_name: profile.first_name,
-        photo_url: profile.profile_photo_url,
-        city: profile.city,
-        neighborhood: profile.neighborhood,
-        role: profile.role,
-        bio_excerpt: bioExcerpt,
-        display_lat: profile.display_lat,
-        display_lng: profile.display_lng,
-        last_online_at: lastOnlineAt,
-      };
-    });
-
-    // Sort by last_online_at desc, then id desc
-    processedProfiles.sort((a, b) => {
-      const dateA = new Date(a.last_online_at);
-      const dateB = new Date(b.last_online_at);
-
-      if (dateA.getTime() !== dateB.getTime()) {
-        return dateB.getTime() - dateA.getTime();
-      }
-
-      return b.id.localeCompare(a.id);
-    });
-
-    // Apply cursor-based filtering if provided
-    let paginatedProfiles = processedProfiles;
-    if (cursor) {
-      try {
-        const [lastOnlineAt, lastId] = cursor.split('|');
-        const cursorDate = new Date(lastOnlineAt);
-
-        paginatedProfiles = processedProfiles.filter((profile) => {
-          const profileDate = new Date(profile.last_online_at);
-          if (profileDate.getTime() !== cursorDate.getTime()) {
-            return profileDate < cursorDate;
-          }
-          return profile.id < lastId;
-        });
-      } catch (error) {
-        console.error('Error processing cursor:', error);
-        // If cursor is invalid, return empty results
-        paginatedProfiles = [];
-      }
-    }
-
-    // Take only the requested limit
-    const resultProfiles = paginatedProfiles.slice(0, limit);
-
-    // Generate next cursor if there are more results
     let nextCursor = null;
-    if (resultProfiles.length === limit && paginatedProfiles.length > limit) {
-      const lastProfile = resultProfiles[resultProfiles.length - 1];
-      nextCursor = `${lastProfile.last_online_at}|${lastProfile.id}`;
+    if (hasNextPage) {
+      const last = resultProfiles[resultProfiles.length - 1];
+      nextCursor = `${new Date(last.last_online_at).toISOString()}|${last.id}`;
     }
-
-    console.log('Returning profiles:', resultProfiles.length, 'nextCursor:', nextCursor);
 
     return NextResponse.json({
-      items: resultProfiles,
+      items: resultProfiles.map((p) => {
+        // Fix: Truncation logic ensures "..." only if characters were actually cut
+        const BIO_LIMIT = 140;
+        const bioExcerpt =
+          p.bio && p.bio.length > BIO_LIMIT
+            ? p.bio.substring(0, BIO_LIMIT).trim() + '...'
+            : p.bio || '';
+
+        return {
+          ...p,
+          photo_url: p.profile_photo_url,
+          bio_excerpt: bioExcerpt,
+        };
+      }),
       nextCursor,
     });
-  } catch (error) {
-    console.error('Error in profiles API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err) {
+    console.error('Server Error:', err);
+    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -780,7 +780,7 @@ export default function ShareAvailability() {
                         <div className="space-y-3">
                           {daySchedules[day].timeSlots.map((slot, index) => (
                             <div
-                              key={slot.id}
+                              key={slot.id || `slot-${day}-${index}`}
                               className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3"
                             >
                               <div className="flex items-center space-x-2 w-full sm:w-auto">
