@@ -1,11 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
-    "app/**/{page,route,layout,template,not-found,error,global-error}.{ts,tsx}!",
-    "components/**/*.{ts,tsx}!",
-    "hooks/**/*.{ts,tsx}!",
-    "lib/**/*.{ts,tsx}!",
-    "libs/**/*.{ts,tsx}!",
+    "app/**/{page,route,layout,template,not-found,error,global-error}.{js,jsx,ts,tsx}!",
+    "app/actions/**/*.{js,jsx,ts,tsx}!",
+    "components/**/*.{js,jsx,ts,tsx}!",
+    "hooks/**/*.{js,jsx,ts,tsx}!",
+    "lib/**/*.{js,jsx,ts,tsx}!",
+    "libs/**/*.{js,jsx,ts,tsx}!",
     "types/**/*.ts!",
     "next-sitemap.config.js",
     "config.js!",
