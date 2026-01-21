@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "app/**/{page,route,layout,template,not-found,error,global-error}.{ts,tsx}!",
+    "components/**/*.{ts,tsx}!",
+    "hooks/**/*.{ts,tsx}!",
+    "lib/**/*.{ts,tsx}!",
+    "libs/**/*.{ts,tsx}!",
+    "types/**/*.ts!",
+    "next-sitemap.config.js"
+  ],
+  "project": ["**/*.{ts,tsx}"],
+  "ignore": [
+    "scripts/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/*.integration.ts",
+    "**/*.test.tsx",
+    "**/*.spec.tsx",
+    "**/*.integration.tsx"
+  ],
+  "tags": ["lintignore"]
+}
