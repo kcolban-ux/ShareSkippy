@@ -24,9 +24,9 @@
     "prepare": "husky",
     "format": "prettier",
     "format:write": "prettier . --write",
-    "check": "knip",
-    "check:fix": "knip --fix",
-    "check:production": "knip --production"
+    "knip": "knip",
+    "knip:fix": "knip --fix",
+    "knip:production": "knip --production"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
