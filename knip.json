@@ -19,5 +19,6 @@
     "**/*.spec.tsx",
     "**/*.integration.tsx"
   ],
+  "ignoreDependencies": ["daisyui"],
   "tags": ["lintignore"]
 }
