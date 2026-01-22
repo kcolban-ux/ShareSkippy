@@ -84,16 +84,16 @@ export default function ProfileCard({ profile, onMessage }) {
       {bio_excerpt && <p className="text-sm text-gray-600 line-clamp-3 mb-4 grow">{bio_excerpt}</p>}
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-auto">
+      <div className="flex flex-col sm:flex-row gap-3 mt-auto">
         <Link
           href={`/profile/${id}`}
-          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm text-center"
+          className="flex-1 border-2 border-gray-300 text-gray-700 bg-white px-5 py-3 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all text-base text-center font-medium"
         >
           View Details
         </Link>
         <button
           onClick={() => onMessage(profile)}
-          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+          className="flex-1 bg-green-600 text-white px-5 py-3 rounded-lg hover:bg-green-700 shadow-sm hover:shadow-md transition-all text-base font-medium"
         >
           Message
         </button>
