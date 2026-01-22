@@ -153,3 +153,49 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
   }
 }
+
+export async function PATCH(request) {
+  try {
+    const supabase = await createClient();
+
+    // Check authentication
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get messageId from request body
+    const { messageId } = await request.json();
+
+    if (!messageId) {
+      return NextResponse.json({ error: 'Message ID is required' }, { status: 400 });
+    }
+
+    // Mark message as read (ONLY if user is recipient)
+    const { data, error } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('id', messageId)
+      .eq('recipient_id', user.id)
+      .select()
+      .single();
+
+    if (error || !data) {
+      return NextResponse.json({ error: 'Message not found or not authorized' }, { status: 404 });
+    }
+
+    // Success response
+    return NextResponse.json({
+      success: true,
+      message: 'Message marked as read',
+      data,
+    });
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    return NextResponse.json({ error: 'Failed to mark message as read' }, { status: 500 });
+  }
+}
