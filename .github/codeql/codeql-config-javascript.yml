@@ -1,4 +1,4 @@
-name: "ShareSkippy CodeQL Config - JavaScript/TypeScript"
+name: 'ShareSkippy CodeQL Config - JavaScript/TypeScript'
 
 paths-ignore:
   - 'node_modules'

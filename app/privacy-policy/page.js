@@ -28,15 +28,10 @@ const PrivacyPolicy = () => {
           Back
         </Link>
 
-        <h1 className="text-3xl font-extrabold pb-6">
-          Privacy Policy for {config.appName}
-        </h1>
+        <h1 className="text-3xl font-extrabold pb-6">Privacy Policy for {config.appName}</h1>
 
-        <pre
-          className="leading-relaxed whitespace-pre-wrap"
-          style={{ fontFamily: 'sans-serif' }}
-        >
-{`Last Updated: January 16, 2026
+        <pre className="leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'sans-serif' }}>
+          {`Last Updated: January 16, 2026
 
 Thank you for visiting ShareSkippy ("we," "us," or "our"). This Privacy Policy explains how we collect, use, and protect your personal and non-personal information when you use our website at https://shareskippy.com (the "Website").
 
