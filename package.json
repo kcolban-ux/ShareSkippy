@@ -23,7 +23,7 @@
     "analyze": "ANALYZE=true next build",
     "prepare": "husky",
     "format": "prettier",
-    "format:write": "prettier --write",
+    "format:write": "prettier . --write",
     "check": "knip",
     "check:fix": "knip --fix"
   },
