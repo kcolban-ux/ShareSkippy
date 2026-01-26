@@ -93,7 +93,7 @@
     "stylelint": "^16.26.1",
     "stylelint-config-standard": "^39.0.1",
     "stylelint-config-tailwindcss": "^1.0.1",
-    "supabase": "^2.72.4",
+    "supabase": "^2.72.8",
     "tailwindcss": "^4.1.16",
     "ts-node": "^10.9.2"
   },
