@@ -91,7 +91,7 @@
     "postcss": "^8.4.38",
     "prettier": "^3.8.1",
     "stylelint": "^16.26.1",
-    "stylelint-config-standard": "^39.0.1",
+    "stylelint-config-standard": "^40.0.0",
     "stylelint-config-tailwindcss": "^1.0.1",
     "supabase": "^2.72.8",
     "tailwindcss": "^4.1.16",
