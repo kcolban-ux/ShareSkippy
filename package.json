@@ -76,6 +76,7 @@
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/node": "^25.0.3",
     "@types/react": "19.2.8",
     "daisyui": "^5.5.14",
     "eslint": "^9.39.2",

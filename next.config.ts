@@ -1,4 +1,6 @@
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev', 'localhost', '127.0.0.1'],
 
   reactStrictMode: true,
