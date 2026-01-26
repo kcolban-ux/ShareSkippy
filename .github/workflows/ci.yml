@@ -28,8 +28,19 @@ jobs:
           npx supabase db push --include-all
           echo "Supabase schema and seeds pushed"
 
+  knip-production:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run knip:production
+
   build:
-    needs: [supabase-db-push]
+    needs: [knip-production, supabase-db-push]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

@@ -47,7 +47,6 @@ const mockSupabase = {
   },
 };
 
-// FIX: Removed duplicate key 'createSerjestceClient' which was a typo of 'createServiceClient'
 jest.mock('@/libs/supabase/server', () => ({
   createClient: jest.fn().mockReturnValue(mockSupabase),
   createServiceClient: jest.fn().mockReturnValue(mockSupabase),
@@ -61,7 +60,7 @@ describe.skip('Email API Integration Tests', () => {
 
   describe.skip('POST /api/emails/welcome', () => {
     it('should send welcome email for valid user', async () => {
-      const { default: handler } = await import('@/app/api/emails/welcome/route');
+      const { default: handler } = await import('@/app/api/emails/send-welcome');
 
       mockSupabase.single.mockResolvedValue({
         data: { email: 'test@example.com', first_name: 'John' },
@@ -106,7 +105,6 @@ describe.skip('Email API Integration Tests', () => {
     it('should send new message notification', async () => {
       const { default: handler } = await import('@/app/api/emails/send-new-message/route');
 
-      // FIX: Cleaned up duplicated 'error: null' and simplified body creation
       mockSupabase.single
         .mockResolvedValueOnce({
           data: { email: 'recipient@example.com', first_name: 'Jane' },
@@ -126,7 +124,7 @@ describe.skip('Email API Integration Tests', () => {
         body: JSON.stringify({
           recipientId: 'recipient-id',
           senderId: 'sender-id',
-          messagePreview: 'Hello there!', // FIX: Corrected typo 'messagePrejestew'
+          messagePreview: 'Hello there!',
           messageId: 'message-123',
         }),
       });
@@ -141,7 +139,6 @@ describe.skip('Email API Integration Tests', () => {
     it('should skip email if notifications disabled', async () => {
       const { default: handler } = await import('@/app/api/emails/send-new-message/route');
 
-      // FIX: Cleaned up duplicated 'error: null' and simplified body creation
       mockSupabase.single
         .mockResolvedValueOnce({
           data: { email: 'recipient@example.com', first_name: 'Jane' },
@@ -178,7 +175,6 @@ describe.skip('Email API Integration Tests', () => {
     it('should send meeting confirmation for confirmed meetings', async () => {
       const { default: handler } = await import('@/app/api/emails/meeting-scheduled/route');
 
-      // FIX: Cleaned up duplicated keys in the body and mock output
       mockSupabase.single
         .mockResolvedValueOnce({
           data: {
@@ -219,7 +215,6 @@ describe.skip('Email API Integration Tests', () => {
     it('should skip email for non-confirmed meetings', async () => {
       const { default: handler } = await import('@/app/api/emails/meeting-scheduled/route');
 
-      // FIX: Cleaned up duplicated keys in mock output and simplified body creation
       mockSupabase.single.mockResolvedValue({
         data: {
           id: 'meeting-123',
@@ -244,7 +239,7 @@ describe.skip('Email API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(result.message).toBe('Meeting not confirmed yet, skipping email');
     });
-  }); // FIX: Added missing closing brace for the last 'describe.skip' block
+  });
 
   describe.skip('GET /api/cron/send-email-reminders', () => {
     it("should send meeting reminders for tomorrow's meetings", async () => {
@@ -254,7 +249,6 @@ describe.skip('Email API Integration Tests', () => {
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
 
-      // FIX: Removed duplicated mock data for a clean single response
       mockSupabase.select.mockResolvedValue({
         data: [
           {
@@ -292,7 +286,6 @@ describe.skip('Email API Integration Tests', () => {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
-      // FIX: Removed duplicated mock data for a clean single response
       mockSupabase.select
         .mockResolvedValueOnce({
           data: [
@@ -305,7 +298,6 @@ describe.skip('Email API Integration Tests', () => {
           ],
           error: null,
         })
-        // FIX: Removed duplicated mock output for consistency
         .mockResolvedValueOnce({
           data: { email_notifications: true },
           error: null,

@@ -46,5 +46,3 @@ export const LEGAL = {
     return LEGAL.longDisclosure;
   },
 };
-
-export default LEGAL;
