@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from './index'; // Assuming './index' exports the initialized Supabase client instance
+import { createClient } from './client';
 import { AuthError, Session, Subscription, User } from '@supabase/supabase-js';
 // #endregion Imports
 
@@ -36,6 +36,7 @@ export function useUser(): UserHookReturn {
   // FIX: State explicitly typed as User | null
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const supabase = createClient();
 
   useEffect(() => {
     // #region Initial Load
@@ -70,7 +71,7 @@ export function useUser(): UserHookReturn {
     // FIX: Ensure cleanup function unsubscribes
     return () => subscription.unsubscribe();
     // #endregion Auth State Change Subscription
-  }, []);
+  }, [supabase.auth]);
 
   return { user, loading };
 }
@@ -84,6 +85,7 @@ export function useSupabaseAuth(): SupabaseAuthHookReturn {
   // FIX: State explicitly typed as User | null
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const supabase = createClient();
 
   useEffect(() => {
     // #region Initial Load
@@ -110,7 +112,7 @@ export function useSupabaseAuth(): SupabaseAuthHookReturn {
 
     return () => subscription.unsubscribe();
     // #endregion Auth State Change Subscription
-  }, []);
+  }, [supabase.auth]);
 
   /**
    * @async
@@ -119,6 +121,7 @@ export function useSupabaseAuth(): SupabaseAuthHookReturn {
    * @returns {Promise<{ error: AuthError | null }>}
    */
   const signOut = async (): Promise<{ error: AuthError | null }> => {
+    const supabase = createClient();
     const { error } = await supabase.auth.signOut();
     if (!error) {
       setUser(null);

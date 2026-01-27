@@ -6,7 +6,7 @@ import AppLayout from '@/components/AppLayout';
 import ClientLayout from '@/components/LayoutClient';
 import { SupabaseUserProvider } from '@/components/providers/SupabaseUserProvider';
 import { QueryProvider } from '@/contexts/QueryProvider';
-import { createClient } from '@/libs/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getSEOTags } from '@/libs/seo';
 import './globals.css';
 import PropTypes from 'prop-types';

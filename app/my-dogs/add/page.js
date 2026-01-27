@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/libs/supabase/client';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
+import { useSupabaseAuth } from '@/lib/supabase/hooks';
 import PhotoUpload from '@/components/ui/PhotoUpload';
 
 export default function AddDogPage() {

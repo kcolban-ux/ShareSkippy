@@ -3,8 +3,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
-import { createClient } from '@/libs/supabase/client';
+import { useSupabaseAuth } from '@/lib/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 
 export default function EditAvailability() {

@@ -48,9 +48,8 @@ const mockSupabase = {
 };
 
 // FIX: Removed duplicate key 'createSerjestceClient' which was a typo of 'createServiceClient'
-jest.mock('@/libs/supabase/server', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn().mockReturnValue(mockSupabase),
-  createServiceClient: jest.fn().mockReturnValue(mockSupabase),
 }));
 
 describe.skip('Email API Integration Tests', () => {

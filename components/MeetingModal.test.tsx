@@ -64,14 +64,16 @@ const mockSingle = jest.fn();
 const mockUpdate = jest.fn();
 const mockEq = jest.fn();
 
-jest.mock('@/libs/supabase', () => ({
-  supabase: {
-    auth: {
-      getUser: () => mockGetUser(),
-    },
-    from: (tableName: string) => mockFrom(tableName),
-  },
-}));
+jest.mock('@/lib/supabase/client', () => {
+  return {
+    createClient: () => ({
+      auth: {
+        getUser: mockGetUser,
+      },
+      from: (tableName: string) => mockFrom(tableName),
+    }),
+  };
+});
 
 const mockInsertChain = {
   select: () => mockSelect(),

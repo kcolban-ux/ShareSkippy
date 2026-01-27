@@ -43,7 +43,7 @@ const mockDogsSelect = jest.fn(() => ({ in: mockDogsIn }));
 
 const mockFrom = jest.fn();
 
-jest.mock('@/libs/supabase/client', () => ({
+jest.mock('@/lib/supabase/client', () => ({
   createClient: jest.fn(() => ({
     auth: mockAuth,
     from: mockFrom,

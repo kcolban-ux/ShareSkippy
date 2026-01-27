@@ -1,10 +1,11 @@
 'use client';
+
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useSupabaseAuth } from '@/libs/supabase/hooks';
-import { supabase } from '@/libs/supabase';
+import { useSupabaseAuth } from '@/lib/supabase/hooks';
+import { createClient } from '@/lib/supabase/client';
 
 export default function DogDetailsPage() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function DogDetailsPage() {
 
   const fetchDog = useCallback(async () => {
     if (!user || !id) return;
+    const supabase = createClient();
 
     try {
       setLoading(true);
@@ -64,6 +66,8 @@ export default function DogDetailsPage() {
       !confirm('Are you sure you want to delete this dog? This action cannot be undone.')
     )
       return;
+
+    const supabase = createClient();
 
     try {
       const { error } = await supabase

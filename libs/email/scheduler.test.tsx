@@ -57,7 +57,7 @@ const mockSupabase: SupabaseMock = {
 /**
  * Mock the Supabase server client factory to return our chainable mock.
  */
-jest.mock('@/libs/supabase/server', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => mockSupabase),
 }));
 

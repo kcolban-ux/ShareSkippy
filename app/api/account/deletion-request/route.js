@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/libs/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 
 // POST /api/account/deletion-request - Request account deletion
 export async function POST(request) {

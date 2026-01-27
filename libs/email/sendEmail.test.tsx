@@ -55,7 +55,7 @@ const mockCreateServiceClient = jest.fn(() => ({ from: mockFrom }));
 /**
  * Mock the server-side Supabase client module.
  */
-jest.mock('@/libs/supabase/server', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createClient: () => mockCreateServiceClient(),
 }));
 

@@ -24,9 +24,8 @@ const mockChain = {
 };
 const mockFrom = jest.fn(() => mockChain);
 const mockSupabaseClient = { from: mockFrom };
-jest.mock('@/libs/supabase/server', () => ({
+jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(() => mockSupabaseClient),
-  createServiceClient: jest.fn(() => mockSupabaseClient),
 }));
 
 const inactiveUser1: MockData = {

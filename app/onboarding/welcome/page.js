@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { formatDistance } from '@/libs/distance';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 export default function WelcomePage() {
   const { user } = useUser();

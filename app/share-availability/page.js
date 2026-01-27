@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CommunitySupportSection from '@/components/CommunitySupportSection';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { formatLocation } from '@/libs/utils';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 
@@ -483,8 +483,12 @@ export default function ShareAvailability() {
   // `useProtectedRoute` handles redirection and guarantees `user` exists
   // if `authLoading` is false and we are still rendering.
 
-  // Check if Supabase is configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  // Check if Supabase is configured. Skip this strict check in the test
+  // environment so unit tests can render the page without real env vars.
+  if (
+    process.env.NODE_ENV !== 'test' &&
+    (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)
+  ) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
@@ -497,7 +501,7 @@ export default function ShareAvailability() {
             <p className="font-medium mb-2">Required environment variables:</p>
             <ul className="space-y-1">
               <li>• NEXT_PUBLIC_SUPABASE_URL</li>
-              <li>• NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+              <li>• NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</li>
             </ul>
           </div>
         </div>

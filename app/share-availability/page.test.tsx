@@ -3,7 +3,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import { useUserProfile, useUserDogs } from '@/hooks/useProfile';
-import { createClient } from '@/libs/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import ShareAvailability from './page';
 
 const mockRouterPush = jest.fn();
@@ -15,10 +15,10 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('@/components/providers/SupabaseUserProvider');
 jest.mock('@/hooks/useProfile');
-jest.mock('@/libs/supabase/client');
+jest.mock('@/lib/supabase/client');
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://dummy-url.com';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-key';
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'dummy-key';
 
 // Cast the imported mocks to Jest's mock type
 const mockedUseUser = useUser as jest.Mock;

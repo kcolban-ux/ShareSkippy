@@ -1,26 +1,66 @@
 'use client';
-import { useState } from 'react';
-import { supabase } from '@/libs/supabase';
+
+import React, { JSX, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import DatePicker from '@/components/ui/DatePicker';
 import Image from 'next/image';
 import Button from '@/components/ui/Button';
 
-// Utility function to format date as YYYY-MM-DD without timezone issues
-const formatDateForInput = (date) => {
+type Recipient = {
+  id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  profile_photo_url?: string | null;
+};
+
+type Conversation = {
+  id?: string;
+  availability_id?: string | null;
+};
+
+type MeetingModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  recipient: Recipient;
+  conversation?: Conversation | null;
+  onMeetingCreated?: () => void;
+};
+
+type FormDataState = {
+  title: string;
+  description: string;
+  meeting_place: string;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
+};
+
+/**
+ * Format a Date to YYYY-MM-DD suitable for native date inputs.
+ */
+const formatDateForInput = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
+/**
+ * Client-side Meeting modal that creates a meeting record in Supabase.
+ *
+ * This component uses the modern lib/supabase/client createClient export.
+ */
 export default function MeetingModal({
   isOpen,
   onClose,
   recipient,
   conversation,
   onMeetingCreated,
-}) {
-  const [formData, setFormData] = useState({
+}: MeetingModalProps): JSX.Element | null {
+  const supabase = createClient();
+
+  const [formData, setFormData] = useState<FormDataState>({
     title: '',
     description: '',
     meeting_place: '',
@@ -30,65 +70,49 @@ export default function MeetingModal({
     end_time: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string>('');
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Validate form data
-      if (!formData.title.trim()) {
-        throw new Error('Meeting title is required');
-      }
-      if (!formData.start_date || !formData.start_time) {
+      if (!formData.title.trim()) throw new Error('Meeting title is required');
+      if (!formData.start_date || !formData.start_time)
         throw new Error('Start date and time are required');
-      }
-      if (!formData.end_date || !formData.end_time) {
+      if (!formData.end_date || !formData.end_time)
         throw new Error('End date and time are required');
-      }
-      if (!formData.meeting_place.trim()) {
-        throw new Error('Meeting place is required');
-      }
+      if (!formData.meeting_place.trim()) throw new Error('Meeting place is required');
 
-      // Combine date and time
       const startDateTime = new Date(`${formData.start_date}T${formData.start_time}`);
       const endDateTime = new Date(`${formData.end_date}T${formData.end_time}`);
 
-      // Validate dates
-      if (startDateTime >= endDateTime) {
-        throw new Error('End time must be after start time');
+      if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+        throw new Error('Invalid start or end date/time');
       }
-      if (startDateTime < new Date()) {
-        throw new Error('Meeting cannot be scheduled in the past');
-      }
+      if (startDateTime >= endDateTime) throw new Error('End time must be after start time');
+      if (startDateTime < new Date()) throw new Error('Meeting cannot be scheduled in the past');
 
-      // Get current user
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('You must be logged in to schedule a meeting');
-      }
 
-      // Create meeting
+      if (authError || !user) throw new Error('You must be logged in to schedule a meeting');
+
       const { data: meeting, error: meetingError } = await supabase
         .from('meetings')
         .insert({
           requester_id: user.id,
           recipient_id: recipient.id,
-          availability_id: conversation?.availability_id,
-          conversation_id: conversation?.id,
+          availability_id: conversation?.availability_id ?? null,
+          conversation_id: conversation?.id ?? null,
           title: formData.title.trim(),
           description: formData.description.trim(),
           meeting_place: formData.meeting_place.trim(),
@@ -101,21 +125,20 @@ export default function MeetingModal({
 
       if (meetingError) throw meetingError;
 
-      // Send a message in the chat about the meeting request
+      // Non-fatal chat message
       const { error: messageError } = await supabase.from('messages').insert({
         sender_id: user.id,
         recipient_id: recipient.id,
-        availability_id: conversation?.availability_id,
+        availability_id: conversation?.availability_id ?? null,
         subject: `Meeting Request: ${formData.title}`,
-        content: `I've sent you a meeting request for "${formData.title}" on ${startDateTime.toLocaleDateString()} at ${startDateTime.toLocaleTimeString()}. Please check your meetings page to accept or reject.`,
+        content: `I've sent you a meeting request for "${formData.title}" on ${startDateTime.toLocaleDateString()} at ${startDateTime.toLocaleTimeString()}.`,
       });
 
       if (messageError) {
+        // Log but do not fail the primary flow
         console.error('Error sending meeting message:', messageError);
-        // Don't throw here as the meeting was created successfully
       }
 
-      // Update conversation timestamp
       if (conversation?.id) {
         await supabase
           .from('conversations')
@@ -123,7 +146,6 @@ export default function MeetingModal({
           .eq('id', conversation.id);
       }
 
-      // Reset form and close modal
       setFormData({
         title: '',
         description: '',
@@ -135,42 +157,35 @@ export default function MeetingModal({
       });
       onClose();
 
-      // Send meeting confirmation emails to both participants
-      try {
-        // Send to requester
-        await fetch('/api/emails/meeting-scheduled', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            meetingId: meeting.id,
-            userId: user.id,
-          }),
-        });
+      // Fire-and-forget email notifications
+      (async () => {
+        try {
+          const meetingId = (meeting as { id?: string } | null)?.id;
 
-        // Send to recipient
-        await fetch('/api/emails/meeting-scheduled', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            meetingId: meeting.id,
-            userId: recipient.id,
-          }),
-        });
-      } catch (emailError) {
-        console.error('Error sending meeting confirmation emails:', emailError);
-        // Don't fail the meeting creation if email fails
-      }
+          await fetch('/api/emails/meeting-scheduled', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meetingId, userId: user.id }),
+          });
 
-      // Call the callback to refresh messages
-      if (onMeetingCreated) {
-        onMeetingCreated();
-      }
+          await fetch('/api/emails/meeting-scheduled', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meetingId, userId: recipient.id }),
+          });
+        } catch (emailError) {
+          console.error('Error sending meeting confirmation emails:', emailError);
+        }
+      })();
 
-      // Show success message (you might want to add a toast notification here)
+      if (onMeetingCreated) onMeetingCreated();
+
+      // Minimal success feedback
       alert('Meeting request sent successfully!');
-    } catch (error) {
-      console.error('Error creating meeting:', error);
-      setError(error.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      console.error('Error creating meeting:', err);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -202,7 +217,6 @@ export default function MeetingModal({
     >
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto my-4 sm:my-0">
         <div className="p-6">
-          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Schedule Meeting</h2>
             <Button
@@ -221,40 +235,38 @@ export default function MeetingModal({
             </Button>
           </div>
 
-          {/* Recipient Info */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center space-x-3">
               {recipient.profile_photo_url ? (
                 <Image
                   src={recipient.profile_photo_url}
-                  alt={`${recipient.first_name} ${recipient.last_name}`}
+                  alt={`${recipient.first_name ?? ''} ${recipient.last_name ?? ''}`}
                   className="w-12 h-12 rounded-full object-cover"
+                  width={48}
+                  height={48}
                   unoptimized
                 />
               ) : (
                 <div className="w-12 h-12 bg-linear-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center text-lg font-medium text-gray-600">
-                  {recipient.first_name?.[0] || '👤'}
+                  {recipient.first_name?.[0] ?? '👤'}
                 </div>
               )}
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {recipient.first_name} {recipient.last_name}
+                  {recipient.first_name ?? ''} {recipient.last_name ?? ''}
                 </h3>
                 <p className="text-sm text-gray-500">Meeting with</p>
               </div>
             </div>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {/* Meeting Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                 Meeting Title *
@@ -271,13 +283,14 @@ export default function MeetingModal({
               />
             </div>
 
-            {/* Start Date and Time */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
                 <DatePicker
                   selectedDate={formData.start_date}
-                  onDateSelect={(date) => setFormData((prev) => ({ ...prev, start_date: date }))}
+                  onDateSelect={(date: string) =>
+                    setFormData((prev) => ({ ...prev, start_date: date }))
+                  }
                   minDate={formatDateForInput(new Date())}
                   placeholder="Select start date"
                 />
@@ -301,13 +314,14 @@ export default function MeetingModal({
               </div>
             </div>
 
-            {/* End Date and Time */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
                 <DatePicker
                   selectedDate={formData.end_date}
-                  onDateSelect={(date) => setFormData((prev) => ({ ...prev, end_date: date }))}
+                  onDateSelect={(date: string) =>
+                    setFormData((prev) => ({ ...prev, end_date: date }))
+                  }
                   minDate={formData.start_date || formatDateForInput(new Date())}
                   maxDate={
                     formData.start_date
@@ -316,7 +330,7 @@ export default function MeetingModal({
                             new Date(formData.start_date).getTime() + 30 * 24 * 60 * 60 * 1000
                           )
                         )
-                      : null
+                      : undefined
                   }
                   placeholder="Select end date"
                 />
@@ -337,7 +351,6 @@ export default function MeetingModal({
               </div>
             </div>
 
-            {/* Meeting Place */}
             <div>
               <label
                 htmlFor="meeting_place"
@@ -357,7 +370,6 @@ export default function MeetingModal({
               />
             </div>
 
-            {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Details (Optional)
@@ -373,7 +385,6 @@ export default function MeetingModal({
               />
             </div>
 
-            {/* Buttons */}
             <div className="flex space-x-3 pt-4">
               <Button
                 type="button"

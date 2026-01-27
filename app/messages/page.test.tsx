@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { supabase } from '@/libs/supabase';
+import { createClient } from '@/lib/supabase/client';
 // Import the hook so we can cast the mock
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import MessagesPage from './page';
@@ -26,31 +26,25 @@ jest.mock(
     }
 );
 
-jest.mock('@/libs/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        or: jest.fn(() => ({
-          order: jest.fn(),
-        })),
-        limit: jest.fn(), // Keep for old test compatibility, though new code uses .or().order()
-      })),
+jest.mock('@/lib/supabase/client', () => {
+  const fromMock = jest.fn();
+  const channelMock = jest.fn(() => ({
+    on: jest.fn(() => ({
+      subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })),
     })),
-    channel: jest.fn(() => ({
-      on: jest.fn(() => ({
-        subscribe: jest.fn(() => ({
-          unsubscribe: jest.fn(),
-        })),
-      })),
+  }));
+  return {
+    createClient: jest.fn(() => ({
+      from: fromMock,
+      channel: channelMock,
+      removeChannel: jest.fn(),
     })),
-    removeChannel: jest.fn(),
-  },
-}));
+  };
+});
 
 // Cast the mocked hooks
 const mockedUseProtectedRoute = useProtectedRoute as jest.Mock;
-const mockedFrom = supabase.from as jest.Mock;
-
+const mockedFrom = createClient().from as jest.Mock;
 describe('MessagesPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
