@@ -11,7 +11,8 @@ export interface SendEmailParams {
     | 'meeting_reminder'
     | 'meeting_scheduled'
     | 'reengage'
-    | 'new_message';
+    | 'new_message'
+    | 'community_growth_day135';
   subject?: string;
   html?: string;
   text?: string;
@@ -189,7 +190,8 @@ export async function scheduleEmail({
     | 'meeting_reminder'
     | 'meeting_scheduled'
     | 'reengage'
-    | 'new_message';
+    | 'new_message'
+    | 'community_growth_day135';
   runAfter: Date;
   payload?: EmailPayload;
 }): Promise<void> {
