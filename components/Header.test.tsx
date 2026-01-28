@@ -45,12 +45,6 @@ jest.mock('@/config', () => ({
   },
 }));
 
-// Mock static asset import
-jest.mock('@/app/icon.png', () => ({
-  __esModule: true,
-  default: 'test-logo.png',
-}));
-
 const mockedUseSearchParams = useSearchParams as jest.Mock;
 const initialSearchParams = new URLSearchParams();
 

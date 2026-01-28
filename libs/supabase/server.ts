@@ -1,8 +1,17 @@
-import { createServerClient, type CookieMethodsServer } from '@supabase/ssr';
+import { CookieOptions, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getCookieOptions } from '@/libs/cookieOptions';
 
 type SupabaseKeyType = 'anon' | 'service_role';
+
+/**
+ * Represents a cookie to be set in the cookie store.
+ */
+interface CookieToSet {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+}
 
 /**
  * @async
@@ -19,21 +28,29 @@ export async function createClient(type: SupabaseKeyType = 'anon') {
       ? process.env.SUPABASE_SERVICE_ROLE_KEY!
       : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-  const cookieMethods: CookieMethodsServer = {
-    getAll() {
-      return cookieStore.getAll();
-    },
-    setAll(cookiesToSet) {
-      try {
-        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-      } catch {
-        // Safe to ignore in Server Components/Middleware if session refresh is handled.
-      }
-    },
-  };
-
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, supabaseKey, {
     cookieOptions: getCookieOptions(),
-    cookies: cookieMethods,
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet: CookieToSet[]) {
+        const errors: unknown[] = [];
+
+        for (const { name, value, options } of cookiesToSet) {
+          try {
+            cookieStore.set(name, value, options);
+          } catch (err) {
+            // Log the specific error for debugging purposes.
+            console.error('Failed to set cookie in server createClient:', err);
+            errors.push(err);
+          }
+        }
+
+        if (errors.length > 0) {
+          console.error('Failed to set one or more cookies in server createClient', errors);
+        }
+      },
+    },
   });
 }

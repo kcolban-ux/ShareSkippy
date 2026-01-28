@@ -26,16 +26,6 @@ jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
 }));
 
-jest.mock('@/app/icon.png', () => ({
-  default: {
-    src: '/mock-icon.png',
-    height: 32,
-    width: 32,
-    blurDataURL:
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
-  },
-}));
-
 jest.mock('@/components/providers/SupabaseUserProvider', () => ({
   useUser: jest.fn(),
 }));

@@ -1,11 +1,9 @@
 'use client';
-'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import logo from '@/app/icon.png';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/components/providers/SupabaseUserProvider';
 import config from '@/config';
 
@@ -42,6 +40,14 @@ const LoggedInNav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { signOut } = useUser();
 
+  const handleNavigation = useCallback((event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+      return;
+    }
+
+    setIsOpen(false);
+  }, []);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(false);
@@ -70,10 +76,9 @@ const LoggedInNav = () => {
             title={`${config.appName} home`}
           >
             <Image
-              src={logo}
+              src="/icon.png"
               alt={`${config.appName} logo`}
               className="w-6 sm:w-8"
-              placeholder="blur"
               priority={true}
               width={32}
               height={32}
@@ -118,6 +123,8 @@ const LoggedInNav = () => {
                 pathname === item.href ? 'bg-white/20 text-white' : ''
               }`}
               title={item.label}
+              onClick={handleNavigation}
+              data-testid={item.href === '/profile' ? 'nav-profile-link' : undefined}
             >
               {item.label}
             </Link>
@@ -148,10 +155,9 @@ const LoggedInNav = () => {
               href="/"
             >
               <Image
-                src={logo}
+                src="/icon.png"
                 alt={`${config.appName} logo`}
                 className="w-6 sm:w-8"
-                placeholder="blur"
                 priority={true}
                 width={32}
                 height={32}
@@ -192,6 +198,8 @@ const LoggedInNav = () => {
                       pathname === item.href ? 'bg-white/20 text-white' : ''
                     }`}
                     title={item.label}
+                    onClick={handleNavigation}
+                    data-testid={item.href === '/profile' ? 'nav-profile-link-mobile' : undefined}
                   >
                     {item.label}
                   </Link>

@@ -40,6 +40,22 @@ tasks:
       - task: setup:env:supabase:populate
       - task: setup:env:resend_info
 
+  setup:e2e:
+    desc: 'Prepare the local environment for Playwright E2E tests (install deps & browsers).'
+    cmds:
+      - cmd: npm install
+      - cmd: npx playwright install-deps
+        platforms: [linux, darwin]
+      - cmd: npx playwright install --with-deps
+        platforms: [linux, darwin]
+      - cmd: npx playwright install
+        platforms: [windows]
+      - cmd: |
+          echo "✅ Playwright tooling installed. Next steps:"
+          echo "  1) Start local Supabase: task services:start"
+          echo "  2) Populate .env with dynamic Supabase keys: task setup:env:supabase:populate"
+          echo "  3) Seed tests and run E2E: npm run e2e"
+
   setup:env:supabase:populate:
     desc: 'Dynamically retrieves and sets local Supabase variables using PowerShell.'
     deps:
@@ -50,7 +66,7 @@ tasks:
         platforms: [windows]
       - cmd: chmod +x scripts/populate-env-keys.sh
         platforms: [linux, darwin]
-      - cmd: scripts/populate-env-keys.sh
+      - cmd: scripts/populate-env-keys.sh {{.ENV_FILE}}
         platforms: [linux, darwin]
 
   setup:env:resend_info:

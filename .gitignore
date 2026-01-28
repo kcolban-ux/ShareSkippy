@@ -47,3 +47,11 @@ public/sitemap-0.xml
 supabase/.temp
 .vercel
 .vs/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

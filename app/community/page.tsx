@@ -386,14 +386,6 @@ export default function CommunityPage() {
     try {
       const supabase = createClient();
 
-      // ... (cache-busting and connection test logic is unchanged)
-      const cacheBuster = Date.now();
-      if (typeof globalThis !== 'undefined' && globalThis.location) {
-        const url = new URL(globalThis.location.href);
-        url.searchParams.set('_t', cacheBuster.toString());
-        globalThis.history.replaceState({}, '', url);
-      }
-
       // Simple query to test connection / initial data fetch
       const { error: allPostsError } = await supabase
         .from('availability')

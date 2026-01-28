@@ -81,11 +81,17 @@ export default function Home() {
   // Get user session
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Unable to read Supabase session', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     };
     getUser();
 

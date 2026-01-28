@@ -1,18 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, JSX } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import OptimizedImage from './ui/OptimizedImage';
 import ButtonSignin from './ButtonSignin';
-import logo from '@/app/icon.png';
 import config from '@/config';
 
-const links = [];
+interface NavLink {
+  href: string;
+  label: string;
+}
+
+const links: NavLink[] = [];
 
 const cta = <ButtonSignin extraStyle="btn-primary" />;
 
-const Header = () => {
+/**
+ * Renders the site header with navigation and mobile menu.
+ *
+ * @returns A JSX element for the header.
+ */
+const Header = (): JSX.Element => {
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -35,7 +44,7 @@ const Header = () => {
             title={`${config.appName} homepage`}
           >
             <OptimizedImage
-              src={logo}
+              src="/icon.png"
               alt={`${config.appName} logo`}
               className="w-6 sm:w-8"
               priority={true}
@@ -104,7 +113,7 @@ const Header = () => {
               href="/"
             >
               <OptimizedImage
-                src={logo}
+                src="/icon.png"
                 alt={`${config.appName} logo`}
                 className="w-6 sm:w-8"
                 priority={true}

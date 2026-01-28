@@ -44,7 +44,7 @@ jobs:
           node-version: '22.x'
           cache: 'npm'
       - run: npm ci
-      - run: npm test
+      - run: npm run unit:ci
 
   typecheck:
     timeout-minutes: 5
