@@ -103,7 +103,10 @@ export async function processScheduledEmails(): Promise<{
           userId: scheduledEmail.user_id,
           to: user.email,
           emailType: scheduledEmail.email_type,
-          payload: scheduledEmail.payload,
+          payload: {
+            ...scheduledEmail.payload,
+            userName: user.first_name || '',
+          },
         });
 
         processed++;
