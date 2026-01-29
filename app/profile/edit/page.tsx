@@ -100,6 +100,7 @@ const initialProfileState: Readonly<ProfileState> = {
  * @component
  * @description Allows the authenticated user to create or edit their profile information.
  */
+
 export default function ProfileEditPage() {
   const router = useRouter();
   const { user, isLoading: isAuthLoading } = useProtectedRoute();
@@ -783,6 +784,7 @@ export default function ProfileEditPage() {
                   value={profile.city ?? ''}
                   onChange={handleInputChange}
                   placeholder="Berkeley"
+                  autoComplete="address-level2"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
@@ -798,6 +800,7 @@ export default function ProfileEditPage() {
                   value={profile.state ?? ''}
                   onChange={handleInputChange}
                   placeholder="CA"
+                  autoComplete="address-level1"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
@@ -813,6 +816,7 @@ export default function ProfileEditPage() {
                   value={profile.zip_code ?? ''}
                   onChange={handleInputChange}
                   placeholder="94704"
+                  autoComplete="postal-code"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
